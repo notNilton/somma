@@ -255,7 +255,7 @@ function TransactionsPage() {
             <PrivacyAmount
               value={summaryIncome - summaryExpenses}
               showSign
-              className={`text-2xl font-bold font-display tracking-tight block ${summaryIncome - summaryExpenses >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+              className="text-2xl font-bold font-display tracking-tight block text-emerald-500"
             />
           </div>
         </div>

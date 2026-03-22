@@ -1,7 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Fuel, Car, Gauge, Loader2, BarChart3, Wrench } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Fuel,
+  Car,
+  Gauge,
+  Loader2,
+  BarChart3,
+  Wrench,
+  Plus,
+  Edit2,
+  Trash2,
+  ChevronDown,
+} from 'lucide-react';
 import {
   XAxis,
   YAxis,
@@ -14,12 +25,71 @@ import {
   Bar,
 } from 'recharts';
 import PrivacyAmount from '../components/PrivacyAmount';
+import { VehicleModal } from '../components/VehicleModal';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { api } from '../lib/api';
 import type { Vehicle, RefuelingLog, VehicleStats, VehicleMaintenanceLog } from './_types';
 
 export const Route = createFileRoute('/vehicles')({
   component: VehiclesPage,
 });
+
+function VehicleSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between gap-2 bg-muted/40 border border-border rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-smooth min-w-[180px]"
+      >
+        <span className="truncate">{selected?.label ?? 'Selecione'}</span>
+        <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-[calc(100%+0.5rem)] left-0 z-50 bg-card border border-border rounded-2xl shadow-xl shadow-primary/10 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 p-1.5 ring-1 ring-black/5 min-w-full">
+            {options.map((opt) => (
+              <button
+                type="button"
+                key={opt.value}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-smooth group ${
+                  value === opt.value ? 'bg-primary/5' : ''
+                }`}
+              >
+                <div
+                  className={`text-sm font-bold transition-smooth truncate ${
+                    value === opt.value
+                      ? 'text-primary'
+                      : 'text-foreground group-hover:text-primary'
+                  }`}
+                >
+                  {opt.label}
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function FuelCharts({ data }: { data: RefuelingLog[] }) {
   const detailedData = [...data]
@@ -116,10 +186,15 @@ function FuelCharts({ data }: { data: RefuelingLog[] }) {
 }
 
 function VehiclesPage() {
+  const queryClient = useQueryClient();
   const [subTab, setSubTab] = useState<'fuelHistory' | 'maintenanceHistory' | 'charts'>(
     'fuelHistory',
   );
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery({
     queryKey: ['vehicles'],
@@ -150,6 +225,43 @@ function VehiclesPage() {
     staleTime: 1000 * 60,
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/vehicles/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      setSelectedVehicleId(null);
+      setConfirmDeleteOpen(false);
+    },
+  });
+
+  const activeVehicle = vehicles.find((v) => v.id === activeVehicleId) ?? null;
+
+  const handleCreate = () => {
+    setEditingVehicle(null);
+    setModalMode('create');
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = () => {
+    setEditingVehicle(activeVehicle);
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
+  const handleModalSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+  };
+
+  const modalInitialData = editingVehicle
+    ? {
+        id: editingVehicle.id,
+        name: editingVehicle.nickname ?? `${editingVehicle.brand} ${editingVehicle.model}`,
+        licensePlate: editingVehicle.licensePlate,
+        brand: editingVehicle.brand,
+        model: editingVehicle.model,
+      }
+    : null;
+
   if (vehiclesLoading) {
     return (
       <div className="p-6 max-w-6xl mx-auto flex items-center justify-center py-24">
@@ -164,19 +276,44 @@ function VehiclesPage() {
   if (vehicles.length === 0) {
     return (
       <div className="p-6 max-w-6xl mx-auto flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-display font-bold">Veículos</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Histórico de abastecimentos, manutenções e gráficos por veículo.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-display font-bold">Veículos</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Histórico de abastecimentos, manutenções e gráficos por veículo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleCreate}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Novo Veículo
+          </button>
         </div>
         <div className="card-premium p-12 flex flex-col items-center justify-center gap-3 text-center">
           <Car className="w-10 h-10 text-muted-foreground/40" />
           <p className="font-bold text-sm">Nenhum veículo cadastrado</p>
           <p className="text-xs text-muted-foreground max-w-[260px]">
-            Cadastre um veículo em Configurações para ver o histórico de abastecimentos.
+            Adicione um veículo para ver o histórico de abastecimentos e manutenções.
           </p>
+          <button
+            type="button"
+            onClick={handleCreate}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth mt-1"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Novo Veículo
+          </button>
         </div>
+        <VehicleModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={handleModalSuccess}
+          mode={modalMode}
+          initialData={modalInitialData}
+        />
       </div>
     );
   }
@@ -195,6 +332,32 @@ function VehiclesPage() {
             Histórico de abastecimentos, manutenções e gráficos por veículo.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleEdit}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-smooth"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirmDeleteOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-rose-200 text-sm font-semibold hover:bg-rose-50 transition-smooth text-rose-500"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Remover
+          </button>
+          <button
+            type="button"
+            onClick={handleCreate}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Novo Veículo
+          </button>
+        </div>
       </div>
 
       {/* Resumo + seletor de veículo + tabs */}
@@ -203,22 +366,18 @@ function VehiclesPage() {
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
             <Car className="w-4 h-4" />
           </div>
-          <div>
+          <div className="flex flex-col gap-1">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
               Veículo em Análise
             </p>
-            <select
+            <VehicleSelect
               value={activeVehicleId ?? ''}
-              onChange={(e) => setSelectedVehicleId(e.target.value)}
-              className="bg-transparent font-bold text-sm outline-none cursor-pointer hover:text-primary transition-smooth"
-            >
-              {vehicles.map((v) => (
-                <option key={v.id} value={v.id} className="bg-card text-foreground">
-                  {v.nickname ?? `${v.brand} ${v.model}`}
-                  {v.licensePlate ? ` (${v.licensePlate})` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedVehicleId}
+              options={vehicles.map((v) => ({
+                value: v.id,
+                label: `${v.nickname ?? `${v.brand} ${v.model}`}${v.licensePlate ? ` (${v.licensePlate})` : ''}`,
+              }))}
+            />
           </div>
         </div>
 
@@ -446,6 +605,25 @@ function VehiclesPage() {
           </table>
         </div>
       )}
+
+      <VehicleModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleModalSuccess}
+        mode={modalMode}
+        initialData={modalInitialData}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDeleteOpen}
+        onCancel={() => setConfirmDeleteOpen(false)}
+        title="Remover veículo"
+        description={`Tem certeza que deseja remover "${activeVehicle?.nickname ?? `${activeVehicle?.brand} ${activeVehicle?.model}`}"? Esta ação não pode ser desfeita.`}
+        confirmText="Remover"
+        variant="danger"
+        onConfirm={() => activeVehicleId && deleteMutation.mutate(activeVehicleId)}
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }
