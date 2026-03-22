@@ -19,6 +19,9 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
+  RefreshCw,
+  Ban,
 } from 'lucide-react';
 import {
   type Tx,
@@ -50,11 +53,14 @@ function TransactionsPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Record<string, true>>({});
   const [confirmBulkDeleteOpen, setConfirmBulkDeleteOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState('all');
+  const [cancelRecurringTarget, setCancelRecurringTarget] = useState<Tx | null>(null);
 
   const { data: transactions = [], isLoading } = useTransactionsList({
     search,
     filterType,
     selectedCategory,
+    selectedAccount,
   });
 
   const { data: categories = [] } = useQuery({
@@ -99,6 +105,21 @@ function TransactionsPage() {
     },
   });
 
+  const markPaidMutation = useMutation({
+    mutationFn: (id: string) => api.patch(`/transactions/${id}`, { status: 'COMPLETED' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+  });
+
+  const stopRecurringMutation = useMutation({
+    mutationFn: (id: string) => api.patch(`/transactions/${id}`, { isRecurring: false }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    },
+  });
+
   const handleCreate = () => {
     setModalMode('create');
     setEditingTransaction(null);
@@ -109,9 +130,13 @@ function TransactionsPage() {
     setEditingTransaction(t);
     setIsModalOpen(true);
   };
-  const handleDelete = (id: string) => {
-    setConfirmDeleteId(id);
-    setConfirmDeleteOpen(true);
+  const handleDelete = (t: Tx) => {
+    if (t.isRecurring) {
+      setCancelRecurringTarget(t);
+    } else {
+      setConfirmDeleteId(t.id);
+      setConfirmDeleteOpen(true);
+    }
   };
   const handleModalSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -198,6 +223,50 @@ function TransactionsPage() {
           setConfirmBulkDeleteOpen(false);
         }}
       />
+      {/* Dialog: cancelar recorrência */}
+      {cancelRecurringTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-card border border-border rounded-2xl shadow-xl p-6 w-full max-w-sm flex flex-col gap-4">
+            <div className="flex items-center gap-2 text-amber-500">
+              <RefreshCw className="w-4 h-4" />
+              <p className="font-bold text-sm">Transação recorrente</p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              "{cancelRecurringTarget.description}" é recorrente. O que deseja fazer?
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={async () => {
+                  await deleteMutation.mutateAsync(cancelRecurringTarget.id);
+                  setCancelRecurringTarget(null);
+                }}
+                disabled={deleteMutation.isPending || stopRecurringMutation.isPending}
+                className="px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-smooth disabled:opacity-50"
+              >
+                Excluir só esta ocorrência
+              </button>
+              <button
+                onClick={async () => {
+                  await stopRecurringMutation.mutateAsync(cancelRecurringTarget.id);
+                  setCancelRecurringTarget(null);
+                }}
+                disabled={deleteMutation.isPending || stopRecurringMutation.isPending}
+                className="px-4 py-2 rounded-xl border border-rose-500/30 text-sm font-semibold text-rose-500 hover:bg-rose-500/10 transition-smooth disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Ban className="w-3.5 h-3.5" />
+                Parar todas as futuras
+              </button>
+              <button
+                onClick={() => setCancelRecurringTarget(null)}
+                disabled={deleteMutation.isPending || stopRecurringMutation.isPending}
+                className="px-4 py-2 rounded-xl text-xs text-muted-foreground hover:text-foreground transition-smooth"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ImportModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
@@ -338,6 +407,18 @@ function TransactionsPage() {
               </option>
             ))}
           </select>
+          <select
+            value={selectedAccount}
+            onChange={(e) => setSelectedAccount(e.target.value)}
+            className="px-3 py-2 bg-card border border-border rounded-lg text-xs font-medium hover:bg-muted transition-smooth outline-none cursor-pointer"
+          >
+            <option value="all">Todas as contas</option>
+            {accounts.map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex items-center gap-2">
@@ -450,8 +531,33 @@ function TransactionsPage() {
                         timeZone: 'UTC',
                       })}
                     </td>
-                    <td className="px-3 py-2.5 text-sm font-medium" title={t.description}>
-                      {truncate(t.description ?? '', 45)}
+                    <td className="px-3 py-2.5" title={t.description}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-medium">
+                          {truncate(t.description ?? '', 38)}
+                        </span>
+                        {t.isRecurring && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                            <RefreshCw className="w-2.5 h-2.5" />
+                            recorrente
+                          </span>
+                        )}
+                        {t.installmentNum != null && t.totalInstallments != null && (
+                          <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider bg-violet-500/10 text-violet-500 border border-violet-500/20">
+                            {t.installmentNum}/{t.totalInstallments}
+                          </span>
+                        )}
+                        {t.status === 'PENDING' && (
+                          <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                            pendente
+                          </span>
+                        )}
+                        {t.status === 'CANCELED' && (
+                          <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-muted text-muted-foreground border border-border">
+                            cancelada
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-2.5">
                       {t.category ? (
@@ -519,6 +625,19 @@ function TransactionsPage() {
                     >
                       <div className="flex items-center justify-end gap-1.5">
                         <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-smooth">
+                          {t.status === 'PENDING' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markPaidMutation.mutate(t.id);
+                              }}
+                              disabled={markPaidMutation.isPending}
+                              title="Marcar como pago"
+                              className="p-1 rounded-md hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-500 transition-smooth disabled:opacity-40"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -531,7 +650,7 @@ function TransactionsPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(t.id);
+                              handleDelete(t);
                             }}
                             disabled={deleteMutation.isPending}
                             className="p-1 rounded-md hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth disabled:opacity-40"

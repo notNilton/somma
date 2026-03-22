@@ -14,6 +14,7 @@ import {
 import {
   TransactionType,
   TransactionClassification,
+  TransactionStatus,
   PaymentMethod,
   TransactionChannel,
   FuelType,
@@ -48,6 +49,10 @@ export class CreateTransactionDto {
   @IsUUID()
   @IsOptional()
   cardId?: string;
+
+  @IsEnum(TransactionStatus)
+  @IsOptional()
+  status?: TransactionStatus;
 
   @IsBoolean()
   @IsOptional()

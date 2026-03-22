@@ -26,11 +26,14 @@ export interface Tx {
   amount: number | string;
   date: string;
   type: 'INCOME' | 'EXPENSE';
+  status?: 'PENDING' | 'COMPLETED' | 'CANCELED';
   classification?: string;
   channel?: 'CARD_CREDIT' | 'CARD_DEBIT' | 'PIX' | 'BANK' | string;
   isRecurring?: boolean;
   isVirtual?: boolean;
   sourceTransactionId?: string;
+  installmentNum?: number;
+  totalInstallments?: number;
   categoryId?: string;
   accountId?: string;
   cardId?: string | null;
@@ -62,12 +65,18 @@ export function buildTxParams(opts: {
   search: string;
   filterType: 'all' | 'INCOME' | 'EXPENSE';
   selectedCategory: string;
+  selectedAccount?: string;
+  selectedStatus?: string;
   extra?: Record<string, string>;
 }): string {
   const params = new URLSearchParams();
   if (opts.search) params.set('search', opts.search);
   if (opts.filterType !== 'all') params.set('type', opts.filterType);
   if (opts.selectedCategory !== 'all') params.set('categoryId', opts.selectedCategory);
+  if (opts.selectedAccount && opts.selectedAccount !== 'all')
+    params.set('accountId', opts.selectedAccount);
+  if (opts.selectedStatus && opts.selectedStatus !== 'all')
+    params.set('status', opts.selectedStatus);
   params.set('page', '1');
   params.set('limit', '5000');
   if (opts.extra) {
@@ -147,9 +156,18 @@ export function useTransactionsList(opts: {
   search: string;
   filterType: 'all' | 'INCOME' | 'EXPENSE';
   selectedCategory: string;
+  selectedAccount?: string;
+  selectedStatus?: string;
 }) {
   return useQuery({
-    queryKey: ['transactions', opts.search, opts.filterType, opts.selectedCategory],
+    queryKey: [
+      'transactions',
+      opts.search,
+      opts.filterType,
+      opts.selectedCategory,
+      opts.selectedAccount,
+      opts.selectedStatus,
+    ],
     queryFn: () => api.get<Tx[]>(`/transactions?${buildTxParams({ ...opts })}`),
     staleTime: 1000 * 30,
   });
