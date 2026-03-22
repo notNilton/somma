@@ -23,9 +23,10 @@ type Classification = BaseClassification | 'TRANSFER';
 
 type TransactionModalTab = 'expense' | 'income' | 'bill_payment';
 
-type ExpenseKind = 'DEBIT' | 'PIX' | 'BANK' | 'CASH';
+type ExpenseKind = 'CREDIT' | 'DEBIT' | 'PIX' | 'BANK' | 'CASH';
 
 function expenseKindToChannel(kind: ExpenseKind) {
+  if (kind === 'CREDIT') return 'CARD_CREDIT';
   if (kind === 'DEBIT') return 'CARD_DEBIT';
   if (kind === 'PIX') return 'PIX';
   return 'BANK';
@@ -347,6 +348,7 @@ export function useTransactionModalModel({
 
   const [expenseKind, setExpenseKind] = useState<ExpenseKind>(() => {
     const channel = initialData?.channel;
+    if (channel === 'CARD_CREDIT') return 'CREDIT';
     if (channel === 'CARD_DEBIT') return 'DEBIT';
     if (channel === 'PIX') return 'PIX';
     return 'BANK';

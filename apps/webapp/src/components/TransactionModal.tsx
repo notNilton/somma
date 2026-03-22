@@ -370,6 +370,7 @@ export function TransactionModal({
                     disabled={isEditing}
                     placeholder="Tipo de despesa"
                     options={[
+                      { value: 'CREDIT', label: 'Crédito' },
                       { value: 'DEBIT', label: 'Débito' },
                       { value: 'PIX', label: 'Pix' },
                       { value: 'BANK', label: 'Bancária' },
@@ -404,8 +405,8 @@ export function TransactionModal({
               </div>
             </div>
 
-            {/* Parcelas */}
-            {activeTab === 'expense' && (
+            {/* Parcelas — só para crédito */}
+            {activeTab === 'expense' && expenseKind === 'CREDIT' && (
               <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col gap-3">
                 <div>
                   <label className={labelCls}>Parcelas</label>
