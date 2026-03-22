@@ -21,7 +21,7 @@ function normalize(value: string) {
 type BaseClassification = 'COMMON' | 'FUEL' | 'MAINTENANCE';
 type Classification = BaseClassification | 'TRANSFER';
 
-type TransactionModalTab = 'expense' | 'income';
+type TransactionModalTab = 'expense' | 'income' | 'bill_payment';
 
 type ExpenseKind = 'DEBIT' | 'PIX' | 'BANK' | 'CASH';
 
@@ -339,9 +339,11 @@ export function useTransactionModalModel({
 }: TransactionModalProps) {
   const isEditing = mode === 'edit';
 
-  const [activeTab, setActiveTab] = useState<TransactionModalTab>(() =>
-    initialData?.type === 'INCOME' ? 'income' : 'expense',
-  );
+  const [activeTab, setActiveTab] = useState<TransactionModalTab>(() => {
+    if (initialData?.classification === 'TRANSFER') return 'bill_payment';
+    if (initialData?.type === 'INCOME') return 'income';
+    return 'expense';
+  });
 
   const [expenseKind, setExpenseKind] = useState<ExpenseKind>(() => {
     const channel = initialData?.channel;
@@ -406,6 +408,17 @@ export function useTransactionModalModel({
   }, [isOpen]);
 
   useEffect(() => {
+    if (activeTab === 'bill_payment') {
+      setIsExpense(true);
+      setIsRecurring(false);
+      setTotalInstallments(1);
+      setHasPaidInstallments(false);
+      setPaidInstallments(1);
+      setCategoryId('');
+      setClassification('TRANSFER');
+      setDescription((prev) => (prev.trim().length ? prev : 'Pagamento de fatura'));
+      return;
+    }
     setIsExpense(activeTab === 'expense');
     setTotalInstallments(1);
     setIsRecurring(false);
@@ -420,7 +433,9 @@ export function useTransactionModalModel({
     setIsRecurring,
     setHasPaidInstallments,
     setPaidInstallments,
+    setCategoryId,
     setClassification,
+    setDescription,
     defaultClassification,
   ]);
 

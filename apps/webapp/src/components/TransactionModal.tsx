@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, ChevronDown, Lock, Loader2, X } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ChevronDown, Lock, Loader2, X, Receipt } from 'lucide-react';
 import { getBrandIcon } from '../lib/vehicle-brands';
 import { useTransactionModalModel } from './TransactionModal.queries';
 
@@ -254,9 +254,9 @@ export function TransactionModal({
         </div>
 
         <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-          {/* Tipo: Despesa / Receita */}
+          {/* Tipo: Despesa / Receita / Fatura */}
           <div
-            className={`relative grid grid-cols-2 gap-2 p-1 bg-muted rounded-2xl ${
+            className={`relative grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl ${
               isEditing ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -290,9 +290,83 @@ export function TransactionModal({
               <ArrowUpRight className="w-4 h-4" />
               Receita
             </button>
+            <button
+              type="button"
+              onClick={() => !isEditing && setActiveTab('bill_payment')}
+              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-smooth ${
+                activeTab === 'bill_payment'
+                  ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+                  : 'text-muted-foreground hover:bg-muted-foreground/10'
+              }`}
+            >
+              <Receipt className="w-4 h-4" />
+              Fatura
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
+          {/* Formulário de Pagamento de Fatura */}
+          {activeTab === 'bill_payment' && (
+            <div className="flex flex-col gap-4">
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-medium">
+                Registra a saída de dinheiro da sua conta para pagar uma fatura de crédito. Aparece
+                como "Fatura Paga" no resumo mensal.
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
+                    Valor da fatura
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    inputMode="numeric"
+                    value={formattedAmount}
+                    onChange={handleAmountChange}
+                    className="w-full bg-muted/40 border border-border rounded-xl px-4 py-2.5 text-sm font-bold text-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-smooth"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
+                    Data do pagamento
+                  </label>
+                  <input
+                    required
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full bg-muted/40 border border-border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-smooth"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
+                    Conta debitada
+                  </label>
+                  <CustomSelect
+                    value={accountId}
+                    onChange={setAccountId}
+                    placeholder="Selecione a conta que paga"
+                    options={accounts.map((acc) => ({ value: acc.id, label: acc.name }))}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
+                    Observações
+                  </label>
+                  <input
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Ex: Fatura Nubank março"
+                    className="w-full bg-muted/40 border border-border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-smooth"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*:last-child:nth-child(odd)]:sm:col-span-2 ${activeTab === 'bill_payment' ? 'hidden' : ''}`}
+          >
             {/* Valor Total */}
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
@@ -605,15 +679,19 @@ export function TransactionModal({
               type="submit"
               disabled={isLoading || isSubmitDisabled}
               className={`flex-[3] flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-white font-bold text-sm shadow-lg transition-smooth hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100 ${
-                isExpense
-                  ? 'bg-rose-500 shadow-rose-500/20'
-                  : 'bg-emerald-500 shadow-emerald-500/20'
+                activeTab === 'bill_payment'
+                  ? 'bg-amber-500 shadow-amber-500/20'
+                  : isExpense
+                    ? 'bg-rose-500 shadow-rose-500/20'
+                    : 'bg-emerald-500 shadow-emerald-500/20'
               }`}
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : isEditing ? (
                 'Salvar Alterações'
+              ) : activeTab === 'bill_payment' ? (
+                'Confirmar Pagamento'
               ) : (
                 `Confirmar ${isFuel ? 'Abastecimento' : isExpense ? 'Despesa' : 'Receita'}`
               )}
