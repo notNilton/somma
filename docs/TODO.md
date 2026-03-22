@@ -49,3 +49,64 @@ A fase de evolução foi integrada em uma interface centralizada e prática, fac
 - [ ] **Calendário Financeiro**: Notificações e visão mensal de vencimentos.
 
 ---
+
+## ⚡ FASE 5: Performance & Infraestrutura
+
+### Redis / Cache
+
+- [ ] **Cache de usuário no JwtAuthGuard** — eliminar query ao banco em toda requisição autenticada (TTL 5 min)
+- [ ] **Cache do Dashboard** — endpoint faz 9+ queries por acesso; cache com TTL 3 min + invalidação no CRUD de transação
+- [ ] Instalar `ioredis`, `@nestjs/cache-manager`, `cache-manager-ioredis` e registrar `CacheModule` global
+
+---
+
+## 📊 FASE 6: Analytics & Relatórios
+
+### Dashboard
+
+- [ ] **Seletor de período** — permitir visualizar qualquer mês, não só o atual
+- [ ] **Gráfico de evolução mensal** — receita vs despesa nos últimos 6 meses
+- [ ] **Breakdown por categoria** — gráfico de pizza/barras com top categorias de gasto
+
+### Relatórios
+
+- [ ] **Tela `/reports`** — gastos por categoria (comparativo mês a mês), evolução de saldo (`BalanceHistory` já existe), top 5 categorias
+
+### Exportação
+
+- [ ] **Endpoint `GET /transactions/export`** — retorna CSV com filtros `from` / `to`
+- [ ] **Botão "Exportar"** na tela de transações ao lado do "Importar"
+
+---
+
+## 💳 FASE 7: Crédito & Transferências
+
+### Fatura de Cartão
+
+- [ ] **Resumo da barra de transações** — separar "Despesas" (compras no crédito + débito/pix) de "Fatura Paga" (informativo de caixa); Saldo = Receitas − Despesas sem duplicar pagamento de fatura
+- [ ] Documentar regra: compras no crédito são despesas no mês em que ocorrem; pagamento de fatura é saída de caixa informativa, não reconta como despesa
+
+### Transferências entre Contas
+
+- [ ] **Tela de Transferências** — usar modelo `Transfer` já existente no schema; tela `/transfers` ou modal dedicado
+- [ ] Garantir que transferência não aparece como despesa/receita no resumo mensal
+
+---
+
+## 🔔 FASE 8: Notificações & Orçamentos
+
+### Orçamentos (Budget)
+
+- [ ] **Modelo `Budget` no schema** — limite mensal por categoria, período, userId
+- [ ] **Backend** — módulo `budgets` (controller + service + DTOs)
+- [ ] **Frontend** — cards de orçamento no dashboard com barra de progresso (% utilizado)
+- [ ] **Alerta visual** quando categoria ultrapassar o limite
+
+### Notificações
+
+- [ ] Instalar `Bull` / `BullMQ` e usar Redis já disponível no `docker-compose.yml`
+- [ ] **Job: vencimento de fatura** — `Card.dueDay` já calculado, só falta disparar lembrete
+- [ ] **Job: orçamento estourado** — dispara quando despesa da categoria ultrapassa o limite definido
+- [ ] **Job: recorrência não paga** — alerta para transações recorrentes PENDING
+
+---

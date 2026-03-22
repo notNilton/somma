@@ -21,12 +21,11 @@ function normalize(value: string) {
 type BaseClassification = 'COMMON' | 'FUEL' | 'MAINTENANCE';
 type Classification = BaseClassification | 'TRANSFER';
 
-type TransactionModalTab = 'expense' | 'income' | 'credit_card_payment';
+type TransactionModalTab = 'expense' | 'income';
 
-type ExpenseKind = 'CREDIT' | 'DEBIT' | 'PIX' | 'BANK' | 'CASH';
+type ExpenseKind = 'DEBIT' | 'PIX' | 'BANK' | 'CASH';
 
 function expenseKindToChannel(kind: ExpenseKind) {
-  if (kind === 'CREDIT') return 'CARD_CREDIT';
   if (kind === 'DEBIT') return 'CARD_DEBIT';
   if (kind === 'PIX') return 'PIX';
   return 'BANK';
@@ -43,24 +42,15 @@ function inferClassificationFromCategory({
   categoryId: string;
   currentClassification: BaseClassification;
 }): BaseClassification {
-  if (!isExpense || filteredCategories.length === 0) {
-    return 'COMMON';
-  }
+  if (!isExpense || filteredCategories.length === 0) return 'COMMON';
 
   const currentCat = filteredCategories.find((c) => c.id === categoryId);
-  if (!currentCat) {
-    return 'COMMON';
-  }
+  if (!currentCat) return 'COMMON';
 
   const norm = normalize(currentCat.name);
 
-  if (norm === 'veiculo-combustivel' || norm.includes('abastecimento')) {
-    return 'FUEL';
-  }
-
-  if (norm === 'veiculo-manutencao' || norm.includes('manutencao')) {
-    return 'MAINTENANCE';
-  }
+  if (norm === 'veiculo-combustivel' || norm.includes('abastecimento')) return 'FUEL';
+  if (norm === 'veiculo-manutencao' || norm.includes('manutencao')) return 'MAINTENANCE';
 
   return currentClassification !== 'COMMON' ? 'COMMON' : currentClassification;
 }
@@ -71,7 +61,6 @@ function buildTransactionPayload({
   classification,
   vehicleFuelCategoryId,
   expenseKind,
-  creditCardId,
   amountInCents,
   litersInMililiters,
   date,
@@ -92,7 +81,6 @@ function buildTransactionPayload({
   classification: Classification;
   vehicleFuelCategoryId: string | null;
   expenseKind: ExpenseKind;
-  creditCardId: string;
   amountInCents: number;
   litersInMililiters: number;
   date: string;
@@ -110,7 +98,6 @@ function buildTransactionPayload({
 }) {
   const actualAmount = amountInCents / 100;
   const actualLiters = litersInMililiters / 1000;
-
   const forcedCategoryIdForFuel = classification === 'FUEL' ? vehicleFuelCategoryId : null;
   const channel = expenseKindToChannel(expenseKind);
 
@@ -131,9 +118,6 @@ function buildTransactionPayload({
     accountId,
     channel,
     classification,
-    ...((expenseKind === 'CREDIT' || classification === 'TRANSFER') && creditCardId
-      ? { cardId: creditCardId }
-      : {}),
     ...(!isEditing && totalInstallments > 1 && { totalInstallments }),
     ...(!isEditing && totalInstallments > 1 && hasPaidInstallments && { paidInstallments }),
     ...(classification === 'FUEL' && {
@@ -192,12 +176,7 @@ function useTransactionModalQueries({
   const vehicleFuelCategoryId =
     filteredCategories.find((c) => normalize(c.name) === 'veiculo-combustivel')?.id ?? null;
 
-  return {
-    filteredCategories,
-    accounts,
-    vehicles,
-    vehicleFuelCategoryId,
-  };
+  return { filteredCategories, accounts, vehicles, vehicleFuelCategoryId };
 }
 
 function useTransactionModalFormState({
@@ -216,9 +195,7 @@ function useTransactionModalFormState({
   const [isExpense, setIsExpense] = useState(initialData ? initialData.type === 'EXPENSE' : true);
   const [isRecurring, setIsRecurring] = useState(initialData?.isRecurring ?? false);
   const [date, setDate] = useState(() => {
-    if (initialData?.date) {
-      return new Date(initialData.date).toISOString().split('T')[0];
-    }
+    if (initialData?.date) return new Date(initialData.date).toISOString().split('T')[0];
     const today = new Date();
     return [
       today.getFullYear(),
@@ -237,13 +214,11 @@ function useTransactionModalFormState({
   const [totalInstallments, setTotalInstallments] = useState(1);
   const [hasPaidInstallments, setHasPaidInstallments] = useState(false);
   const [paidInstallments, setPaidInstallments] = useState(1);
-
   const [classification, setClassification] = useState<Classification>(
     (initialData?.classification as Classification | undefined) ??
       defaultClassification ??
       'COMMON',
   );
-
   const [vehicleId, setVehicleId] = useState(
     fuelData?.vehicleId ?? initialData?.vehicleId ?? defaultVehicleId ?? '',
   );
@@ -266,16 +241,12 @@ function useTransactionModalFormState({
   );
 
   useEffect(() => {
-    if (!isOpen) return;
-    if (!initialData) {
-      setTotalInstallments(1);
-    }
+    if (!isOpen || initialData) return;
+    setTotalInstallments(1);
   }, [isOpen, initialData]);
 
   useEffect(() => {
-    if (totalInstallments > 1) {
-      setIsRecurring(false);
-    }
+    if (totalInstallments > 1) setIsRecurring(false);
   }, [totalInstallments]);
 
   useEffect(() => {
@@ -288,48 +259,33 @@ function useTransactionModalFormState({
   }, [totalInstallments]);
 
   useEffect(() => {
-    if (!hasPaidInstallments) {
-      setPaidInstallments(1);
-    }
+    if (!hasPaidInstallments) setPaidInstallments(1);
   }, [hasPaidInstallments]);
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '');
-    setAmount(value);
-  };
-
-  const handleKmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '');
-    setCurrentKm(value);
-  };
-
-  const handleLitersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '');
-    setLiters(value);
-  };
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setAmount(e.target.value.replace(/\D/g, ''));
+  const handleKmChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setCurrentKm(e.target.value.replace(/\D/g, ''));
+  const handleLitersChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setLiters(e.target.value.replace(/\D/g, ''));
 
   const formattedAmount = (Number(amount) / 100).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   });
-
   const amountValue = Number(amount) / 100;
   const installmentValue = totalInstallments > 1 ? amountValue / totalInstallments : amountValue;
-
   const formattedInstallment = installmentValue.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   });
-
   const formattedKm = Number(currentKm).toLocaleString('pt-BR');
-
   const formattedLiters = (Number(liters) / 1000).toLocaleString('pt-BR', {
     minimumFractionDigits: 3,
     maximumFractionDigits: 3,
   });
 
   return {
-    // state
     isExpense,
     setIsExpense,
     isRecurring,
@@ -360,11 +316,9 @@ function useTransactionModalFormState({
     setLiters,
     fuelType,
     setFuelType,
-    // handlers
     handleAmountChange,
     handleKmChange,
     handleLitersChange,
-    // derived
     formattedAmount,
     amountValue,
     installmentValue,
@@ -385,22 +339,16 @@ export function useTransactionModalModel({
 }: TransactionModalProps) {
   const isEditing = mode === 'edit';
 
-  const [activeTab, setActiveTab] = useState<TransactionModalTab>(() => {
-    if (initialData?.classification === 'TRANSFER') return 'credit_card_payment';
-    if (initialData?.type === 'EXPENSE') return 'expense';
-    return 'income';
-  });
+  const [activeTab, setActiveTab] = useState<TransactionModalTab>(() =>
+    initialData?.type === 'INCOME' ? 'income' : 'expense',
+  );
 
   const [expenseKind, setExpenseKind] = useState<ExpenseKind>(() => {
     const channel = initialData?.channel;
-    if (channel === 'CARD_CREDIT') return 'CREDIT';
     if (channel === 'CARD_DEBIT') return 'DEBIT';
     if (channel === 'PIX') return 'PIX';
-    if (channel === 'BANK') return 'BANK';
     return 'BANK';
   });
-
-  const [creditCardId, setCreditCardId] = useState<string>(() => initialData?.cardId ?? '');
 
   const form = useTransactionModalFormState({
     initialData,
@@ -448,45 +396,21 @@ export function useTransactionModalModel({
   } = form;
 
   const { filteredCategories, accounts, vehicles, vehicleFuelCategoryId } =
-    useTransactionModalQueries({
-      isOpen,
-      isExpense,
-    });
+    useTransactionModalQueries({ isOpen, isExpense });
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setError(null);
-    }
+    if (isOpen) setError(null);
   }, [isOpen]);
 
   useEffect(() => {
-    if (activeTab === 'credit_card_payment') {
-      setIsExpense(true);
-      setIsRecurring(false);
-      setTotalInstallments(1);
-      setHasPaidInstallments(false);
-      setPaidInstallments(1);
-      setCategoryId('');
-      setClassification('TRANSFER');
-      setDescription((prev) => (prev.trim().length ? prev : 'Pagamento de fatura'));
-      setExpenseKind('BANK');
-      setCreditCardId('');
-      return;
-    }
-
     setIsExpense(activeTab === 'expense');
-    // Receita não suporta parcelamento; sempre fixa em 1
     setTotalInstallments(1);
     setIsRecurring(false);
     setHasPaidInstallments(false);
     setPaidInstallments(1);
-    if (activeTab !== 'expense') {
-      setExpenseKind('BANK');
-      setCreditCardId('');
-    }
     setClassification((prev) =>
       prev === 'TRANSFER' ? ((defaultClassification ?? 'COMMON') as BaseClassification) : prev,
     );
@@ -496,44 +420,14 @@ export function useTransactionModalModel({
     setIsRecurring,
     setHasPaidInstallments,
     setPaidInstallments,
-    setCategoryId,
     setClassification,
-    setDescription,
     defaultClassification,
   ]);
-
-  useEffect(() => {
-    if (activeTab !== 'expense') return;
-
-    if (expenseKind !== 'CREDIT') {
-      setTotalInstallments(1);
-      setHasPaidInstallments(false);
-      setPaidInstallments(1);
-      setCreditCardId('');
-    }
-  }, [
-    activeTab,
-    expenseKind,
-    setTotalInstallments,
-    setHasPaidInstallments,
-    setPaidInstallments,
-    setCreditCardId,
-  ]);
-
-  const creditCards = accounts.flatMap((a) => a.cards ?? []).filter((c) => c.type === 'CREDIT');
-
-  useEffect(() => {
-    if (activeTab !== 'expense' || expenseKind !== 'CREDIT') return;
-    const selectedCard = creditCards.find((c) => c.id === creditCardId);
-    if (selectedCard) setAccountId(selectedCard.accountId);
-  }, [activeTab, expenseKind, creditCards, creditCardId, setAccountId]);
 
   const prevCategoryIdRef = React.useRef(categoryId);
 
   useEffect(() => {
-    if (activeTab === 'credit_card_payment') return;
     if (prevCategoryIdRef.current === categoryId) return;
-
     prevCategoryIdRef.current = categoryId;
 
     const nextClassification = inferClassificationFromCategory({
@@ -545,7 +439,7 @@ export function useTransactionModalModel({
     });
 
     setClassification(nextClassification);
-  }, [activeTab, isExpense, filteredCategories, categoryId]);
+  }, [isExpense, filteredCategories, categoryId]);
 
   const isVehicleCategory = React.useMemo(() => {
     const c = filteredCategories.find((cat) => cat.id === categoryId);
@@ -556,13 +450,8 @@ export function useTransactionModalModel({
 
   const isFuel = classification === 'FUEL';
   const isMaintenance = classification === 'MAINTENANCE';
-  const creditCardAccounts = accounts.filter((a) => a.type === 'CREDIT_CARD');
 
-  const isSubmitDisabled =
-    Number(amount) <= 0 ||
-    !date ||
-    (activeTab === 'credit_card_payment' && (!accountId || !creditCardId)) ||
-    (activeTab !== 'credit_card_payment' && !accountId && !(isExpense && expenseKind === 'CREDIT'));
+  const isSubmitDisabled = Number(amount) <= 0 || !date || !accountId;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -576,7 +465,6 @@ export function useTransactionModalModel({
         classification: classification as Classification,
         vehicleFuelCategoryId,
         expenseKind,
-        creditCardId,
         amountInCents: Number(amount),
         litersInMililiters: Number(liters),
         date,
@@ -609,17 +497,13 @@ export function useTransactionModalModel({
   };
 
   return {
-    // view helpers
     isEditing,
     isFuel,
     isMaintenance,
     activeTab,
+    setActiveTab,
     expenseKind,
     setExpenseKind,
-    creditCardId,
-    setCreditCardId,
-    creditCards,
-    // form state
     isExpense,
     setIsExpense,
     isRecurring,
@@ -650,20 +534,15 @@ export function useTransactionModalModel({
     handleLitersChange,
     fuelType,
     setFuelType,
-    // derived / formatting
     formattedAmount,
     installmentValue,
     formattedInstallment,
     formattedKm,
     formattedLiters,
     isVehicleCategory,
-    // queries
     filteredCategories,
     accounts,
-    creditCardAccounts,
-    setActiveTab,
     vehicles,
-    // submission
     isLoading,
     isSubmitDisabled,
     error,

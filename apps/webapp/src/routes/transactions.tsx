@@ -27,6 +27,7 @@ import {
   currentMonthKey,
   sumExpenses,
   sumIncome,
+  sumBillPayments,
   useTransactionsList,
 } from './transactions.queries';
 
@@ -136,6 +137,7 @@ function TransactionsPage() {
 
   const summaryExpenses = sumExpenses(tableTransactions);
   const summaryIncome = sumIncome(tableTransactions);
+  const summaryBillPayments = sumBillPayments(tableTransactions);
 
   const truncate = (s: string, max: number) => {
     const str = (s ?? '').trim();
@@ -248,6 +250,17 @@ function TransactionsPage() {
               className="text-2xl font-bold font-display tracking-tight block text-emerald-500"
             />
           </div>
+          {summaryBillPayments > 0 && (
+            <div title="Pagamento de fatura já contabilizado nas despesas do crédito — exibido apenas como saída de caixa">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                Fatura Paga
+              </p>
+              <PrivacyAmount
+                value={-summaryBillPayments}
+                className="text-2xl font-bold font-display tracking-tight block text-amber-500"
+              />
+            </div>
+          )}
           <div className="pl-6 border-l border-border">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
               Saldo
@@ -551,7 +564,11 @@ function TransactionsPage() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleModalSuccess}
         mode={modalMode}
-        initialData={editingTransaction}
+        initialData={
+          editingTransaction
+            ? { ...editingTransaction, cardId: editingTransaction.cardId ?? undefined }
+            : null
+        }
       />
     </div>
   );

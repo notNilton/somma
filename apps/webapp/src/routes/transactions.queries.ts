@@ -88,6 +88,12 @@ export function sumIncome(list: Tx[]): number {
     .reduce((acc, t) => acc + Math.abs(Number(t.amount)), 0);
 }
 
+export function sumBillPayments(list: Tx[]): number {
+  return list
+    .filter((t) => t.type === 'EXPENSE' && t.classification === 'TRANSFER')
+    .reduce((acc, t) => acc + Math.abs(Number(t.amount)), 0);
+}
+
 export function currentMonthKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;

@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  ChevronDown,
-  CreditCard,
-  Lock,
-  Loader2,
-  X,
-} from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ChevronDown, Lock, Loader2, X } from 'lucide-react';
 import { getBrandIcon } from '../lib/vehicle-brands';
 import { useTransactionModalModel } from './TransactionModal.queries';
 
@@ -24,12 +16,6 @@ export interface Account {
   name: string;
   creditLimit?: number | string | null;
   type?: 'CHECKING' | 'SAVINGS' | 'CASH' | 'WALLET' | 'INVESTMENT';
-  cards?: Array<{
-    id: string;
-    accountId: string;
-    name: string;
-    type: 'CREDIT' | 'DEBIT';
-  }>;
 }
 
 export interface Vehicle {
@@ -73,9 +59,7 @@ export interface TransactionModalProps {
   onSuccess: () => void;
   mode?: 'create' | 'edit';
   initialData?: Transaction | null;
-  /** opcional: contexto de veículo atual (ex: vindo da tela de evolução) */
   defaultVehicleId?: string;
-  /** opcional: tipo de gasto sugerido ao abrir o modal */
   defaultClassification?: 'COMMON' | 'FUEL' | 'MAINTENANCE';
 }
 
@@ -156,7 +140,11 @@ function CustomSelect({
                 {opt.icon && <div className="mt-0.5 shrink-0">{opt.icon}</div>}
                 <div className="flex-1 min-w-0">
                   <div
-                    className={`text-sm font-bold transition-smooth truncate ${value === opt.value ? 'text-primary' : 'text-foreground group-hover:text-primary'}`}
+                    className={`text-sm font-bold transition-smooth truncate ${
+                      value === opt.value
+                        ? 'text-primary'
+                        : 'text-foreground group-hover:text-primary'
+                    }`}
                   >
                     {opt.label}
                   </div>
@@ -233,12 +221,9 @@ export function TransactionModal({
     formattedLiters,
     filteredCategories,
     accounts,
-    creditCards,
     vehicles,
     expenseKind,
     setExpenseKind,
-    creditCardId,
-    setCreditCardId,
     isVehicleCategory,
     classification,
     setClassification,
@@ -269,8 +254,9 @@ export function TransactionModal({
         </div>
 
         <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+          {/* Tipo: Despesa / Receita */}
           <div
-            className={`relative grid grid-cols-3 gap-2 p-1 bg-muted rounded-2xl ${
+            className={`relative grid grid-cols-2 gap-2 p-1 bg-muted rounded-2xl ${
               isEditing ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -283,38 +269,26 @@ export function TransactionModal({
             <button
               type="button"
               onClick={() => !isEditing && setActiveTab('expense')}
-              className={`w-full min-w-0 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-smooth ${
+              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-smooth ${
                 activeTab === 'expense'
                   ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20'
                   : 'text-muted-foreground hover:bg-muted-foreground/10'
               }`}
             >
               <ArrowDownLeft className="w-4 h-4" />
-              <span className="truncate">Despesa</span>
+              Despesa
             </button>
             <button
               type="button"
               onClick={() => !isEditing && setActiveTab('income')}
-              className={`w-full min-w-0 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-smooth ${
+              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-smooth ${
                 activeTab === 'income'
                   ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                   : 'text-muted-foreground hover:bg-muted-foreground/10'
               }`}
             >
               <ArrowUpRight className="w-4 h-4" />
-              <span className="truncate">Receita</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => !isEditing && setActiveTab('credit_card_payment')}
-              className={`w-full min-w-0 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-smooth ${
-                activeTab === 'credit_card_payment'
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                  : 'text-muted-foreground hover:bg-muted-foreground/10'
-              }`}
-            >
-              <CreditCard className="w-4 h-4" />
-              Fatura
+              Receita
             </button>
           </div>
 
@@ -322,27 +296,23 @@ export function TransactionModal({
             {/* Valor Total */}
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
-                {activeTab === 'credit_card_payment' ? 'Valor total a pagar' : 'Valor Total'}
+                Valor Total
               </label>
-              <div className="relative">
-                <input
-                  required
-                  type="text"
-                  inputMode="numeric"
-                  value={formattedAmount}
-                  onChange={handleAmountChange}
-                  className={`w-full bg-muted/40 border border-border rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 outline-none transition-smooth ${
-                    activeTab === 'credit_card_payment'
-                      ? 'text-primary focus:ring-primary/20'
-                      : isExpense
-                        ? 'text-rose-500 focus:ring-rose-500/20'
-                        : 'text-emerald-500 focus:ring-emerald-500/20'
-                  }`}
-                />
-              </div>
+              <input
+                required
+                type="text"
+                inputMode="numeric"
+                value={formattedAmount}
+                onChange={handleAmountChange}
+                className={`w-full bg-muted/40 border border-border rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 outline-none transition-smooth ${
+                  isExpense
+                    ? 'text-rose-500 focus:ring-rose-500/20'
+                    : 'text-emerald-500 focus:ring-emerald-500/20'
+                }`}
+              />
             </div>
 
-            {/* Tipo de despesa */}
+            {/* Tipo de despesa (canal) */}
             {activeTab === 'expense' && (
               <div>
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
@@ -350,13 +320,10 @@ export function TransactionModal({
                 </label>
                 <CustomSelect
                   value={expenseKind}
-                  onChange={(v) =>
-                    setExpenseKind(v as 'CREDIT' | 'DEBIT' | 'PIX' | 'BANK' | 'CASH')
-                  }
+                  onChange={(v) => setExpenseKind(v as 'DEBIT' | 'PIX' | 'BANK' | 'CASH')}
                   disabled={isEditing}
                   placeholder="Selecione o tipo"
                   options={[
-                    { value: 'CREDIT', label: 'Crédito' },
                     { value: 'DEBIT', label: 'Débito' },
                     { value: 'PIX', label: 'Pix' },
                     { value: 'BANK', label: 'Transação bancária' },
@@ -366,7 +333,7 @@ export function TransactionModal({
               </div>
             )}
 
-            {/* Date */}
+            {/* Data */}
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
                 Data
@@ -380,28 +347,26 @@ export function TransactionModal({
               />
             </div>
 
-            {/* Category */}
-            {activeTab !== 'credit_card_payment' && (
-              <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
-                  Categoria
-                </label>
-                <CustomSelect
-                  value={categoryId}
-                  onChange={setCategoryId}
-                  placeholder="Sem categoria"
-                  options={filteredCategories.map((cat) => ({
-                    value: cat.id,
-                    label: cat.name,
-                    description: cat.description,
-                    color: cat.color || 'var(--muted-foreground)',
-                  }))}
-                />
-              </div>
-            )}
+            {/* Categoria */}
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
+                Categoria
+              </label>
+              <CustomSelect
+                value={categoryId}
+                onChange={setCategoryId}
+                placeholder="Sem categoria"
+                options={filteredCategories.map((cat) => ({
+                  value: cat.id,
+                  label: cat.name,
+                  description: cat.description,
+                  color: cat.color || 'var(--muted-foreground)',
+                }))}
+              />
+            </div>
 
-            {/* Parcelas (somente crédito expense) */}
-            {activeTab === 'expense' && expenseKind === 'CREDIT' && (
+            {/* Parcelas (todas as despesas) */}
+            {activeTab === 'expense' && (
               <div className="sm:col-span-2 bg-muted/30 border border-border rounded-2xl p-4">
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
@@ -479,60 +444,24 @@ export function TransactionModal({
               </div>
             )}
 
-            {/* Account */}
-            {!(activeTab === 'expense' && expenseKind === 'CREDIT') && (
-              <div className="sm:col-span-1">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
-                  Pagamento via
-                </label>
-                <CustomSelect
-                  value={accountId}
-                  onChange={setAccountId}
-                  placeholder="Selecione uma conta"
-                  options={accounts.map((acc) => ({
-                    value: acc.id,
-                    label: acc.name,
-                  }))}
-                />
-              </div>
-            )}
+            {/* Conta */}
+            <div className="sm:col-span-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
+                Conta
+              </label>
+              <CustomSelect
+                value={accountId}
+                onChange={setAccountId}
+                placeholder="Selecione uma conta"
+                options={accounts.map((acc) => ({
+                  value: acc.id,
+                  label: acc.name,
+                }))}
+              />
+            </div>
 
-            {/* Cartão de crédito (para despesas com cartão ou pagamento de fatura) */}
-            {(activeTab === 'credit_card_payment' ||
-              (activeTab === 'expense' && expenseKind === 'CREDIT')) && (
-              <div>
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
-                  {activeTab === 'credit_card_payment' ? 'Cartão a pagar' : 'Cartão de crédito'}
-                </label>
-                <CustomSelect
-                  value={creditCardId}
-                  disabled={activeTab === 'credit_card_payment' && !accountId}
-                  onChange={(v) => {
-                    setCreditCardId(v);
-                    if (activeTab === 'expense' && expenseKind === 'CREDIT') {
-                      const nextCard = creditCards.find((c) => c.id === v);
-                      if (nextCard) setAccountId(nextCard.accountId);
-                    }
-                  }}
-                  placeholder={
-                    activeTab === 'credit_card_payment' && !accountId
-                      ? 'Selecione uma conta 1º'
-                      : 'Selecione um cartão'
-                  }
-                  options={
-                    activeTab === 'credit_card_payment' && !accountId
-                      ? []
-                      : creditCards.map((card) => ({
-                          value: card.id,
-                          label: card.name,
-                        }))
-                  }
-                />
-              </div>
-            )}
-
-            {/* Abastecimento Toggle */}
-            {isVehicleCategory && activeTab !== 'credit_card_payment' && (
+            {/* Toggle Abastecimento */}
+            {isVehicleCategory && (
               <div className="sm:col-span-2 pt-2 pb-1">
                 <label className="flex items-center gap-3 cursor-pointer group w-max">
                   <input
@@ -553,8 +482,8 @@ export function TransactionModal({
               </div>
             )}
 
-            {/* Veículo + combustível (para FUEL/MAINTENANCE) */}
-            {!isFuel && !isMaintenance ? null : (
+            {/* Veículo + combustível */}
+            {(isFuel || isMaintenance) && (
               <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
@@ -630,10 +559,7 @@ export function TransactionModal({
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary">
                           {(Number(amount) / 100 / (Number(liters) / 1000)).toLocaleString(
                             'pt-BR',
-                            {
-                              style: 'currency',
-                              currency: 'BRL',
-                            },
+                            { style: 'currency', currency: 'BRL' },
                           )}
                           /L
                         </div>
@@ -644,10 +570,8 @@ export function TransactionModal({
               </div>
             )}
 
-            {/* Recorrência (apenas para COMMON) - Oculto Temporariamente */}
-
-            {/* Descrição (renomeada para Observações) */}
-            {!isFuel && !isMaintenance && activeTab !== 'credit_card_payment' && (
+            {/* Observações */}
+            {!isFuel && !isMaintenance && (
               <div className="sm:col-span-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
                   Observações
@@ -681,23 +605,17 @@ export function TransactionModal({
               type="submit"
               disabled={isLoading || isSubmitDisabled}
               className={`flex-[3] flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-white font-bold text-sm shadow-lg transition-smooth hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:scale-100 ${
-                activeTab === 'credit_card_payment'
-                  ? 'bg-primary shadow-primary/20'
-                  : isExpense
-                    ? 'bg-rose-500 shadow-rose-500/20'
-                    : 'bg-emerald-500 shadow-emerald-500/20'
+                isExpense
+                  ? 'bg-rose-500 shadow-rose-500/20'
+                  : 'bg-emerald-500 shadow-emerald-500/20'
               }`}
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isEditing ? (
+                'Salvar Alterações'
               ) : (
-                <>
-                  {isEditing
-                    ? 'Salvar Alterações'
-                    : activeTab === 'credit_card_payment'
-                      ? 'Confirmar Pagamento da Fatura'
-                      : `Confirmar ${isFuel ? 'Abastecimento' : isExpense ? 'Despesa' : 'Receita'}`}
-                </>
+                `Confirmar ${isFuel ? 'Abastecimento' : isExpense ? 'Despesa' : 'Receita'}`
               )}
             </button>
           </div>
