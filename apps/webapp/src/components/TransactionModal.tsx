@@ -212,7 +212,6 @@ export function TransactionModal({
     fuelType,
     setFuelType,
     formattedAmount,
-    installmentValue,
     formattedInstallment,
     formattedKm,
     formattedLiters,
@@ -407,63 +406,52 @@ export function TransactionModal({
 
             {/* Parcelas — só para crédito */}
             {activeTab === 'expense' && expenseKind === 'CREDIT' && (
-              <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col gap-3">
-                <div>
-                  <label className={labelCls}>Parcelas</label>
-                  <CustomSelect
-                    value={String(totalInstallments)}
-                    onChange={(v) => setTotalInstallments(Number(v))}
-                    disabled={isEditing}
-                    placeholder="Selecione"
-                    options={Array.from({ length: 21 }, (_, i) => i + 1).map((n) => ({
-                      value: String(n),
-                      label: n === 1 ? 'À vista (1x)' : `${n}x`,
-                    }))}
-                  />
-                  {totalInstallments > 1 && (
-                    <p className="text-[10px] font-bold text-muted-foreground mt-1">
-                      Parcela: {formattedInstallment}
-                    </p>
-                  )}
-                </div>
-                {!isEditing && totalInstallments > 1 && (
-                  <div>
-                    <label className="flex items-center gap-2 cursor-pointer">
+              <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col gap-2">
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <label className={labelCls}>Parcelas</label>
+                    <CustomSelect
+                      value={String(totalInstallments)}
+                      onChange={(v) => setTotalInstallments(Number(v))}
+                      disabled={isEditing}
+                      placeholder="Selecione"
+                      options={Array.from({ length: 21 }, (_, i) => i + 1).map((n) => ({
+                        value: String(n),
+                        label: n === 1 ? 'À vista (1x)' : `${n}x`,
+                      }))}
+                    />
+                  </div>
+                  {!isEditing && totalInstallments > 1 && (
+                    <label className="flex items-center gap-1.5 pb-2 cursor-pointer shrink-0">
                       <input
                         type="checkbox"
                         checked={hasPaidInstallments}
                         onChange={(e) => setHasPaidInstallments(e.target.checked)}
-                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 transition-smooth"
+                        className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 transition-smooth"
                       />
-                      <span className="text-xs font-bold uppercase tracking-widest">
-                        Já pagou algumas?
-                      </span>
+                      <span className="text-xs font-bold text-muted-foreground">Já pagou?</span>
                     </label>
-                    {hasPaidInstallments && (
-                      <div className="mt-3 grid grid-cols-2 gap-3">
-                        <div>
-                          <label className={labelCls}>Quantas?</label>
-                          <CustomSelect
-                            value={String(paidInstallments)}
-                            onChange={(v) => setPaidInstallments(Number(v))}
-                            placeholder="Selecione"
-                            options={Array.from({ length: totalInstallments }, (_, i) => i + 1).map(
-                              (n) => ({ value: String(n), label: `${n} de ${totalInstallments}` }),
-                            )}
-                          />
-                        </div>
-                        <div>
-                          <label className={labelCls}>Valor pago</label>
-                          <div className={`${inputCls} font-bold`}>
-                            {(installmentValue * paidInstallments).toLocaleString('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL',
-                            })}
-                          </div>
-                        </div>
-                      </div>
+                  )}
+                </div>
+                {totalInstallments > 1 && (
+                  <p className="text-[10px] font-bold text-muted-foreground">
+                    {formattedInstallment}/parcela
+                    {hasPaidInstallments &&
+                      ` · ${paidInstallments} já ${paidInstallments === 1 ? 'paga' : 'pagas'}`}
+                  </p>
+                )}
+                {!isEditing && totalInstallments > 1 && hasPaidInstallments && (
+                  <CustomSelect
+                    value={String(paidInstallments)}
+                    onChange={(v) => setPaidInstallments(Number(v))}
+                    placeholder="Selecione"
+                    options={Array.from({ length: totalInstallments }, (_, i) => i + 1).map(
+                      (n) => ({
+                        value: String(n),
+                        label: `${n} de ${totalInstallments} pagas`,
+                      }),
                     )}
-                  </div>
+                  />
                 )}
               </div>
             )}
