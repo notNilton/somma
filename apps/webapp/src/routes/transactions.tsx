@@ -22,6 +22,9 @@ import {
   CheckCircle2,
   RefreshCw,
   Ban,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from 'lucide-react';
 import {
   type Tx,
@@ -55,6 +58,8 @@ function TransactionsPage() {
   const [confirmBulkDeleteOpen, setConfirmBulkDeleteOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState('all');
   const [cancelRecurringTarget, setCancelRecurringTarget] = useState<Tx | null>(null);
+  const [sortKey, setSortKey] = useState<'date' | 'description' | 'amount'>('date');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const { data: transactions = [], isLoading } = useTransactionsList({
     search,
@@ -143,14 +148,21 @@ function TransactionsPage() {
     queryClient.invalidateQueries({ queryKey: ['dashboard'] });
   };
 
-  // Meses disponíveis: derivados das transações existentes, mais o mês atual sempre presente
+  const handleToggleSort = (key: 'date' | 'description' | 'amount') => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'date' ? 'desc' : 'asc');
+    }
+  };
+
   const availableMonths = Array.from(
     new Set([currentMonthKey(), ...transactions.map((t) => t.date.slice(0, 7))]),
   )
     .sort()
     .reverse();
 
-  // Garante que o mês selecionado é válido
   const activeMonth = availableMonths.includes(selectedMonth)
     ? selectedMonth
     : (availableMonths[0] ?? currentMonthKey());
@@ -170,6 +182,33 @@ function TransactionsPage() {
     const str = (s ?? '').trim();
     return str.length <= max ? str : str.slice(0, max - 1).trimEnd() + '…';
   };
+
+  const isAnyFilterActive =
+    search !== '' ||
+    filterType !== 'all' ||
+    selectedCategory !== 'all' ||
+    selectedAccount !== 'all';
+
+  const sortedTransactions = [...tableTransactions].sort((a, b) => {
+    const cmp =
+      sortKey === 'date'
+        ? a.date.localeCompare(b.date)
+        : sortKey === 'description'
+          ? (a.description ?? '').localeCompare(b.description ?? '')
+          : Math.abs(Number(a.amount)) - Math.abs(Number(b.amount));
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  const dayKeys: string[] = [];
+  const groupedByDay: Record<string, Tx[]> = {};
+  for (const t of sortedTransactions) {
+    const day = t.date.slice(0, 10);
+    if (!groupedByDay[day]) {
+      groupedByDay[day] = [];
+      dayKeys.push(day);
+    }
+    groupedByDay[day]!.push(t);
+  }
 
   const selectedList = Object.keys(selectedIds);
   const selectedDeletable = tableTransactions.filter((t) => selectedIds[t.id]);
@@ -223,6 +262,7 @@ function TransactionsPage() {
           setConfirmBulkDeleteOpen(false);
         }}
       />
+
       {/* Dialog: cancelar recorrência */}
       {cancelRecurringTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -251,7 +291,7 @@ function TransactionsPage() {
                   setCancelRecurringTarget(null);
                 }}
                 disabled={deleteMutation.isPending || stopRecurringMutation.isPending}
-                className="px-4 py-2 rounded-xl border border-rose-500/30 text-sm font-semibold text-rose-500 hover:bg-rose-500/10 transition-smooth disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-rose-500/30 text-sm font-semibold text-rose-500 hover:bg-rose-500/10 transition-smooth disabled:opacity-50"
               >
                 <Ban className="w-3.5 h-3.5" />
                 Parar todas as futuras
@@ -267,6 +307,7 @@ function TransactionsPage() {
           </div>
         </div>
       )}
+
       <ImportModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
@@ -422,6 +463,20 @@ function TransactionsPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {isAnyFilterActive && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch('');
+                setFilterType('all');
+                setSelectedCategory('all');
+                setSelectedAccount('all');
+              }}
+              className="text-xs font-bold text-primary hover:underline"
+            >
+              Limpar filtros
+            </button>
+          )}
           {selectedList.length > 0 && (
             <button
               type="button"
@@ -467,12 +522,33 @@ function TransactionsPage() {
                   className="h-3.5 w-3.5 accent-primary cursor-pointer"
                 />
               </th>
-              {['Data', 'Descrição', 'Categoria', 'Conta', 'Valor'].map((h, i) => (
+              {(
+                [
+                  { label: 'Data', key: 'date' as const },
+                  { label: 'Descrição', key: 'description' as const },
+                  { label: 'Categoria', key: null },
+                  { label: 'Conta', key: null },
+                  { label: 'Valor', key: 'amount' as const },
+                ] as const
+              ).map(({ label, key }) => (
                 <th
-                  key={h}
-                  className={`px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground ${i === 4 ? 'text-right' : ''}`}
+                  key={label}
+                  onClick={key ? () => handleToggleSort(key) : undefined}
+                  className={`px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground ${label === 'Valor' ? 'text-right' : ''} ${key ? 'cursor-pointer select-none hover:text-foreground transition-smooth' : ''}`}
                 >
-                  {h}
+                  <span className="inline-flex items-center gap-1">
+                    {label}
+                    {key &&
+                      (sortKey === key ? (
+                        sortDir === 'asc' ? (
+                          <ArrowUp className="w-3 h-3" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 opacity-30" />
+                      ))}
+                  </span>
                 </th>
               ))}
             </tr>
@@ -500,175 +576,199 @@ function TransactionsPage() {
                 </td>
               </tr>
             ) : (
-              tableTransactions.map((t) => {
-                const isIncome = t.type === 'INCOME';
-                const value = Math.abs(Number(t.amount));
+              dayKeys.map((day) => {
+                const dayTxs = groupedByDay[day] ?? [];
+                const dayDate = new Date(day + 'T12:00:00Z');
+                const dayLabel = dayDate.toLocaleDateString('pt-BR', {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: 'short',
+                  timeZone: 'UTC',
+                });
                 return (
-                  <tr
-                    key={t.id}
-                    className="hover:bg-muted/20 transition-smooth group cursor-pointer"
-                  >
-                    <td className="px-3 py-2.5">
-                      <input
-                        type="checkbox"
-                        checked={!!selectedIds[t.id]}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          setSelectedIds((prev) => {
-                            const next = { ...prev };
-                            if (e.target.checked) next[t.id] = true;
-                            else delete next[t.id];
-                            return next;
-                          });
-                        }}
-                        className="h-3.5 w-3.5 accent-primary cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(t.date).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: 'short',
-                        timeZone: 'UTC',
-                      })}
-                    </td>
-                    <td className="px-3 py-2.5" title={t.description}>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-sm font-medium">
-                          {truncate(t.description ?? '', 38)}
+                  <>
+                    <tr key={`day-${day}`} className="bg-muted/30 border-b border-border">
+                      <td colSpan={6} className="px-4 py-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          {dayLabel}
                         </span>
-                        {t.isRecurring && (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                            <RefreshCw className="w-2.5 h-2.5" />
-                            recorrente
-                          </span>
-                        )}
-                        {t.installmentNum != null && t.totalInstallments != null && (
-                          <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider bg-violet-500/10 text-violet-500 border border-violet-500/20">
-                            {t.installmentNum}/{t.totalInstallments}
-                          </span>
-                        )}
-                        {t.status === 'PENDING' && (
-                          <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                            pendente
-                          </span>
-                        )}
-                        {t.status === 'CANCELED' && (
-                          <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-muted text-muted-foreground border border-border">
-                            cancelada
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {t.category ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/10">
-                          <Tag className="w-2.5 h-2.5" />
-                          {t.category.name}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <CreditCard className="w-3 h-3 shrink-0" />
-                        <span className="truncate max-w-[100px]">{t.account?.name ?? '—'}</span>
-                      </div>
-                      <div className="mt-0.5 flex flex-wrap gap-1">
-                        {t.card ? (
-                          <span
-                            className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border"
-                            style={{
-                              backgroundColor: `${t.card.color ?? '#64748B'}15`,
-                              borderColor: `${t.card.color ?? '#64748B'}35`,
-                              color: t.card.color ?? '#64748B',
-                            }}
-                          >
-                            {t.card.type === 'CREDIT' ? 'crédito' : 'débito'}
-                          </span>
-                        ) : (
-                          <>
-                            <span
-                              className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border"
-                              style={{
-                                backgroundColor: '#64748B15',
-                                borderColor: '#64748B35',
-                                color: '#64748B',
+                      </td>
+                    </tr>
+                    {dayTxs.map((t) => {
+                      const isIncome = t.type === 'INCOME';
+                      const value = Math.abs(Number(t.amount));
+                      return (
+                        <tr
+                          key={t.id}
+                          onClick={() => handleEdit(t)}
+                          className="hover:bg-muted/20 transition-smooth group cursor-pointer"
+                        >
+                          <td className="px-3 py-2.5">
+                            <input
+                              type="checkbox"
+                              checked={!!selectedIds[t.id]}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                setSelectedIds((prev) => {
+                                  const next = { ...prev };
+                                  if (e.target.checked) next[t.id] = true;
+                                  else delete next[t.id];
+                                  return next;
+                                });
                               }}
-                            >
-                              {t.channel === 'PIX'
-                                ? 'pix'
-                                : t.channel === 'CARD_DEBIT'
-                                  ? 'débito'
-                                  : t.channel === 'CARD_CREDIT'
-                                    ? 'crédito'
-                                    : 'bancária'}
-                            </span>
-                            {t.classification === 'TRANSFER' && (
-                              <span
-                                className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border"
-                                style={{
-                                  backgroundColor: '#F59E0B15',
-                                  borderColor: '#F59E0B35',
-                                  color: '#F59E0B',
-                                }}
-                              >
-                                fatura
+                              className="h-3.5 w-3.5 accent-primary cursor-pointer"
+                            />
+                          </td>
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(t.date).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'short',
+                              timeZone: 'UTC',
+                            })}
+                          </td>
+                          <td className="px-3 py-2.5" title={t.description}>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-sm font-medium">
+                                {truncate(t.description ?? '', 38)}
                               </span>
+                              {t.isRecurring && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                                  <RefreshCw className="w-2.5 h-2.5" />
+                                  recorrente
+                                </span>
+                              )}
+                              {t.installmentNum != null && t.totalInstallments != null && (
+                                <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider bg-violet-500/10 text-violet-500 border border-violet-500/20">
+                                  {t.installmentNum}/{t.totalInstallments}
+                                </span>
+                              )}
+                              {t.status === 'PENDING' && (
+                                <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                  pendente
+                                </span>
+                              )}
+                              {t.status === 'CANCELED' && (
+                                <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-muted text-muted-foreground border border-border">
+                                  cancelada
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {t.category ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/10">
+                                <Tag className="w-2.5 h-2.5" />
+                                {t.category.name}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
                             )}
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td
-                      className={`px-3 py-2.5 text-right font-bold text-sm ${isIncome ? 'text-emerald-500' : 'text-foreground'}`}
-                    >
-                      <div className="flex items-center justify-end gap-1.5">
-                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-smooth">
-                          {t.status === 'PENDING' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markPaidMutation.mutate(t.id);
-                              }}
-                              disabled={markPaidMutation.isPending}
-                              title="Marcar como pago"
-                              className="p-1 rounded-md hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-500 transition-smooth disabled:opacity-40"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(t);
-                            }}
-                            className="p-1 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-smooth"
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <CreditCard className="w-3 h-3 shrink-0" />
+                              <span className="truncate max-w-[100px]">
+                                {t.account?.name ?? '—'}
+                              </span>
+                            </div>
+                            <div className="mt-0.5 flex flex-wrap gap-1">
+                              {t.card ? (
+                                <span
+                                  className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border"
+                                  style={{
+                                    backgroundColor: `${t.card.color ?? '#64748B'}15`,
+                                    borderColor: `${t.card.color ?? '#64748B'}35`,
+                                    color: t.card.color ?? '#64748B',
+                                  }}
+                                >
+                                  {t.card.type === 'CREDIT' ? 'crédito' : 'débito'}
+                                </span>
+                              ) : (
+                                <>
+                                  <span
+                                    className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border"
+                                    style={{
+                                      backgroundColor: '#64748B15',
+                                      borderColor: '#64748B35',
+                                      color: '#64748B',
+                                    }}
+                                  >
+                                    {t.channel === 'PIX'
+                                      ? 'pix'
+                                      : t.channel === 'CARD_DEBIT'
+                                        ? 'débito'
+                                        : t.channel === 'CARD_CREDIT'
+                                          ? 'crédito'
+                                          : 'bancária'}
+                                  </span>
+                                  {t.classification === 'TRANSFER' && (
+                                    <span
+                                      className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border"
+                                      style={{
+                                        backgroundColor: '#F59E0B15',
+                                        borderColor: '#F59E0B35',
+                                        color: '#F59E0B',
+                                      }}
+                                    >
+                                      fatura
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </td>
+                          <td
+                            className={`px-3 py-2.5 text-right font-bold text-sm ${isIncome ? 'text-emerald-500' : 'text-foreground'}`}
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(t);
-                            }}
-                            disabled={deleteMutation.isPending}
-                            className="p-1 rounded-md hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth disabled:opacity-40"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <div className="flex items-center">
-                          {isIncome ? (
-                            <ArrowUpRight className="inline w-3 h-3 mr-0.5" />
-                          ) : (
-                            <ArrowDownLeft className="inline w-3 h-3 mr-0.5" />
-                          )}
-                          <PrivacyAmount value={value} />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-smooth">
+                                {t.status === 'PENDING' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      markPaidMutation.mutate(t.id);
+                                    }}
+                                    disabled={markPaidMutation.isPending}
+                                    title="Marcar como pago"
+                                    className="p-1 rounded-md hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-500 transition-smooth disabled:opacity-40"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEdit(t);
+                                  }}
+                                  className="p-1 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-smooth"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(t);
+                                  }}
+                                  disabled={deleteMutation.isPending}
+                                  className="p-1 rounded-md hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth disabled:opacity-40"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <div className="flex items-center">
+                                {isIncome ? (
+                                  <ArrowUpRight className="inline w-3 h-3 mr-0.5" />
+                                ) : (
+                                  <ArrowDownLeft className="inline w-3 h-3 mr-0.5" />
+                                )}
+                                <PrivacyAmount value={value} />
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </>
                 );
               })
             )}
