@@ -82,6 +82,22 @@ export function sumExpenses(list: Tx[]): number {
     .reduce((acc, t) => acc + Math.abs(Number(t.amount)), 0);
 }
 
+export function sumDebitExpenses(list: Tx[]): number {
+  return list
+    .filter(
+      (t) => t.type === 'EXPENSE' && t.classification !== 'TRANSFER' && t.channel !== 'CARD_CREDIT',
+    )
+    .reduce((acc, t) => acc + Math.abs(Number(t.amount)), 0);
+}
+
+export function sumCreditExpenses(list: Tx[]): number {
+  return list
+    .filter(
+      (t) => t.type === 'EXPENSE' && t.classification !== 'TRANSFER' && t.channel === 'CARD_CREDIT',
+    )
+    .reduce((acc, t) => acc + Math.abs(Number(t.amount)), 0);
+}
+
 export function sumIncome(list: Tx[]): number {
   return list
     .filter((t) => t.type === 'INCOME')

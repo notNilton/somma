@@ -26,8 +26,9 @@ import {
   formatMonthLabelPtBr,
   currentMonthKey,
   sumExpenses,
+  sumDebitExpenses,
+  sumCreditExpenses,
   sumIncome,
-  sumBillPayments,
   useTransactionsList,
 } from './transactions.queries';
 
@@ -136,8 +137,9 @@ function TransactionsPage() {
   const tableTransactions = transactions.filter((t) => t.date.slice(0, 7) === activeMonth);
 
   const summaryExpenses = sumExpenses(tableTransactions);
+  const summaryDebit = sumDebitExpenses(tableTransactions);
+  const summaryCredit = sumCreditExpenses(tableTransactions);
   const summaryIncome = sumIncome(tableTransactions);
-  const summaryBillPayments = sumBillPayments(tableTransactions);
 
   const truncate = (s: string, max: number) => {
     const str = (s ?? '').trim();
@@ -234,40 +236,37 @@ function TransactionsPage() {
         <div className="flex items-center gap-6">
           <div>
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-              Despesas
+              Déb / Pix
+            </p>
+            <PrivacyAmount
+              value={-summaryDebit}
+              className="text-2xl font-bold font-display tracking-tight block text-rose-500"
+            />
+          </div>
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+              Crédito
+            </p>
+            <PrivacyAmount
+              value={-summaryCredit}
+              className="text-2xl font-bold font-display tracking-tight block text-purple-500"
+            />
+          </div>
+          <div className="pl-6 border-l border-border">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+              Total Gastos
             </p>
             <PrivacyAmount
               value={-summaryExpenses}
               className="text-2xl font-bold font-display tracking-tight block text-rose-500"
             />
           </div>
-          <div>
+          <div className="pl-6 border-l border-border">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
               Receitas
             </p>
             <PrivacyAmount
               value={summaryIncome}
-              className="text-2xl font-bold font-display tracking-tight block text-emerald-500"
-            />
-          </div>
-          {summaryBillPayments > 0 && (
-            <div title="Pagamento de fatura já contabilizado nas despesas do crédito — exibido apenas como saída de caixa">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                Fatura Paga
-              </p>
-              <PrivacyAmount
-                value={-summaryBillPayments}
-                className="text-2xl font-bold font-display tracking-tight block text-amber-500"
-              />
-            </div>
-          )}
-          <div className="pl-6 border-l border-border">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-              Saldo
-            </p>
-            <PrivacyAmount
-              value={summaryIncome - summaryExpenses}
-              showSign
               className="text-2xl font-bold font-display tracking-tight block text-emerald-500"
             />
           </div>
