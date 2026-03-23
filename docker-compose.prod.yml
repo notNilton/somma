@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: mirante-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-mirante}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    image: gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${BACKEND_VERSION:-latest}
+    container_name: mirante-backend
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-mirante}
+      WEBAPP_URL: ${WEBAPP_URL}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  webapp:
+    image: gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${WEBAPP_VERSION:-latest}
+    container_name: mirante-webapp
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

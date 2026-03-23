@@ -1,0 +1,69 @@
+name: Build Validation (Dev)
+run-name: Build Validation - ${{ gitea.actor }}
+
+on:
+  push:
+    branches:
+      - development
+  workflow_dispatch:
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      BACKEND_CHANGED: ${{ steps.check.outputs.BACKEND_CHANGED }}
+      WEBAPP_CHANGED: ${{ steps.check.outputs.WEBAPP_CHANGED }}
+      DATABASE_CHANGED: ${{ steps.check.outputs.DATABASE_CHANGED }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed apps
+        id: check
+        run: |
+          check() {
+            if git diff HEAD~1 HEAD -- "$1" | grep -q .; then
+              echo "${2}=true" >> $GITHUB_OUTPUT
+              echo "✅ $3 changes detected"
+            else
+              echo "${2}=false" >> $GITHUB_OUTPUT
+              echo "ℹ️ No $3 changes"
+            fi
+          }
+
+          check apps/backend/    BACKEND_CHANGED  "Backend"
+          check apps/webapp/     WEBAPP_CHANGED   "Webapp"
+          check packages/database/ DATABASE_CHANGED "Database"
+
+  build-backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fix Docker Socket Permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
+      - name: Build Backend image (validation only)
+        run: |
+          docker build -f apps/backend/Dockerfile -t mirante-backend:dev-test .
+          echo "✅ Backend build successful"
+
+  build-webapp:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fix Docker Socket Permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
+      - name: Build Webapp image (validation only)
+        run: |
+          docker build -f apps/webapp/Dockerfile \
+            --build-arg VITE_API_URL=https://mirante-api.nilbyte.com.br \
+            -t mirante-webapp:dev-test .
+          echo "✅ Webapp build successful"

@@ -1,0 +1,176 @@
+name: Deploy Mirante (Main)
+run-name: Deploy Main - ${{ gitea.actor }}
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # ========================================================
+  # 1. Database Migrations
+  # ========================================================
+  check-prisma-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      PRISMA_CHANGED: ${{ steps.check.outputs.PRISMA_CHANGED }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Check for Prisma changes
+        id: check
+        run: |
+          if git diff HEAD~1 HEAD -- packages/database/prisma/ | grep -q .; then
+            echo "PRISMA_CHANGED=true" >> $GITHUB_OUTPUT
+            echo "✅ Prisma changes detected"
+          else
+            echo "PRISMA_CHANGED=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No Prisma changes"
+          fi
+
+  deploy-prisma:
+    needs: check-prisma-changes
+    if: needs.check-prisma-changes.outputs.PRISMA_CHANGED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Prisma migrations
+        run: |
+          echo "🔄 Running migrations..."
+          npm run db:deploy
+          echo "✅ Migrations completed"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  # ========================================================
+  # 2. Release Jobs (Sequential to avoid Git conflicts)
+  # ========================================================
+  release-backend:
+    needs: [deploy-prisma]
+    if: always() && (needs.deploy-prisma.result == 'success' || needs.deploy-prisma.result == 'skipped')
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "CI Bot"
+          git config --global user.email "bot@nilbyte.com"
+
+      - name: Release Backend
+        id: version
+        run: |
+          npx standard-version --path apps/backend --tag-prefix backend-v --message "chore(backend): release %s [skip ci]"
+          git push --follow-tags origin HEAD:main
+          VERSION=$(node -p "require('./apps/backend/package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+  release-webapp:
+    needs: [release-backend]
+    if: always() && needs.release-backend.result == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "CI Bot"
+          git config --global user.email "bot@nilbyte.com"
+
+      - name: Pull latest changes
+        run: git pull origin main
+
+      - name: Release Webapp
+        id: version
+        run: |
+          npx standard-version --path apps/webapp --tag-prefix webapp-v --message "chore(webapp): release %s [skip ci]"
+          git push --follow-tags origin HEAD:main
+          VERSION=$(node -p "require('./apps/webapp/package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+  # ========================================================
+  # 3. Build & Push (Parallel)
+  # ========================================================
+  build-backend:
+    needs: [release-backend]
+    if: always() && needs.release-backend.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fix Docker Socket Permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
+      - uses: docker/login-action@v2
+        with:
+          registry: gitea.nilbyte.com.br
+          username: notNilton
+          password: ${{ secrets.PACKAGES_TOKEN }}
+
+      - uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: apps/backend/Dockerfile
+          push: true
+          no-cache: true
+          tags: |
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.release-backend.outputs.VERSION }}
+
+  build-webapp:
+    needs: [release-webapp]
+    if: always() && needs.release-webapp.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fix Docker Socket Permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
+      - uses: docker/login-action@v2
+        with:
+          registry: gitea.nilbyte.com.br
+          username: notNilton
+          password: ${{ secrets.PACKAGES_TOKEN }}
+
+      - uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: apps/webapp/Dockerfile
+          push: true
+          no-cache: true
+          build-args: |
+            VITE_API_URL=https://mirante-api.nilbyte.com.br
+            VITE_APP_VERSION=${{ needs.release-webapp.outputs.VERSION }}
+          tags: |
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.release-webapp.outputs.VERSION }}
