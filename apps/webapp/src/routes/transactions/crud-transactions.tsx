@@ -466,22 +466,22 @@ function CrudTransactionsPage() {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="p-6 max-w-6xl mx-auto flex flex-col gap-6">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={goBack}
-              className="p-1.5 rounded-lg hover:bg-muted transition-smooth text-muted-foreground hover:text-foreground"
+              className="p-2.5 rounded-lg hover:bg-muted transition-smooth text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
-              <h1 className="text-2xl font-display font-bold">
+              <h1 className="text-xl sm:text-2xl font-display font-bold">
                 {isEditing ? 'Editar Transação' : 'Nova Transação'}
               </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
                 {isEditing
                   ? 'Atualize os dados do lançamento.'
                   : 'Preencha os dados do novo lançamento.'}
@@ -492,7 +492,7 @@ function CrudTransactionsPage() {
             <button
               type="button"
               onClick={goBack}
-              className="px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-smooth"
+              className="hidden sm:flex px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-smooth"
             >
               Cancelar
             </button>
@@ -506,11 +506,14 @@ function CrudTransactionsPage() {
               ) : (
                 <Save className="w-3.5 h-3.5" />
               )}
-              {isEditing
-                ? 'Salvar'
-                : activeTab === 'bill_payment'
-                  ? 'Confirmar Pagamento'
-                  : `Confirmar ${isExpense ? 'Despesa' : 'Receita'}`}
+              <span className="hidden sm:inline">
+                {isEditing
+                  ? 'Salvar'
+                  : activeTab === 'bill_payment'
+                    ? 'Confirmar Pagamento'
+                    : `Confirmar ${isExpense ? 'Despesa' : 'Receita'}`}
+              </span>
+              <span className="sm:hidden">Salvar</span>
             </button>
           </div>
         </div>

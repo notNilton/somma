@@ -82,7 +82,7 @@ export default function Header() {
           <div className="w-[1px] h-4 bg-border mx-1" />
           <Link
             to="/settings"
-            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-smooth"
+            className="hidden sm:flex p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-smooth"
             title="Perfil"
           >
             <User className="w-5 h-5" />

@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import PrivacyAmount from '../components/PrivacyAmount';
+import Fab from '../components/Fab';
 import { api } from '../lib/api';
 import {
   Plus,
@@ -56,7 +57,7 @@ function MetricCard({
   accent?: string;
 }) {
   return (
-    <div className="card-premium p-4 flex flex-col gap-3">
+    <div className="card-premium p-3 sm:p-4 flex flex-col gap-2 sm:gap-3">
       <div className="flex items-center justify-between">
         <div className="p-1.5 rounded-lg bg-muted/50 text-muted-foreground border border-border/50">
           <Icon className="w-4 h-4" />
@@ -69,7 +70,9 @@ function MetricCard({
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           {title}
         </p>
-        <div className={`text-xl font-bold font-display mt-0.5 ${accent ?? ''}`}>{value}</div>
+        <div className={`text-lg sm:text-xl font-bold font-display mt-0.5 ${accent ?? ''}`}>
+          {value}
+        </div>
       </div>
     </div>
   );
@@ -98,18 +101,19 @@ function UserDashboard() {
   const maxFlow = Math.max(...data.cashFlow.map((d) => d.value), 1);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto flex flex-col gap-6">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold">Olá, {data.userName} 👋</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <h1 className="text-xl sm:text-2xl font-display font-bold">Olá, {data.userName} 👋</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
             Aqui está o seu painel financeiro de hoje.
           </p>
         </div>
+        {/* Botão visível apenas no desktop — mobile usa FAB */}
         <button
-          onClick={() => navigate({ to: '/transactions' })}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+          onClick={() => void navigate({ to: '/transactions/crud-transactions' })}
+          className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
         >
           <Plus className="w-3.5 h-3.5" />
           Nova Transação
@@ -117,7 +121,7 @@ function UserDashboard() {
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         <MetricCard
           title="Saldo Total"
           value={<PrivacyAmount value={data.totalBalance} className="font-display" />}
@@ -146,9 +150,9 @@ function UserDashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Esquerda: Gráfico + Transações recentes */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
+        <div className="lg:col-span-2 flex flex-col gap-4 sm:gap-6">
           {/* Cash Flow */}
           <div className="card-premium p-4">
             <div className="flex items-center gap-2 mb-4">
@@ -157,12 +161,12 @@ function UserDashboard() {
                 Fluxo de Caixa — 7 dias
               </h2>
             </div>
-            <div className="h-[140px] flex items-end gap-2 px-1">
+            <div className="h-[100px] sm:h-[140px] flex items-end gap-2 px-1">
               {data.cashFlow.map((day, i) => {
                 const height = (day.value / maxFlow) * 100;
                 return (
                   <div key={i} className="flex-1 flex flex-col gap-1 items-center group">
-                    <div className="w-full bg-muted/30 rounded-t h-[110px] flex flex-col justify-end overflow-hidden">
+                    <div className="w-full bg-muted/30 rounded-t h-[70px] sm:h-[110px] flex flex-col justify-end overflow-hidden">
                       <div
                         className="w-full bg-primary/40 group-hover:bg-primary/70 transition-smooth"
                         style={{ height: `${height === 0 ? 4 : height}%` }}
@@ -184,7 +188,7 @@ function UserDashboard() {
                 Atividade Recente
               </h2>
               <button
-                onClick={() => navigate({ to: '/transactions' })}
+                onClick={() => void navigate({ to: '/transactions' })}
                 className="text-[10px] font-bold text-primary hover:underline"
               >
                 Ver tudo →
@@ -199,7 +203,7 @@ function UserDashboard() {
                 data.recentTransactions.map((t, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/20 transition-smooth cursor-pointer"
+                    className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-base shrink-0">
@@ -232,7 +236,7 @@ function UserDashboard() {
               Suas Contas
             </h2>
             <button
-              onClick={() => navigate({ to: '/accounts' })}
+              onClick={() => void navigate({ to: '/accounts' })}
               className="text-[10px] font-bold text-primary hover:underline"
             >
               Gerenciar →
@@ -242,7 +246,7 @@ function UserDashboard() {
             {data.accounts.map((acc, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/20 transition-smooth cursor-pointer"
+                className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -264,6 +268,12 @@ function UserDashboard() {
           </div>
         </div>
       </div>
+
+      {/* FAB mobile — Nova Transação */}
+      <Fab
+        label="Nova transação"
+        onClick={() => void navigate({ to: '/transactions/crud-transactions' })}
+      />
     </div>
   );
 }

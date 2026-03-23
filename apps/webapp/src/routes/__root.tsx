@@ -9,6 +9,7 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { TanStackDevtools } from '@tanstack/react-devtools';
+import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
 import { PrivacyProvider } from '../lib/privacy';
@@ -40,7 +41,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
       { title: 'BudgetWise' },
     ],
     links: [{ rel: 'stylesheet', href: appCss }],
@@ -72,10 +73,11 @@ function RootDocument() {
         <QueryClientProvider client={queryClient}>
           <PrivacyProvider>
             {!isAuthPage && <Header />}
-            <main className="flex-1">
+            <main className="flex-1 pb-16 sm:pb-0">
               <Outlet />
             </main>
             {!isAuthPage && <Footer />}
+            {!isAuthPage && <BottomNav />}
 
             <TanStackDevtools
               config={{ position: 'bottom-right' }}
