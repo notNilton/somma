@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## 1.3.0 (2026-03-23)
+
+
+### Features
+
+* adicionar prototipo do backend-v2 ([498e68b](http://gitea:3000/nilbyte-studios/mirante/commit/498e68b931afb233ca3c92fe1da891e7ec5e6fd2))
+
 ### [1.2.22](http://gitea:3000/nilbyte-studios/mirante/compare/webapp-v1.2.20...webapp-v1.2.22) (2026-03-23)
 
 ### [1.2.21](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.2.19...backend-v1.2.21) (2026-03-23)
