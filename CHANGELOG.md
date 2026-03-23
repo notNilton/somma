@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.15](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.2.13...backend-v1.2.15) (2026-03-23)
+
+
+### Bug Fixes
+
+* cada Dockerfile instala apenas suas próprias dependências ([66a54f1](http://gitea:3000/nilbyte-studios/mirante/commit/66a54f112cd45e1702b394f6eb6340082b5b56a7))
+
 ### [1.2.14](http://gitea:3000/nilbyte-studios/mirante/compare/webapp-v1.2.12...webapp-v1.2.14) (2026-03-23)
 
 ### [1.2.13](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.2.11...backend-v1.2.13) (2026-03-23)
