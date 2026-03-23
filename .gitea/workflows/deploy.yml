@@ -49,10 +49,7 @@ jobs:
         run: npm ci
 
       - name: Run Prisma migrations
-        run: |
-          echo "🔄 Running migrations..."
-          npm run db:deploy
-          echo "✅ Migrations completed"
+        run: npm run db:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
@@ -124,6 +121,40 @@ jobs:
           VERSION=$(node -p "require('./apps/webapp/package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
+  release-backend-v2:
+    needs: [release-webapp]
+    if: always() && needs.release-webapp.result == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "CI Bot"
+          git config --global user.email "bot@nilbyte.com"
+
+      - name: Pull latest changes
+        run: git pull origin main
+
+      - name: Release Backend v2
+        id: version
+        run: |
+          npx standard-version --path apps/backend-v2 --tag-prefix backend-v2-v --message "chore(backend-v2): release %s [skip ci]"
+          git push --follow-tags origin HEAD:main
+          VERSION=$(node -p "require('./apps/backend-v2/package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
   # ========================================================
   # 3. Build & Push (Parallel)
   # ========================================================
@@ -138,7 +169,7 @@ jobs:
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
-      - name: Login to Gitea Registry
+      - name: Login to registry
         uses: docker/login-action@v2
         with:
           registry: gitea.nilbyte.com.br
@@ -166,7 +197,7 @@ jobs:
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
-      - name: Login to Gitea Registry
+      - name: Login to registry
         uses: docker/login-action@v2
         with:
           registry: gitea.nilbyte.com.br
@@ -185,3 +216,31 @@ jobs:
           tags: |
             gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
             gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.release-webapp.outputs.VERSION }}
+
+  build-backend-v2:
+    needs: [release-backend-v2]
+    if: always() && needs.release-backend-v2.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Fix Docker Socket Permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
+      - name: Login to registry
+        uses: docker/login-action@v2
+        with:
+          registry: gitea.nilbyte.com.br
+          username: notNilton
+          password: ${{ secrets.PACKAGES_TOKEN }}
+
+      - name: Build and push Backend v2 image
+        uses: docker/build-push-action@v4
+        with:
+          context: apps/backend-v2
+          file: apps/backend-v2/Dockerfile
+          push: true
+          tags: |
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend-v2:latest
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend-v2:${{ needs.release-backend-v2.outputs.VERSION }}

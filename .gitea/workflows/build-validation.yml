@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       BACKEND_CHANGED: ${{ steps.check.outputs.BACKEND_CHANGED }}
+      BACKEND_V2_CHANGED: ${{ steps.check.outputs.BACKEND_V2_CHANGED }}
       WEBAPP_CHANGED: ${{ steps.check.outputs.WEBAPP_CHANGED }}
       DATABASE_CHANGED: ${{ steps.check.outputs.DATABASE_CHANGED }}
     steps:
@@ -29,6 +30,14 @@ jobs:
           else
             echo "BACKEND_CHANGED=false" >> $GITHUB_OUTPUT
             echo "ℹ️ No Backend changes"
+          fi
+
+          if git diff HEAD~1 HEAD -- apps/backend-v2/ | grep -q .; then
+            echo "BACKEND_V2_CHANGED=true" >> $GITHUB_OUTPUT
+            echo "✅ Backend v2 changes detected"
+          else
+            echo "BACKEND_V2_CHANGED=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No Backend v2 changes"
           fi
 
           if git diff HEAD~1 HEAD -- apps/webapp/ | grep -q .; then
@@ -62,6 +71,22 @@ jobs:
         run: |
           docker build -f apps/backend/Dockerfile -t mirante-backend:dev-test .
           echo "✅ Backend build successful"
+
+  build-backend-v2:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.BACKEND_V2_CHANGED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Fix Docker Socket Permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
+      - name: Build Backend v2 image (validation only)
+        run: |
+          docker build -f apps/backend-v2/Dockerfile apps/backend-v2/ -t mirante-backend-v2:dev-test
+          echo "✅ Backend v2 build successful"
 
   build-webapp:
     needs: detect-changes
