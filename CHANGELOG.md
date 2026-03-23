@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.4](http://gitea:3000/nilbyte-studios/mirante/compare/webapp-v1.2.2...webapp-v1.2.4) (2026-03-23)
+
+
+### Bug Fixes
+
+* tornar prepare script tolerante a falha em CI/Docker ([7d73bd7](http://gitea:3000/nilbyte-studios/mirante/commit/7d73bd73fa56d7f0bfb6e5b0d83203ccf97c1f33))
+
+### [1.2.3](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.2.1...backend-v1.2.3) (2026-03-23)
+
+
+### Bug Fixes
+
+* tornar prepare script tolerante a falha em CI/Docker ([7d73bd7](http://gitea:3000/nilbyte-studios/mirante/commit/7d73bd73fa56d7f0bfb6e5b0d83203ccf97c1f33))
+
 ### [1.2.2](http://gitea:3000/nilbyte-studios/mirante/compare/webapp-v1.2.0...webapp-v1.2.2) (2026-03-23)
 
 
