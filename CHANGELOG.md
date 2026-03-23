@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.1.0...backend-v1.2.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* desabilitar husky nos Dockerfiles com HUSKY=0 ([52ee563](http://gitea:3000/nilbyte-studios/mirante/commit/52ee563f23e116d9a6d09f7bac94f5e9d6f4bd99))
+
 ## 1.2.0 (2026-03-23)
 
 
