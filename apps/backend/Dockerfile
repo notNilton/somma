@@ -7,7 +7,7 @@ COPY package*.json ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/database/package.json ./packages/database/
 
-RUN npm ci --workspaces --if-present
+RUN npm ci --workspace=backend --workspace=@mirante/database
 
 COPY tsconfig.base.json ./
 COPY packages/database/ ./packages/database/

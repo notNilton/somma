@@ -8,7 +8,7 @@ COPY tsconfig.base.json ./
 COPY apps/webapp/package.json ./apps/webapp/
 COPY packages/database/package.json ./packages/database/
 
-RUN npm ci --workspaces --if-present
+RUN npm ci --workspace=@mirante/webapp
 
 COPY apps/webapp/ ./apps/webapp/
 COPY packages/database/ ./packages/database/
