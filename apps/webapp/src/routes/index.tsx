@@ -205,16 +205,11 @@ function UserDashboard() {
                     key={i}
                     className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-base shrink-0">
-                        {t.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium leading-tight">{t.label}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {t.cat} · {t.date}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="text-sm font-medium leading-tight">{t.label}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {t.cat} · {t.date}
+                      </p>
                     </div>
                     <PrivacyAmount
                       value={t.val}
@@ -248,12 +243,7 @@ function UserDashboard() {
                 key={i}
                 className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Wallet className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <p className="text-sm font-medium">{acc.label}</p>
-                </div>
+                <p className="text-sm font-medium">{acc.label}</p>
                 <PrivacyAmount value={acc.val} className="text-sm font-bold" />
               </div>
             ))}
