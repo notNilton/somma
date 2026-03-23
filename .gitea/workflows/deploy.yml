@@ -16,7 +16,8 @@ jobs:
     outputs:
       PRISMA_CHANGED: ${{ steps.check.outputs.PRISMA_CHANGED }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
@@ -28,7 +29,7 @@ jobs:
             echo "✅ Prisma changes detected"
           else
             echo "PRISMA_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Prisma changes"
+            echo "ℹ️ No Prisma changes detected"
           fi
 
   deploy-prisma:
@@ -36,9 +37,11 @@ jobs:
     if: needs.check-prisma-changes.outputs.PRISMA_CHANGED == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
 
@@ -63,12 +66,14 @@ jobs:
     outputs:
       VERSION: ${{ steps.version.outputs.VERSION }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
-      - uses: actions/setup-node@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
 
@@ -92,12 +97,14 @@ jobs:
     outputs:
       VERSION: ${{ steps.version.outputs.VERSION }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
-      - uses: actions/setup-node@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
 
@@ -125,43 +132,56 @@ jobs:
     if: always() && needs.release-backend.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
-      - name: Login to registry
-        run: echo "${{ secrets.PACKAGES_TOKEN }}" | docker login gitea.nilbyte.com.br -u notNilton --password-stdin
+      - name: Login to Gitea Registry
+        uses: docker/login-action@v2
+        with:
+          registry: gitea.nilbyte.com.br
+          username: notNilton
+          password: ${{ secrets.PACKAGES_TOKEN }}
 
-      - name: Build and push backend
-        run: |
-          docker build -f apps/backend/Dockerfile \
-            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest \
-            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.release-backend.outputs.VERSION }} \
-            .
-          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
-          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.release-backend.outputs.VERSION }}
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: apps/backend/Dockerfile
+          push: true
+          tags: |
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.release-backend.outputs.VERSION }}
 
   build-webapp:
     needs: [release-webapp]
     if: always() && needs.release-webapp.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
-      - name: Login to registry
-        run: echo "${{ secrets.PACKAGES_TOKEN }}" | docker login gitea.nilbyte.com.br -u notNilton --password-stdin
+      - name: Login to Gitea Registry
+        uses: docker/login-action@v2
+        with:
+          registry: gitea.nilbyte.com.br
+          username: notNilton
+          password: ${{ secrets.PACKAGES_TOKEN }}
 
-      - name: Build and push webapp
-        run: |
-          docker build -f apps/webapp/Dockerfile \
-            --build-arg VITE_API_URL=https://mirante-api.nilbyte.com.br \
-            --build-arg VITE_APP_VERSION=${{ needs.release-webapp.outputs.VERSION }} \
-            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest \
-            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.release-webapp.outputs.VERSION }} \
-            .
-          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
-          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.release-webapp.outputs.VERSION }}
+      - name: Build and push Webapp image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: apps/webapp/Dockerfile
+          build-args: |
+            VITE_API_URL=https://mirante-api.nilbyte.com.br
+            VITE_APP_VERSION=${{ needs.release-webapp.outputs.VERSION }}
+          push: true
+          tags: |
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.release-webapp.outputs.VERSION }}

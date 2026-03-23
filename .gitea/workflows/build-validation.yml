@@ -15,33 +15,45 @@ jobs:
       WEBAPP_CHANGED: ${{ steps.check.outputs.WEBAPP_CHANGED }}
       DATABASE_CHANGED: ${{ steps.check.outputs.DATABASE_CHANGED }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Detect changed apps
         id: check
         run: |
-          check() {
-            if git diff HEAD~1 HEAD -- "$1" | grep -q .; then
-              echo "${2}=true" >> $GITHUB_OUTPUT
-              echo "✅ $3 changes detected"
-            else
-              echo "${2}=false" >> $GITHUB_OUTPUT
-              echo "ℹ️ No $3 changes"
-            fi
-          }
+          if git diff HEAD~1 HEAD -- apps/backend/ | grep -q .; then
+            echo "BACKEND_CHANGED=true" >> $GITHUB_OUTPUT
+            echo "✅ Backend changes detected"
+          else
+            echo "BACKEND_CHANGED=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No Backend changes"
+          fi
 
-          check apps/backend/    BACKEND_CHANGED  "Backend"
-          check apps/webapp/     WEBAPP_CHANGED   "Webapp"
-          check packages/database/ DATABASE_CHANGED "Database"
+          if git diff HEAD~1 HEAD -- apps/webapp/ | grep -q .; then
+            echo "WEBAPP_CHANGED=true" >> $GITHUB_OUTPUT
+            echo "✅ Webapp changes detected"
+          else
+            echo "WEBAPP_CHANGED=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No Webapp changes"
+          fi
+
+          if git diff HEAD~1 HEAD -- packages/database/ | grep -q .; then
+            echo "DATABASE_CHANGED=true" >> $GITHUB_OUTPUT
+            echo "✅ Database changes detected"
+          else
+            echo "DATABASE_CHANGED=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No Database changes"
+          fi
 
   build-backend:
     needs: detect-changes
     if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
@@ -56,7 +68,8 @@ jobs:
     if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository code
+        uses: actions/checkout@v3
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
