@@ -132,8 +132,8 @@ jobs:
 
       - name: Reset buildx state
         run: |
-          docker buildx rm default || true
-          docker buildx create --use --name default
+          docker buildx rm mirante-builder || true
+          docker buildx create --use --name mirante-builder
 
       - uses: docker/login-action@v2
         with:
@@ -163,8 +163,8 @@ jobs:
 
       - name: Reset buildx state
         run: |
-          docker buildx rm default || true
-          docker buildx create --use --name default
+          docker buildx rm mirante-builder || true
+          docker buildx create --use --name mirante-builder
 
       - uses: docker/login-action@v2
         with:
