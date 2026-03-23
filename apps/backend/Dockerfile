@@ -29,10 +29,11 @@ COPY package*.json ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/database/package.json ./packages/database/
 
-RUN npm ci --workspaces --if-present --omit=dev
+RUN npm ci --workspace=backend --workspace=@mirante/database --omit=dev --ignore-scripts
 
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/packages/database/dist ./packages/database/dist
 
 EXPOSE 3000
 
