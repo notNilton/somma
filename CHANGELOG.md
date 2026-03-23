@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.20](http://gitea:3000/nilbyte-studios/mirante/compare/webapp-v1.2.18...webapp-v1.2.20) (2026-03-23)
+
+### [1.2.19](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.2.17...backend-v1.2.19) (2026-03-23)
+
+
+### Bug Fixes
+
+* improve cicd ([32e24e1](http://gitea:3000/nilbyte-studios/mirante/commit/32e24e1b8656d36432b4de58c5b24b4fe2e6f2b2))
+
 ### [1.2.18](http://gitea:3000/nilbyte-studios/mirante/compare/webapp-v1.2.16...webapp-v1.2.18) (2026-03-23)
 
 ### [1.2.17](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.2.15...backend-v1.2.17) (2026-03-23)
