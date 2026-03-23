@@ -7,6 +7,7 @@ import {
   IsBoolean,
   MaxLength,
   Min,
+  Max,
 } from 'class-validator';
 import { AccountType, AccountOwnership } from '@project-budget/database';
 
@@ -77,4 +78,16 @@ export class CreateAccountDto {
   @IsBoolean()
   @IsOptional()
   includeInTotal?: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Max(28)
+  closingDay?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Max(28)
+  dueDay?: number;
 }

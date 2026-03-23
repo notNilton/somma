@@ -79,6 +79,9 @@ model Account {
     hasPix    Boolean @default(true)  @map("has_pix")
     hasCredit Boolean @default(false) @map("has_credit")
 
+    closingDay Int? @map("closing_day")
+    dueDay     Int? @map("due_day")
+
     includeInTotal Boolean @default(true) @map("include_in_total")
 
     isActive  Boolean   @default(true) @map("is_active")

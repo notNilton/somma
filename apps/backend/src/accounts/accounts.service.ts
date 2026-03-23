@@ -46,6 +46,8 @@ export class AccountsService {
         hasPix: dto.hasPix ?? true,
         hasCredit: dto.hasCredit ?? false,
         includeInTotal: dto.includeInTotal ?? true,
+        closingDay: dto.closingDay ?? null,
+        dueDay: dto.dueDay ?? null,
       },
     });
   }
@@ -84,6 +86,8 @@ export class AccountsService {
         hasCredit: dto.hasCredit,
         includeInTotal: dto.includeInTotal,
         isActive: dto.isActive,
+        closingDay: dto.closingDay,
+        dueDay: dto.dueDay,
       },
     });
   }

@@ -17,10 +17,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as AccountsIndexRouteImport } from './routes/accounts/index'
 import { Route as SettingsVehiclesRouteImport } from './routes/settings/vehicles'
 import { Route as SettingsPersonalInfoRouteImport } from './routes/settings/personal-info'
 import { Route as SettingsDataPrivacyRouteImport } from './routes/settings/data-privacy'
 import { Route as SettingsCategoriesRouteImport } from './routes/settings/categories'
+import { Route as AccountsCrudAccountsRouteImport } from './routes/accounts/crud-accounts'
 
 const VehiclesRoute = VehiclesRouteImport.update({
   id: '/vehicles',
@@ -62,6 +64,11 @@ const SettingsIndexRoute = SettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SettingsRoute,
 } as any)
+const AccountsIndexRoute = AccountsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AccountsRoute,
+} as any)
 const SettingsVehiclesRoute = SettingsVehiclesRouteImport.update({
   id: '/vehicles',
   path: '/vehicles',
@@ -82,47 +89,57 @@ const SettingsCategoriesRoute = SettingsCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => SettingsRoute,
 } as any)
+const AccountsCrudAccountsRoute = AccountsCrudAccountsRouteImport.update({
+  id: '/crud-accounts',
+  path: '/crud-accounts',
+  getParentRoute: () => AccountsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/accounts': typeof AccountsRoute
+  '/accounts': typeof AccountsRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRouteWithChildren
   '/transactions': typeof TransactionsRoute
   '/vehicles': typeof VehiclesRoute
+  '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute
   '/settings/categories': typeof SettingsCategoriesRoute
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/accounts/': typeof AccountsIndexRoute
   '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/accounts': typeof AccountsRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/transactions': typeof TransactionsRoute
   '/vehicles': typeof VehiclesRoute
+  '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute
   '/settings/categories': typeof SettingsCategoriesRoute
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/accounts': typeof AccountsIndexRoute
   '/settings': typeof SettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/accounts': typeof AccountsRoute
+  '/accounts': typeof AccountsRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRouteWithChildren
   '/transactions': typeof TransactionsRoute
   '/vehicles': typeof VehiclesRoute
+  '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute
   '/settings/categories': typeof SettingsCategoriesRoute
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/accounts/': typeof AccountsIndexRoute
   '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -135,23 +152,26 @@ export interface FileRouteTypes {
     | '/settings'
     | '/transactions'
     | '/vehicles'
+    | '/accounts/crud-accounts'
     | '/settings/categories'
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
+    | '/accounts/'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/accounts'
     | '/login'
     | '/register'
     | '/transactions'
     | '/vehicles'
+    | '/accounts/crud-accounts'
     | '/settings/categories'
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
+    | '/accounts'
     | '/settings'
   id:
     | '__root__'
@@ -162,16 +182,18 @@ export interface FileRouteTypes {
     | '/settings'
     | '/transactions'
     | '/vehicles'
+    | '/accounts/crud-accounts'
     | '/settings/categories'
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
+    | '/accounts/'
     | '/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountsRoute: typeof AccountsRoute
+  AccountsRoute: typeof AccountsRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRouteWithChildren
@@ -237,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsIndexRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/accounts/': {
+      id: '/accounts/'
+      path: '/'
+      fullPath: '/accounts/'
+      preLoaderRoute: typeof AccountsIndexRouteImport
+      parentRoute: typeof AccountsRoute
+    }
     '/settings/vehicles': {
       id: '/settings/vehicles'
       path: '/vehicles'
@@ -265,8 +294,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsCategoriesRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/accounts/crud-accounts': {
+      id: '/accounts/crud-accounts'
+      path: '/crud-accounts'
+      fullPath: '/accounts/crud-accounts'
+      preLoaderRoute: typeof AccountsCrudAccountsRouteImport
+      parentRoute: typeof AccountsRoute
+    }
   }
 }
+
+interface AccountsRouteChildren {
+  AccountsCrudAccountsRoute: typeof AccountsCrudAccountsRoute
+  AccountsIndexRoute: typeof AccountsIndexRoute
+}
+
+const AccountsRouteChildren: AccountsRouteChildren = {
+  AccountsCrudAccountsRoute: AccountsCrudAccountsRoute,
+  AccountsIndexRoute: AccountsIndexRoute,
+}
+
+const AccountsRouteWithChildren = AccountsRoute._addFileChildren(
+  AccountsRouteChildren,
+)
 
 interface SettingsRouteChildren {
   SettingsCategoriesRoute: typeof SettingsCategoriesRoute
@@ -290,7 +340,7 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountsRoute: AccountsRoute,
+  AccountsRoute: AccountsRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRouteWithChildren,
