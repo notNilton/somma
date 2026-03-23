@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/.cache
+**/coverage
+**/*.log
+.git
+.gitignore
+.env
+.env.*
+docker-compose*.yml
+.gitea
+README.md
