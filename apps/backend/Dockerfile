@@ -9,8 +9,10 @@ COPY packages/database/package.json ./packages/database/
 
 RUN npm ci --workspaces --if-present
 
+COPY tsconfig.base.json ./
 COPY packages/database/ ./packages/database/
 RUN cd packages/database && DATABASE_URL="postgresql://x:x@localhost:5432/x" npx prisma generate
+RUN npm run build --workspace=@mirante/database
 
 COPY apps/backend/ ./apps/backend/
 RUN npm run build --workspace=backend

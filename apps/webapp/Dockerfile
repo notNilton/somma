@@ -4,6 +4,7 @@ WORKDIR /app
 
 
 COPY package*.json ./
+COPY tsconfig.base.json ./
 COPY apps/webapp/package.json ./apps/webapp/
 COPY packages/database/package.json ./packages/database/
 
