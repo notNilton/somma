@@ -130,26 +130,17 @@ jobs:
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
-      - name: Reset buildx state
+      - name: Login to registry
+        run: echo "${{ secrets.PACKAGES_TOKEN }}" | docker login gitea.nilbyte.com.br -u notNilton --password-stdin
+
+      - name: Build and push backend
         run: |
-          docker buildx rm mirante-builder || true
-          docker buildx create --use --name mirante-builder
-
-      - uses: docker/login-action@v2
-        with:
-          registry: gitea.nilbyte.com.br
-          username: notNilton
-          password: ${{ secrets.PACKAGES_TOKEN }}
-
-      - uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: apps/backend/Dockerfile
-          push: true
-          no-cache: true
-          tags: |
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.release-backend.outputs.VERSION }}
+          docker build -f apps/backend/Dockerfile \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.release-backend.outputs.VERSION }} \
+            .
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.release-backend.outputs.VERSION }}
 
   build-webapp:
     needs: [release-webapp]
@@ -161,26 +152,16 @@ jobs:
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
-      - name: Reset buildx state
+      - name: Login to registry
+        run: echo "${{ secrets.PACKAGES_TOKEN }}" | docker login gitea.nilbyte.com.br -u notNilton --password-stdin
+
+      - name: Build and push webapp
         run: |
-          docker buildx rm mirante-builder || true
-          docker buildx create --use --name mirante-builder
-
-      - uses: docker/login-action@v2
-        with:
-          registry: gitea.nilbyte.com.br
-          username: notNilton
-          password: ${{ secrets.PACKAGES_TOKEN }}
-
-      - uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: apps/webapp/Dockerfile
-          push: true
-          no-cache: true
-          build-args: |
-            VITE_API_URL=https://mirante-api.nilbyte.com.br
-            VITE_APP_VERSION=${{ needs.release-webapp.outputs.VERSION }}
-          tags: |
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.release-webapp.outputs.VERSION }}
+          docker build -f apps/webapp/Dockerfile \
+            --build-arg VITE_API_URL=https://mirante-api.nilbyte.com.br \
+            --build-arg VITE_APP_VERSION=${{ needs.release-webapp.outputs.VERSION }} \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.release-webapp.outputs.VERSION }} \
+            .
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.release-webapp.outputs.VERSION }}
