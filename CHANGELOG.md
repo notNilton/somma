@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.9](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.2.7...backend-v1.2.9) (2026-03-23)
+
+
+### Bug Fixes
+
+* reduzir imagem backend e adicionar version ao webapp ([f77b764](http://gitea:3000/nilbyte-studios/mirante/commit/f77b7641afc1cac611e203369bc4a37fada6ea5e))
+
 ### [1.2.8](http://gitea:3000/nilbyte-studios/mirante/compare/webapp-v1.2.6...webapp-v1.2.8) (2026-03-23)
 
 
