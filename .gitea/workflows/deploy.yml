@@ -130,6 +130,11 @@ jobs:
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
+      - name: Reset buildx state
+        run: |
+          docker buildx rm default || true
+          docker buildx create --use --name default
+
       - uses: docker/login-action@v2
         with:
           registry: gitea.nilbyte.com.br
@@ -155,6 +160,11 @@ jobs:
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
+
+      - name: Reset buildx state
+        run: |
+          docker buildx rm default || true
+          docker buildx create --use --name default
 
       - uses: docker/login-action@v2
         with:
