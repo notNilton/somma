@@ -2,6 +2,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+ENV HUSKY=0
+
 COPY package*.json ./
 COPY apps/webapp/package.json ./apps/webapp/
 COPY packages/database/package.json ./packages/database/
