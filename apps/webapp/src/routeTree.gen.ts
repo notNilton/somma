@@ -8,159 +8,160 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root';
-import { Route as VehiclesRouteImport } from './routes/vehicles';
-import { Route as TransactionsRouteImport } from './routes/transactions';
-import { Route as SettingsRouteImport } from './routes/settings';
-import { Route as RegisterRouteImport } from './routes/register';
-import { Route as LoginRouteImport } from './routes/login';
-import { Route as AccountsRouteImport } from './routes/accounts';
-import { Route as IndexRouteImport } from './routes/index';
-import { Route as TransactionsIndexRouteImport } from './routes/transactions/index';
-import { Route as SettingsIndexRouteImport } from './routes/settings/index';
-import { Route as AccountsIndexRouteImport } from './routes/accounts/index';
-import { Route as TransactionsCrudTransactionsRouteImport } from './routes/transactions/crud-transactions';
-import { Route as SettingsVehiclesRouteImport } from './routes/settings/vehicles';
-import { Route as SettingsPersonalInfoRouteImport } from './routes/settings/personal-info';
-import { Route as SettingsDataPrivacyRouteImport } from './routes/settings/data-privacy';
-import { Route as SettingsCategoriesRouteImport } from './routes/settings/categories';
-import { Route as AccountsCrudAccountsRouteImport } from './routes/accounts/crud-accounts';
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as VehiclesRouteImport } from './routes/vehicles'
+import { Route as TransactionsRouteImport } from './routes/transactions'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AccountsRouteImport } from './routes/accounts'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as TransactionsIndexRouteImport } from './routes/transactions/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as AccountsIndexRouteImport } from './routes/accounts/index'
+import { Route as TransactionsCrudTransactionsRouteImport } from './routes/transactions/crud-transactions'
+import { Route as SettingsVehiclesRouteImport } from './routes/settings/vehicles'
+import { Route as SettingsPersonalInfoRouteImport } from './routes/settings/personal-info'
+import { Route as SettingsDataPrivacyRouteImport } from './routes/settings/data-privacy'
+import { Route as SettingsCategoriesRouteImport } from './routes/settings/categories'
+import { Route as AccountsCrudAccountsRouteImport } from './routes/accounts/crud-accounts'
 
 const VehiclesRoute = VehiclesRouteImport.update({
   id: '/vehicles',
   path: '/vehicles',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TransactionsRoute = TransactionsRouteImport.update({
   id: '/transactions',
   path: '/transactions',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AccountsRoute = AccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TransactionsIndexRoute = TransactionsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => TransactionsRoute,
-} as any);
+} as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 const AccountsIndexRoute = AccountsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AccountsRoute,
-} as any);
-const TransactionsCrudTransactionsRoute = TransactionsCrudTransactionsRouteImport.update({
-  id: '/crud-transactions',
-  path: '/crud-transactions',
-  getParentRoute: () => TransactionsRoute,
-} as any);
+} as any)
+const TransactionsCrudTransactionsRoute =
+  TransactionsCrudTransactionsRouteImport.update({
+    id: '/crud-transactions',
+    path: '/crud-transactions',
+    getParentRoute: () => TransactionsRoute,
+  } as any)
 const SettingsVehiclesRoute = SettingsVehiclesRouteImport.update({
   id: '/vehicles',
   path: '/vehicles',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 const SettingsPersonalInfoRoute = SettingsPersonalInfoRouteImport.update({
   id: '/personal-info',
   path: '/personal-info',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 const SettingsDataPrivacyRoute = SettingsDataPrivacyRouteImport.update({
   id: '/data-privacy',
   path: '/data-privacy',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 const SettingsCategoriesRoute = SettingsCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
   getParentRoute: () => SettingsRoute,
-} as any);
+} as any)
 const AccountsCrudAccountsRoute = AccountsCrudAccountsRouteImport.update({
   id: '/crud-accounts',
   path: '/crud-accounts',
   getParentRoute: () => AccountsRoute,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute;
-  '/accounts': typeof AccountsRouteWithChildren;
-  '/login': typeof LoginRoute;
-  '/register': typeof RegisterRoute;
-  '/settings': typeof SettingsRouteWithChildren;
-  '/transactions': typeof TransactionsRouteWithChildren;
-  '/vehicles': typeof VehiclesRoute;
-  '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute;
-  '/settings/categories': typeof SettingsCategoriesRoute;
-  '/settings/data-privacy': typeof SettingsDataPrivacyRoute;
-  '/settings/personal-info': typeof SettingsPersonalInfoRoute;
-  '/settings/vehicles': typeof SettingsVehiclesRoute;
-  '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute;
-  '/accounts/': typeof AccountsIndexRoute;
-  '/settings/': typeof SettingsIndexRoute;
-  '/transactions/': typeof TransactionsIndexRoute;
+  '/': typeof IndexRoute
+  '/accounts': typeof AccountsRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/transactions': typeof TransactionsRouteWithChildren
+  '/vehicles': typeof VehiclesRoute
+  '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute
+  '/settings/categories': typeof SettingsCategoriesRoute
+  '/settings/data-privacy': typeof SettingsDataPrivacyRoute
+  '/settings/personal-info': typeof SettingsPersonalInfoRoute
+  '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
+  '/accounts/': typeof AccountsIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/transactions/': typeof TransactionsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute;
-  '/login': typeof LoginRoute;
-  '/register': typeof RegisterRoute;
-  '/vehicles': typeof VehiclesRoute;
-  '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute;
-  '/settings/categories': typeof SettingsCategoriesRoute;
-  '/settings/data-privacy': typeof SettingsDataPrivacyRoute;
-  '/settings/personal-info': typeof SettingsPersonalInfoRoute;
-  '/settings/vehicles': typeof SettingsVehiclesRoute;
-  '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute;
-  '/accounts': typeof AccountsIndexRoute;
-  '/settings': typeof SettingsIndexRoute;
-  '/transactions': typeof TransactionsIndexRoute;
+  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/vehicles': typeof VehiclesRoute
+  '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute
+  '/settings/categories': typeof SettingsCategoriesRoute
+  '/settings/data-privacy': typeof SettingsDataPrivacyRoute
+  '/settings/personal-info': typeof SettingsPersonalInfoRoute
+  '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
+  '/accounts': typeof AccountsIndexRoute
+  '/settings': typeof SettingsIndexRoute
+  '/transactions': typeof TransactionsIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  '/': typeof IndexRoute;
-  '/accounts': typeof AccountsRouteWithChildren;
-  '/login': typeof LoginRoute;
-  '/register': typeof RegisterRoute;
-  '/settings': typeof SettingsRouteWithChildren;
-  '/transactions': typeof TransactionsRouteWithChildren;
-  '/vehicles': typeof VehiclesRoute;
-  '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute;
-  '/settings/categories': typeof SettingsCategoriesRoute;
-  '/settings/data-privacy': typeof SettingsDataPrivacyRoute;
-  '/settings/personal-info': typeof SettingsPersonalInfoRoute;
-  '/settings/vehicles': typeof SettingsVehiclesRoute;
-  '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute;
-  '/accounts/': typeof AccountsIndexRoute;
-  '/settings/': typeof SettingsIndexRoute;
-  '/transactions/': typeof TransactionsIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/accounts': typeof AccountsRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/transactions': typeof TransactionsRouteWithChildren
+  '/vehicles': typeof VehiclesRoute
+  '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute
+  '/settings/categories': typeof SettingsCategoriesRoute
+  '/settings/data-privacy': typeof SettingsDataPrivacyRoute
+  '/settings/personal-info': typeof SettingsPersonalInfoRoute
+  '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
+  '/accounts/': typeof AccountsIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/transactions/': typeof TransactionsIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/accounts'
@@ -177,8 +178,8 @@ export interface FileRouteTypes {
     | '/transactions/crud-transactions'
     | '/accounts/'
     | '/settings/'
-    | '/transactions/';
-  fileRoutesByTo: FileRoutesByTo;
+    | '/transactions/'
+  fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
@@ -192,7 +193,7 @@ export interface FileRouteTypes {
     | '/transactions/crud-transactions'
     | '/accounts'
     | '/settings'
-    | '/transactions';
+    | '/transactions'
   id:
     | '__root__'
     | '/'
@@ -210,154 +211,156 @@ export interface FileRouteTypes {
     | '/transactions/crud-transactions'
     | '/accounts/'
     | '/settings/'
-    | '/transactions/';
-  fileRoutesById: FileRoutesById;
+    | '/transactions/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AccountsRoute: typeof AccountsRouteWithChildren;
-  LoginRoute: typeof LoginRoute;
-  RegisterRoute: typeof RegisterRoute;
-  SettingsRoute: typeof SettingsRouteWithChildren;
-  TransactionsRoute: typeof TransactionsRouteWithChildren;
-  VehiclesRoute: typeof VehiclesRoute;
+  IndexRoute: typeof IndexRoute
+  AccountsRoute: typeof AccountsRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
+  TransactionsRoute: typeof TransactionsRouteWithChildren
+  VehiclesRoute: typeof VehiclesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/vehicles': {
-      id: '/vehicles';
-      path: '/vehicles';
-      fullPath: '/vehicles';
-      preLoaderRoute: typeof VehiclesRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/vehicles'
+      path: '/vehicles'
+      fullPath: '/vehicles'
+      preLoaderRoute: typeof VehiclesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/transactions': {
-      id: '/transactions';
-      path: '/transactions';
-      fullPath: '/transactions';
-      preLoaderRoute: typeof TransactionsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
-      id: '/settings';
-      path: '/settings';
-      fullPath: '/settings';
-      preLoaderRoute: typeof SettingsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
-      id: '/register';
-      path: '/register';
-      fullPath: '/register';
-      preLoaderRoute: typeof RegisterRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
-      id: '/login';
-      path: '/login';
-      fullPath: '/login';
-      preLoaderRoute: typeof LoginRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accounts': {
-      id: '/accounts';
-      path: '/accounts';
-      fullPath: '/accounts';
-      preLoaderRoute: typeof AccountsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
-      id: '/';
-      path: '/';
-      fullPath: '/';
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/transactions/': {
-      id: '/transactions/';
-      path: '/';
-      fullPath: '/transactions/';
-      preLoaderRoute: typeof TransactionsIndexRouteImport;
-      parentRoute: typeof TransactionsRoute;
-    };
+      id: '/transactions/'
+      path: '/'
+      fullPath: '/transactions/'
+      preLoaderRoute: typeof TransactionsIndexRouteImport
+      parentRoute: typeof TransactionsRoute
+    }
     '/settings/': {
-      id: '/settings/';
-      path: '/';
-      fullPath: '/settings/';
-      preLoaderRoute: typeof SettingsIndexRouteImport;
-      parentRoute: typeof SettingsRoute;
-    };
+      id: '/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/accounts/': {
-      id: '/accounts/';
-      path: '/';
-      fullPath: '/accounts/';
-      preLoaderRoute: typeof AccountsIndexRouteImport;
-      parentRoute: typeof AccountsRoute;
-    };
+      id: '/accounts/'
+      path: '/'
+      fullPath: '/accounts/'
+      preLoaderRoute: typeof AccountsIndexRouteImport
+      parentRoute: typeof AccountsRoute
+    }
     '/transactions/crud-transactions': {
-      id: '/transactions/crud-transactions';
-      path: '/crud-transactions';
-      fullPath: '/transactions/crud-transactions';
-      preLoaderRoute: typeof TransactionsCrudTransactionsRouteImport;
-      parentRoute: typeof TransactionsRoute;
-    };
+      id: '/transactions/crud-transactions'
+      path: '/crud-transactions'
+      fullPath: '/transactions/crud-transactions'
+      preLoaderRoute: typeof TransactionsCrudTransactionsRouteImport
+      parentRoute: typeof TransactionsRoute
+    }
     '/settings/vehicles': {
-      id: '/settings/vehicles';
-      path: '/vehicles';
-      fullPath: '/settings/vehicles';
-      preLoaderRoute: typeof SettingsVehiclesRouteImport;
-      parentRoute: typeof SettingsRoute;
-    };
+      id: '/settings/vehicles'
+      path: '/vehicles'
+      fullPath: '/settings/vehicles'
+      preLoaderRoute: typeof SettingsVehiclesRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/personal-info': {
-      id: '/settings/personal-info';
-      path: '/personal-info';
-      fullPath: '/settings/personal-info';
-      preLoaderRoute: typeof SettingsPersonalInfoRouteImport;
-      parentRoute: typeof SettingsRoute;
-    };
+      id: '/settings/personal-info'
+      path: '/personal-info'
+      fullPath: '/settings/personal-info'
+      preLoaderRoute: typeof SettingsPersonalInfoRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/data-privacy': {
-      id: '/settings/data-privacy';
-      path: '/data-privacy';
-      fullPath: '/settings/data-privacy';
-      preLoaderRoute: typeof SettingsDataPrivacyRouteImport;
-      parentRoute: typeof SettingsRoute;
-    };
+      id: '/settings/data-privacy'
+      path: '/data-privacy'
+      fullPath: '/settings/data-privacy'
+      preLoaderRoute: typeof SettingsDataPrivacyRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/categories': {
-      id: '/settings/categories';
-      path: '/categories';
-      fullPath: '/settings/categories';
-      preLoaderRoute: typeof SettingsCategoriesRouteImport;
-      parentRoute: typeof SettingsRoute;
-    };
+      id: '/settings/categories'
+      path: '/categories'
+      fullPath: '/settings/categories'
+      preLoaderRoute: typeof SettingsCategoriesRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/accounts/crud-accounts': {
-      id: '/accounts/crud-accounts';
-      path: '/crud-accounts';
-      fullPath: '/accounts/crud-accounts';
-      preLoaderRoute: typeof AccountsCrudAccountsRouteImport;
-      parentRoute: typeof AccountsRoute;
-    };
+      id: '/accounts/crud-accounts'
+      path: '/crud-accounts'
+      fullPath: '/accounts/crud-accounts'
+      preLoaderRoute: typeof AccountsCrudAccountsRouteImport
+      parentRoute: typeof AccountsRoute
+    }
   }
 }
 
 interface AccountsRouteChildren {
-  AccountsCrudAccountsRoute: typeof AccountsCrudAccountsRoute;
-  AccountsIndexRoute: typeof AccountsIndexRoute;
+  AccountsCrudAccountsRoute: typeof AccountsCrudAccountsRoute
+  AccountsIndexRoute: typeof AccountsIndexRoute
 }
 
 const AccountsRouteChildren: AccountsRouteChildren = {
   AccountsCrudAccountsRoute: AccountsCrudAccountsRoute,
   AccountsIndexRoute: AccountsIndexRoute,
-};
+}
 
-const AccountsRouteWithChildren = AccountsRoute._addFileChildren(AccountsRouteChildren);
+const AccountsRouteWithChildren = AccountsRoute._addFileChildren(
+  AccountsRouteChildren,
+)
 
 interface SettingsRouteChildren {
-  SettingsCategoriesRoute: typeof SettingsCategoriesRoute;
-  SettingsDataPrivacyRoute: typeof SettingsDataPrivacyRoute;
-  SettingsPersonalInfoRoute: typeof SettingsPersonalInfoRoute;
-  SettingsVehiclesRoute: typeof SettingsVehiclesRoute;
-  SettingsIndexRoute: typeof SettingsIndexRoute;
+  SettingsCategoriesRoute: typeof SettingsCategoriesRoute
+  SettingsDataPrivacyRoute: typeof SettingsDataPrivacyRoute
+  SettingsPersonalInfoRoute: typeof SettingsPersonalInfoRoute
+  SettingsVehiclesRoute: typeof SettingsVehiclesRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
@@ -366,21 +369,25 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsPersonalInfoRoute: SettingsPersonalInfoRoute,
   SettingsVehiclesRoute: SettingsVehiclesRoute,
   SettingsIndexRoute: SettingsIndexRoute,
-};
+}
 
-const SettingsRouteWithChildren = SettingsRoute._addFileChildren(SettingsRouteChildren);
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
 
 interface TransactionsRouteChildren {
-  TransactionsCrudTransactionsRoute: typeof TransactionsCrudTransactionsRoute;
-  TransactionsIndexRoute: typeof TransactionsIndexRoute;
+  TransactionsCrudTransactionsRoute: typeof TransactionsCrudTransactionsRoute
+  TransactionsIndexRoute: typeof TransactionsIndexRoute
 }
 
 const TransactionsRouteChildren: TransactionsRouteChildren = {
   TransactionsCrudTransactionsRoute: TransactionsCrudTransactionsRoute,
   TransactionsIndexRoute: TransactionsIndexRoute,
-};
+}
 
-const TransactionsRouteWithChildren = TransactionsRoute._addFileChildren(TransactionsRouteChildren);
+const TransactionsRouteWithChildren = TransactionsRoute._addFileChildren(
+  TransactionsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -390,16 +397,16 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRouteWithChildren,
   TransactionsRoute: TransactionsRouteWithChildren,
   VehiclesRoute: VehiclesRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from './router.tsx';
-import type { createStart } from '@tanstack/react-start';
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
   }
 }

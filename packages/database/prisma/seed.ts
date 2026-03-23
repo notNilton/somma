@@ -94,6 +94,8 @@ async function main() {
       hasDebit: true,
       hasPix: true,
       hasCredit: true,
+      closingDay: 3,
+      dueDay: 10,
       color: '#8A05BE',
       icon: 'Wallet',
     },
@@ -112,6 +114,8 @@ async function main() {
       hasDebit: true,
       hasPix: true,
       hasCredit: true,
+      closingDay: 20,
+      dueDay: 27,
       color: '#00B1EA',
       icon: 'Wallet',
     },
@@ -130,8 +134,30 @@ async function main() {
       hasDebit: true,
       hasPix: true,
       hasCredit: true,
+      closingDay: 15,
+      dueDay: 22,
       color: '#8A05BE',
       icon: 'Building',
+    },
+  });
+
+  await prisma.account.create({
+    data: {
+      userId: nilton.id,
+      name: 'Vuon',
+      type: AccountType.CHECKING,
+      ownership: AccountOwnership.PERSONAL,
+      bankName: 'Vuon',
+      cpf: '06143981183',
+      balance: 0,
+      creditLimit: 5000,
+      hasDebit: false,
+      hasPix: false,
+      hasCredit: true,
+      closingDay: 22,
+      dueDay: 1,
+      color: '#10B981',
+      icon: 'CreditCard',
     },
   });
 
