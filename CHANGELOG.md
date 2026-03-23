@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.8](http://gitea:3000/nilbyte-studios/mirante/compare/webapp-v1.2.6...webapp-v1.2.8) (2026-03-23)
+
+
+### Bug Fixes
+
+* corrigir resolução de @mirante/database e tsconfig.base.json nos Dockerfiles ([702477d](http://gitea:3000/nilbyte-studios/mirante/commit/702477daa1c57419e7499a84a85874d0e3b74186))
+
 ### [1.2.7](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.2.5...backend-v1.2.7) (2026-03-23)
 
 
