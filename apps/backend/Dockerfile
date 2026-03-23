@@ -2,7 +2,6 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-ENV HUSKY=0
 
 COPY package*.json ./
 COPY apps/backend/package.json ./apps/backend/
@@ -23,7 +22,6 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV HUSKY=0
 
 COPY package*.json ./
 COPY apps/backend/package.json ./apps/backend/
