@@ -65,10 +65,12 @@ function SettingsPage() {
   });
 
   return (
-    <div className="p-6 max-w-6xl mx-auto flex flex-col gap-4">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
       <div>
-        <h1 className="text-2xl font-display font-bold">Configurações</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Gerencie seu perfil e preferências.</p>
+        <h1 className="text-xl sm:text-2xl font-display font-bold">Configurações</h1>
+        <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
+          Gerencie seu perfil e preferências.
+        </p>
       </div>
 
       <div className="card-premium overflow-hidden divide-y divide-border">

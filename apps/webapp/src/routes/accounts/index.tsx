@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import PrivacyAmount from '../../components/PrivacyAmount';
+import Fab from '../../components/Fab';
 import {
   Plus,
   Wallet,
@@ -66,11 +67,14 @@ function AccountCard({
   const hasCredit = creditLimitValue > 0;
 
   return (
-    <div className="card-premium p-4 group relative flex flex-col gap-3">
+    <div
+      onClick={() => onEdit(account)}
+      className="card-premium p-4 group relative flex flex-col gap-3 cursor-pointer active:bg-muted/20 transition-smooth"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div
-            className="p-2 rounded-lg border"
+            className="p-2 rounded-lg border shrink-0"
             style={{
               backgroundColor: `${account.color}15`,
               color: account.color,
@@ -92,18 +96,25 @@ function AccountCard({
           <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
             {TYPE_LABELS[account.type] ?? account.type}
           </span>
-          <div className="opacity-0 group-hover:opacity-100 flex gap-0.5 transition-smooth ml-1">
+          {/* Ações: sempre visíveis no mobile, hover no desktop */}
+          <div className="flex gap-0.5 ml-1 sm:opacity-0 sm:group-hover:opacity-100 transition-smooth">
             <button
-              onClick={() => onEdit(account)}
-              className="p-1 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-smooth"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(account);
+              }}
+              className="p-1.5 rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary transition-smooth"
             >
-              <Edit2 className="w-3 h-3" />
+              <Edit2 className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={() => onDelete(account.id)}
-              className="p-1 rounded-md hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(account.id);
+              }}
+              className="p-1.5 rounded-md hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -177,6 +188,9 @@ function AccountsPage() {
   });
 
   const totalBalance = accounts.reduce((acc, a) => acc + Math.max(0, Number(a.balance)), 0);
+  const hasCreditSummary = (creditSummary?.totalCreditLimit ?? 0) > 0;
+
+  const handleCreate = () => void navigate({ to: '/accounts/crud-accounts' });
 
   const handleDelete = (id: string) => {
     if (confirm('Excluir esta conta? As transações vinculadas serão mantidas.')) {
@@ -185,15 +199,13 @@ function AccountsPage() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto flex flex-col gap-6">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-display font-bold">Contas</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Gerencie suas contas e carteiras.</p>
-        </div>
+        <h1 className="text-xl sm:text-2xl font-display font-bold">Contas</h1>
         <button
-          onClick={() => void navigate({ to: '/accounts/crud-accounts' })}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+          onClick={handleCreate}
+          className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
         >
           <Plus className="w-3.5 h-3.5" />
           Nova Conta
@@ -207,45 +219,47 @@ function AccountsPage() {
         </div>
       ) : (
         <>
-          {/* Resumo compacto */}
-          <div className="flex flex-wrap items-center gap-6 px-4 py-3 bg-muted/30 rounded-xl border border-border">
-            <div>
+          {/* Resumo */}
+          <div className="card-premium p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-3">
               <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                Patrimônio
+                Patrimônio total
               </p>
               <PrivacyAmount
                 value={totalBalance}
-                className="text-2xl font-bold font-display tracking-tight block"
+                className="text-xl sm:text-2xl font-bold font-display tracking-tight"
               />
             </div>
-            {(creditSummary?.totalCreditLimit ?? 0) > 0 && (
-              <>
-                <div className="border-l border-border pl-6">
-                  <p className="text-[9px] font-bold uppercase text-muted-foreground">
-                    Limite total
+            {hasCreditSummary && (
+              <div className="grid grid-cols-3 gap-2 border-t border-border pt-3">
+                <div className="text-center">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+                    Limite
                   </p>
                   <PrivacyAmount
                     value={creditSummary!.totalCreditLimit}
-                    className="text-violet-600 font-bold text-base block"
+                    className="text-sm font-bold text-violet-600 block"
                   />
                 </div>
-                <div className="border-l border-border pl-6">
-                  <p className="text-[9px] font-bold uppercase text-muted-foreground">
-                    Crédito usado
+                <div className="text-center border-x border-border">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+                    Usado
                   </p>
                   <PrivacyAmount
                     value={creditSummary!.creditUsed}
-                    className="text-rose-500 font-bold text-base block"
+                    className="text-sm font-bold text-rose-500 block"
                   />
                 </div>
-                <div className="border-l border-border pl-6">
-                  <p className="text-[9px] font-bold uppercase text-muted-foreground">Disponível</p>
+                <div className="text-center">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+                    Disponível
+                  </p>
                   <PrivacyAmount
                     value={creditSummary!.availableCredit}
-                    className="text-emerald-600 font-bold text-base block"
+                    className="text-sm font-bold text-emerald-600 block"
                   />
                 </div>
-              </>
+              </div>
             )}
           </div>
 
@@ -263,6 +277,9 @@ function AccountsPage() {
           </div>
         </>
       )}
+
+      {/* FAB mobile */}
+      <Fab label="Nova conta" onClick={handleCreate} />
     </div>
   );
 }

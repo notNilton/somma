@@ -229,22 +229,22 @@ function CrudAccountsPage() {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="p-6 max-w-6xl mx-auto flex flex-col gap-6">
-        {/* Header — mesmo padrão que accounts/index */}
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={goBack}
-              className="p-1.5 rounded-lg hover:bg-muted transition-smooth text-muted-foreground hover:text-foreground"
+              className="p-2.5 rounded-lg hover:bg-muted transition-smooth text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
-              <h1 className="text-2xl font-display font-bold">
+              <h1 className="text-xl sm:text-2xl font-display font-bold">
                 {isEditing ? 'Editar Conta' : 'Nova Conta'}
               </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
                 {isEditing
                   ? 'Atualize os dados da conta bancária ou carteira.'
                   : 'Preencha os dados da nova conta bancária ou carteira.'}
@@ -255,7 +255,7 @@ function CrudAccountsPage() {
             <button
               type="button"
               onClick={goBack}
-              className="px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-smooth"
+              className="hidden sm:flex px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-smooth"
             >
               Cancelar
             </button>
@@ -420,7 +420,7 @@ function CrudAccountsPage() {
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               Cartão de Crédito
             </p>
-            <div className="flex items-end gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
               <div className="flex-1">
                 <label className={labelCls}>Limite de Crédito</label>
                 <input
@@ -431,33 +431,37 @@ function CrudAccountsPage() {
                   className={`${inputCls} font-bold`}
                 />
               </div>
-              <div className="w-40">
-                <label className={labelCls}>Dia de Fechamento</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={28}
-                  value={closingDay}
-                  onChange={(e) => setClosingDay(e.target.value)}
-                  placeholder="Ex: 3"
-                  className={inputCls}
-                />
-              </div>
-              <div className="w-40">
-                <label className={labelCls}>Dia de Vencimento</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={28}
-                  value={dueDay}
-                  onChange={(e) => setDueDay(e.target.value)}
-                  placeholder="Ex: 10"
-                  className={inputCls}
-                />
+              <div className="grid grid-cols-2 sm:flex sm:gap-4 gap-3">
+                <div className="sm:w-40">
+                  <label className={labelCls}>Dia Fechamento</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={28}
+                    value={closingDay}
+                    onChange={(e) => setClosingDay(e.target.value)}
+                    placeholder="Ex: 3"
+                    className={inputCls}
+                  />
+                </div>
+                <div className="sm:w-40">
+                  <label className={labelCls}>Dia Vencimento</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={28}
+                    value={dueDay}
+                    onChange={(e) => setDueDay(e.target.value)}
+                    placeholder="Ex: 10"
+                    className={inputCls}
+                  />
+                </div>
               </div>
               {closingDay && dueDay && (
-                <p className="text-[11px] text-violet-500 font-medium self-end pb-2.5">
-                  Compras até dia {closingDay} → fatura atual · Vence dia {dueDay}
+                <p className="text-[11px] text-violet-500 font-medium sm:self-end sm:pb-2.5">
+                  Fecha dia {closingDay} · Vence dia {dueDay}
                 </p>
               )}
             </div>

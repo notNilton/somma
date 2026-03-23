@@ -7,8 +7,6 @@ import {
   useLocation,
 } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
-import { TanStackDevtools } from '@tanstack/react-devtools';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
@@ -79,15 +77,6 @@ function RootDocument() {
             {!isAuthPage && <Footer />}
             {!isAuthPage && <BottomNav />}
 
-            <TanStackDevtools
-              config={{ position: 'bottom-right' }}
-              plugins={[
-                {
-                  name: 'Tanstack Router',
-                  render: <TanStackRouterDevtoolsPanel />,
-                },
-              ]}
-            />
             <Scripts />
           </PrivacyProvider>
         </QueryClientProvider>
