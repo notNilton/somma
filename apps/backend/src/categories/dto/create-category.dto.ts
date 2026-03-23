@@ -6,7 +6,7 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
-import { TransactionType } from '@project-budget/database';
+import { TransactionType } from '@mirante/database';
 
 export class CreateCategoryDto {
   @IsString()

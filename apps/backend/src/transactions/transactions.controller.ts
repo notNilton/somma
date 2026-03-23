@@ -16,7 +16,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { ListTransactionsQuery } from './dto/list-transactions.query';
 import { ImportTransactionsDto } from './dto/import-transactions.dto';
-import { Transaction, User } from '@project-budget/database';
+import { Transaction, User } from '@mirante/database';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';

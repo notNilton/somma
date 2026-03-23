@@ -1,4 +1,4 @@
-# Mobile UX Design — BudgetWise
+# Mobile UX Design — Mirante
 
 Guia de implementação para tornar o app plenamente utilizável em dispositivos móveis.
 O foco é experiência nativa: navegação por polegar, touch targets adequados e layouts que fazem sentido em tela pequena.
@@ -31,7 +31,7 @@ No desktop: layout atual sem mudanças.
 
 ```
 ┌─────────────────────────────┐
-│  BudgetWise        👁 🌙 👤 │  ← Header: só logo + ações utilitárias
+│  Mirante        👁 🌙 👤 │  ← Header: só logo + ações utilitárias
 ├─────────────────────────────┤
 │                             │
 │         Conteúdo            │
@@ -322,4 +322,4 @@ Tabelas de transações que têm muitas colunas devem ser envoltas em scroll hor
 
 ---
 
-_Documentação gerada em 2026-03-22 — projeto BudgetWise / nilByte_
+_Documentação gerada em 2026-03-22 — projeto Mirante / nilByte_

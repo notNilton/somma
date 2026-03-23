@@ -1,4 +1,4 @@
-# Project Budget - Database Package (@project-budget/database)
+# Mirante - Database Package (@mirante/database)
 
 Este pacote é a fonte única de verdade (Single Source of Truth) para o esquema do banco de dados, orquestração de infraestrutura e tipagens exportadas para todo o monorepo.
 
@@ -36,7 +36,7 @@ npm run db:docker:down  # Encerra os contêineres e limpa recursos
 Para acessar o banco de dados em outros pacotes da workspace, importe o cliente e as tipagens diretamente:
 
 ```typescript
-import { PrismaClient, TransactionStatus } from '@project-budget/database';
+import { PrismaClient, TransactionStatus } from '@mirante/database';
 
 const prisma = new PrismaClient();
 ```

@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { Tag } from '@project-budget/database';
+import { Tag } from '@mirante/database';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { TagsService } from './tags.service';
 import { CreateTagDto } from './dto/create-tag.dto';

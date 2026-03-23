@@ -1,4 +1,4 @@
-# Project Budget — Sistema de Gerenciamento Financeiro
+# Mirante — Sistema de Gerenciamento Financeiro
 
 Monorepo NestJS + React + Prisma + PostgreSQL para controle de gastos, contas bancárias e veículos.
 

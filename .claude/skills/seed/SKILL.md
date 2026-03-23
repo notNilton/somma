@@ -3,7 +3,7 @@ name: seed
 description: Roda o seed do banco de dados para popular com dados de desenvolvimento
 ---
 
-Execute o seed do projeto project-budget.
+Execute o seed do projeto mirante.
 
 ## Passos
 

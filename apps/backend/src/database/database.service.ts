@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaClient } from '@project-budget/database';
+import { PrismaClient } from '@mirante/database';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 

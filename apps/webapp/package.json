@@ -1,5 +1,5 @@
 {
-  "name": "@project-budget/webapp",
+  "name": "@mirante/webapp",
   "private": true,
   "type": "module",
   "imports": {

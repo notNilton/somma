@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:18-alpine
-    container_name: project-budget-db
+    container_name: mirante-db
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -19,7 +19,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: project-budget-redis
+    container_name: mirante-redis
     restart: always
     ports:
       - '6379:6379'

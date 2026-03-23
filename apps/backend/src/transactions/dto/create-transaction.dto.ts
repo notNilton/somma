@@ -19,7 +19,7 @@ import {
   TransactionChannel,
   FuelType,
   MaintenanceType,
-} from '@project-budget/database';
+} from '@mirante/database';
 
 export class CreateTransactionDto {
   @IsUUID()

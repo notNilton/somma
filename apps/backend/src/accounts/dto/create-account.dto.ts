@@ -9,7 +9,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { AccountType, AccountOwnership } from '@project-budget/database';
+import { AccountType, AccountOwnership } from '@mirante/database';
 
 export class CreateAccountDto {
   @IsString()

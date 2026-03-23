@@ -9,7 +9,7 @@ import {
   Prisma,
   VehicleMaintenance,
   TransactionClassification,
-} from '@project-budget/database';
+} from '@mirante/database';
 
 @Injectable()
 export class VehiclesService {

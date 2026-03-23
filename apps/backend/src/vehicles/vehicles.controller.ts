@@ -16,7 +16,7 @@ import {
   User,
   Vehicle,
   VehicleMaintenance,
-} from '@project-budget/database';
+} from '@mirante/database';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 

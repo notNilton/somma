@@ -3,7 +3,7 @@ name: migrar
 description: Roda prisma migrate dev para aplicar mudanças no schema ao banco de dados PostgreSQL
 ---
 
-Execute uma migração do Prisma para o projeto project-budget.
+Execute uma migração do Prisma para o projeto mirante.
 
 ## Passos
 

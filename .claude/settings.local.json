@@ -5,9 +5,9 @@
       "Bash(npx prisma:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(wc -l \"c:/Users/notNilton/Workspace/nilbyte/project-budget/apps/backend/src\"/**/*.service.ts)",
+      "Bash(wc -l \"c:/Users/notNilton/Workspace/nilbyte/mirante/apps/backend/src\"/**/*.service.ts)",
       "Bash(npx jest:*)",
-      "Bash(node -e \"require\\(''''@project-budget/database''''\\)\")"
+      "Bash(node -e \"require\\(''''@mirante/database''''\\)\")"
     ]
   }
 }

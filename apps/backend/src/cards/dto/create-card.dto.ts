@@ -7,7 +7,7 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
-import { CardType } from '@project-budget/database';
+import { CardType } from '@mirante/database';
 
 export class CreateCardDto {
   @IsUUID()

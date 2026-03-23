@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { User, Prisma } from '@project-budget/database';
+import { User, Prisma } from '@mirante/database';
 
 @Injectable()
 export class UsersService {

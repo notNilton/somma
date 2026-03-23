@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { TransactionType } from '@project-budget/database';
+import { TransactionType } from '@mirante/database';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 
 @Injectable()

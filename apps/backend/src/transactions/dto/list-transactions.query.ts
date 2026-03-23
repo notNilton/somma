@@ -11,7 +11,7 @@ import {
   TransactionType,
   TransactionStatus,
   TransactionClassification,
-} from '@project-budget/database';
+} from '@mirante/database';
 
 export class ListTransactionsQuery {
   @IsUUID()

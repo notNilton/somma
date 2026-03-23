@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { Account } from '@project-budget/database';
+import { Account } from '@mirante/database';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
-import { Prisma } from '@project-budget/database';
+import { Prisma } from '@mirante/database';
 
 @Injectable()
 export class AccountsService {

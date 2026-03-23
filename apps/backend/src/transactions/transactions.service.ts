@@ -11,7 +11,7 @@ import {
   Prisma,
   TransactionStatus,
   TransactionChannel,
-} from '@project-budget/database';
+} from '@mirante/database';
 import { createHash } from 'crypto';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';

@@ -6,7 +6,7 @@ import {
   IsEnum,
   Min,
 } from 'class-validator';
-import { MaintenanceType } from '@project-budget/database';
+import { MaintenanceType } from '@mirante/database';
 
 export class CreateMaintenanceLogDto {
   @IsEnum(MaintenanceType)

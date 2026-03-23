@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@project-budget/database": ["../../packages/database/src/index.ts"]
+      "@mirante/database": ["../../packages/database/src/index.ts"]
     }
   },
   "include": ["src/**/*", "test/**/*"]

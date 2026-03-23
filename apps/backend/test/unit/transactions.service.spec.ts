@@ -6,7 +6,7 @@ import {
   TransactionType,
   TransactionStatus,
   CardType,
-} from '@project-budget/database';
+} from '@mirante/database';
 
 // ─────────────────────────────────────────────
 // Helpers

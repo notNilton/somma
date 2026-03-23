@@ -1,4 +1,4 @@
-# TODO: Project Budget - Status de Implementação
+# TODO: Mirante - Status de Implementação
 
 Com base nos documentos de design detalhados e no estado atual da base de código (`apps/backend` e `apps/webapp`), aqui está o status macro das implementações e as próximas tarefas (TODOs) do projeto.
 

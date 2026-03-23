@@ -1,4 +1,4 @@
-# Project Budget
+# Mirante
 
 Plataforma unificada de Gerenciamento de Orçamento Pessoal baseada no princípio de Partidas Dobradas (Double-Entry Bookkeeping) e estruturada em arquitetura Monorepo via NPM Workspaces.
 

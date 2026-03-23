@@ -1,12 +1,12 @@
-# Project Budget - Backend API
+# Mirante - Backend API
 
-Esta é a API central para a plataforma Project Budget, desenvolvida com NestJS.
+Esta é a API central para a plataforma Mirante, desenvolvida com NestJS.
 
 O Backend é o motor de processamento da plataforma, responsável pela lógica de negócio, controle de integridade financeira e segurança dos dados contábeis.
 
 ## Arquitetura Backend
 
-O Backend atua como a única ponte autorizada para manipular os dados do sistema. Ele gerencia a comunicação importando o módulo `@project-budget/database` derivado do monorepo.
+O Backend atua como a única ponte autorizada para manipular os dados do sistema. Ele gerencia a comunicação importando o módulo `@mirante/database` derivado do monorepo.
 
 ### Princípios Técnicos
 
