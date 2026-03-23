@@ -1,17 +1,13 @@
 export default function Footer() {
-  const year = new Date().getFullYear();
-
   return (
-    <footer className="mt-20 border-t border-border px-4 py-8 text-muted-foreground">
-      <div className="max-w-7xl mx-auto flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left transition-smooth">
-        <p className="m-0 text-xs tracking-wide uppercase font-medium opacity-70">
-          &copy; {year} BudgetWise
+    <footer className="border-t border-border/50 px-6 py-3">
+      <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+          &copy; {new Date().getFullYear()} BudgetWise
         </p>
-        <p className="m-0 text-xs font-medium opacity-70 hover:opacity-100 transition-opacity">
+        <p className="text-[10px] text-muted-foreground/40">
           Desenvolvido por{' '}
-          <span className="text-foreground font-bold italic tracking-tighter uppercase">
-            nilByte
-          </span>
+          <span className="font-bold italic text-muted-foreground/60">nilByte</span>
         </p>
       </div>
     </footer>
