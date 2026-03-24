@@ -30,7 +30,7 @@ jobs:
       - name: Tag Backend Release
         id: version
         run: |
-          LATEST=$(git tag --list 'backend-v*' --sort=-version:refname | head -1)
+          LATEST=$(git tag --list 'backend-v*' --sort=-v:refname | grep -E '^backend-v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
           if [ -z "$LATEST" ]; then LATEST="backend-v0.0.0"; fi
           VERSION=${LATEST#backend-v}
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
