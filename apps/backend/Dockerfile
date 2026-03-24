@@ -2,10 +2,10 @@ FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY apps/backend/go.mod apps/backend/go.sum ./
 RUN go mod download
 
-COPY . .
+COPY apps/backend/ .
 ARG BUILD_VERSION=dev
 RUN go build -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${BUILD_VERSION}" -o main ./cmd/api && \
     go build -o migrate ./cmd/migrate
@@ -21,6 +21,7 @@ RUN apk --no-cache add ca-certificates tzdata && \
 
 COPY --from=builder /app/main .
 COPY --from=builder /app/migrate .
+COPY database/migrations/ /database/migrations/
 
 USER appuser
 
