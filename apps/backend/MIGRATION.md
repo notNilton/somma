@@ -1,4 +1,4 @@
-# Projeto de Migração: NestJS → Go (backend-v2)
+# Projeto de Migração: NestJS → Go (backend)
 
 Este documento é o guia completo para uma LLM migrar o backend NestJS para Go.
 Siga a ordem dos módulos. Cada módulo é independente e pode ser implementado separadamente.
