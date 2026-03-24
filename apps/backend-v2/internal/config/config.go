@@ -1,27 +1,20 @@
 package config
 
-import (
-	"log"
-	"os"
-
-	"github.com/joho/godotenv"
-)
+import "os"
 
 type Config struct {
 	Port        string
 	DatabaseURL string
+	JWTSecret   string
 	Env         string
 }
 
 func Load() *Config {
-	if err := godotenv.Load(); err != nil {
-		log.Println("no .env file found, using environment variables")
-	}
-
 	return &Config{
 		Port:        getEnv("PORT", "3000"),
 		DatabaseURL: getEnv("DATABASE_URL", ""),
-		Env:         getEnv("NODE_ENV", "development"),
+		JWTSecret:   getEnv("JWT_SECRET", "changeme"),
+		Env:         getEnv("ENV", "development"),
 	}
 }
 

@@ -1,16 +1,82 @@
 package routes
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"net/http"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nilbyte/mirante/backend-v2/internal/handlers"
-	"gorm.io/gorm"
+	"github.com/nilbyte/mirante/backend-v2/internal/middleware"
 )
 
-func Register(app *fiber.App, db *gorm.DB) {
-	h := handlers.New(db)
+func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte) {
+	h := handlers.New(db, jwtKey)
+	auth := middleware.Auth(jwtKey)
 
-	app.Get("/health", h.Health)
+	// Health
+	mux.HandleFunc("GET /health", h.Health)
 
-	v1 := app.Group("/api/v1")
-	_ = v1 // rotas futuras aqui
+	// Auth (público)
+	mux.HandleFunc("POST /auth/register", h.Register)
+	mux.HandleFunc("POST /auth/login", h.Login)
+
+	// Users
+	mux.HandleFunc("GET /users/me", auth(h.GetMe))
+	mux.HandleFunc("PATCH /users/me", auth(h.UpdateMe))
+
+	// Accounts
+	mux.HandleFunc("GET /api/v1/accounts", auth(h.ListAccounts))
+	mux.HandleFunc("GET /api/v1/accounts/credit-summary", auth(h.GetCreditSummary))
+	mux.HandleFunc("GET /api/v1/accounts/{id}", auth(h.GetAccount))
+	mux.HandleFunc("POST /api/v1/accounts", auth(h.CreateAccount))
+	mux.HandleFunc("PATCH /api/v1/accounts/{id}", auth(h.UpdateAccount))
+	mux.HandleFunc("DELETE /api/v1/accounts/{id}", auth(h.DeleteAccount))
+
+	// Cards
+	mux.HandleFunc("GET /api/v1/cards", auth(h.ListCards))
+	mux.HandleFunc("GET /api/v1/cards/{id}", auth(h.GetCard))
+	mux.HandleFunc("POST /api/v1/cards", auth(h.CreateCard))
+	mux.HandleFunc("PATCH /api/v1/cards/{id}", auth(h.UpdateCard))
+	mux.HandleFunc("DELETE /api/v1/cards/{id}", auth(h.DeleteCard))
+
+	// Categories
+	mux.HandleFunc("GET /api/v1/categories", auth(h.ListCategories))
+	mux.HandleFunc("GET /api/v1/categories/{id}", auth(h.GetCategory))
+	mux.HandleFunc("POST /api/v1/categories", auth(h.CreateCategory))
+	mux.HandleFunc("PATCH /api/v1/categories/{id}", auth(h.UpdateCategory))
+	mux.HandleFunc("DELETE /api/v1/categories/{id}", auth(h.DeleteCategory))
+
+	// Tags
+	mux.HandleFunc("GET /api/v1/tags", auth(h.ListTags))
+	mux.HandleFunc("GET /api/v1/tags/{id}", auth(h.GetTag))
+	mux.HandleFunc("POST /api/v1/tags", auth(h.CreateTag))
+	mux.HandleFunc("PATCH /api/v1/tags/{id}", auth(h.UpdateTag))
+	mux.HandleFunc("DELETE /api/v1/tags/{id}", auth(h.DeleteTag))
+
+	// Transactions
+	mux.HandleFunc("GET /api/v1/transactions", auth(h.ListTransactions))
+	mux.HandleFunc("GET /api/v1/transactions/future", auth(h.ListFutureTransactions))
+	mux.HandleFunc("GET /api/v1/transactions/{id}", auth(h.GetTransaction))
+	mux.HandleFunc("POST /api/v1/transactions", auth(h.CreateTransaction))
+	mux.HandleFunc("POST /api/v1/transactions/import-csv", auth(h.ImportCSV))
+	mux.HandleFunc("PATCH /api/v1/transactions/{id}", auth(h.UpdateTransaction))
+	mux.HandleFunc("DELETE /api/v1/transactions/{id}", auth(h.DeleteTransaction))
+
+	// Vehicles
+	mux.HandleFunc("GET /api/v1/vehicles", auth(h.ListVehicles))
+	mux.HandleFunc("GET /api/v1/vehicles/{id}", auth(h.GetVehicle))
+	mux.HandleFunc("GET /api/v1/vehicles/{id}/refuelings", auth(h.GetVehicleRefuelings))
+	mux.HandleFunc("GET /api/v1/vehicles/{id}/maintenances", auth(h.GetVehicleMaintenances))
+	mux.HandleFunc("GET /api/v1/vehicles/{id}/expenses-stats", auth(h.GetVehicleExpenseStats))
+	mux.HandleFunc("POST /api/v1/vehicles", auth(h.CreateVehicle))
+	mux.HandleFunc("PATCH /api/v1/vehicles/{id}", auth(h.UpdateVehicle))
+	mux.HandleFunc("DELETE /api/v1/vehicles/{id}", auth(h.DeleteVehicle))
+
+	// Dashboard
+	mux.HandleFunc("GET /api/v1/dashboard", auth(h.GetDashboard))
+
+	// Settings
+	mux.HandleFunc("GET /api/v1/settings/profile", auth(h.GetProfile))
+	mux.HandleFunc("PATCH /api/v1/settings/profile", auth(h.UpdateProfile))
+	mux.HandleFunc("PATCH /api/v1/settings/change-password", auth(h.ChangePassword))
+	mux.HandleFunc("DELETE /api/v1/settings/account", auth(h.DeleteMyAccount))
 }

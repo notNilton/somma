@@ -14,7 +14,8 @@ FROM alpine:3.19 AS runner
 
 WORKDIR /app
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN apk --no-cache add ca-certificates tzdata && \
+    addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=builder /app/main .
 

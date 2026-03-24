@@ -1,31 +1,24 @@
 package handlers
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"context"
+	"net/http"
 )
 
-type healthResponse struct {
-	Status   string `json:"status"`
-	Database string `json:"database"`
-	Version  string `json:"version"`
-}
-
-func (h *Handler) Health(c *fiber.Ctx) error {
+func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	dbStatus := "connected"
-
-	sqlDB, err := h.db.DB()
-	if err != nil || sqlDB.Ping() != nil {
+	if err := h.db.Ping(context.Background()); err != nil {
 		dbStatus = "disconnected"
 	}
 
-	status := fiber.StatusOK
+	status := http.StatusOK
 	if dbStatus == "disconnected" {
-		status = fiber.StatusServiceUnavailable
+		status = http.StatusServiceUnavailable
 	}
 
-	return c.Status(status).JSON(healthResponse{
-		Status:   "ok",
-		Database: dbStatus,
-		Version:  "2.0.0",
+	writeJSON(w, status, map[string]string{
+		"status":   "ok",
+		"database": dbStatus,
+		"version":  "2.0.0",
 	})
 }
