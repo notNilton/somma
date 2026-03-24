@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v2-v1.3.0...backend-v2-v1.4.0) (2026-03-24)
+
+
+### Features
+
+* **backend-v2:** implementar esqueleto completo Go com todos os módulos ([8326466](http://gitea:3000/nilbyte-studios/mirante/commit/8326466bcb98811cbe351ec229441a2b2728558e))
+
 ### [1.3.2](http://gitea:3000/nilbyte-studios/mirante/compare/webapp-v1.2.22...webapp-v1.3.2) (2026-03-24)
 
 ### [1.3.1](http://gitea:3000/nilbyte-studios/mirante/compare/backend-v1.2.21...backend-v1.3.1) (2026-03-24)
