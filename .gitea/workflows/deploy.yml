@@ -35,7 +35,9 @@ jobs:
       - name: Release Backend
         id: version
         run: |
-          npx standard-version --path apps/backend --tag-prefix backend-v --skip.changelog --message "chore(backend): release %s [skip ci]"
+          cd apps/backend
+          npx standard-version --tag-prefix backend-v --skip.changelog --releaseCommitMessageFormat "chore(backend): release {{currentTag}} [skip ci]"
+          cd ../..
           git push --follow-tags origin HEAD:main
           VERSION=$(node -p "require('./apps/backend/package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
@@ -69,7 +71,9 @@ jobs:
       - name: Release Webapp
         id: version
         run: |
-          npx standard-version --path apps/webapp --tag-prefix webapp-v --skip.changelog --message "chore(webapp): release %s [skip ci]"
+          cd apps/webapp
+          npx standard-version --tag-prefix webapp-v --skip.changelog --releaseCommitMessageFormat "chore(webapp): release {{currentTag}} [skip ci]"
+          cd ../..
           git push --follow-tags origin HEAD:main
           VERSION=$(node -p "require('./apps/webapp/package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
