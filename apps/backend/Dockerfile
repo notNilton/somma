@@ -1,40 +1,26 @@
-FROM node:20-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
+COPY go.mod go.sum ./
+RUN go mod download
 
-COPY package*.json ./
-COPY apps/backend/package.json ./apps/backend/
-COPY packages/database/package.json ./packages/database/
-
-RUN npm ci --workspace=backend --workspace=@mirante/database && npm cache clean --force
-
-COPY tsconfig.base.json ./
-COPY packages/database/ ./packages/database/
-RUN cd packages/database && DATABASE_URL="postgresql://x:x@localhost:5432/x" npx prisma generate
-RUN npm run build --workspace=@mirante/database
-
-COPY apps/backend/ ./apps/backend/
-RUN npm run build --workspace=backend
+COPY . .
+RUN go build -o main ./cmd/api
 
 # ---
 
-FROM node:20-alpine AS runner
+FROM alpine:3.19 AS runner
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+RUN apk --no-cache add ca-certificates tzdata && \
+    addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY package*.json ./
-COPY apps/backend/package.json ./apps/backend/
-COPY packages/database/package.json ./packages/database/
+COPY --from=builder /app/main .
 
-RUN npm ci --workspace=backend --workspace=@mirante/database --omit=dev --ignore-scripts && npm cache clean --force
-
-COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/packages/database/dist ./packages/database/dist
+USER appuser
 
 EXPOSE 3000
 
-CMD ["node", "apps/backend/dist/main"]
+CMD ["./main"]
