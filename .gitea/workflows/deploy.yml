@@ -22,25 +22,24 @@ jobs:
           fetch-depth: 0
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
       - name: Configure Git
         run: |
           git config --global user.name "CI Bot"
           git config --global user.email "bot@nilbyte.com"
 
-      - name: Release Backend
+      - name: Tag Backend Release
         id: version
         run: |
-          cd apps/backend
-          npx standard-version --tag-prefix backend-v --skip.changelog --releaseCommitMessageFormat "chore(backend): release {{currentTag}} [skip ci]"
-          cd ../..
+          LATEST=$(git tag --list 'backend-v*' --sort=-version:refname | head -1)
+          if [ -z "$LATEST" ]; then LATEST="backend-v0.0.0"; fi
+          VERSION=${LATEST#backend-v}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          NEW_TAG="backend-v${NEW_VERSION}"
+          git tag -a "$NEW_TAG" -m "chore(backend): release ${NEW_TAG} [skip ci]"
           git push --follow-tags origin HEAD:main
-          VERSION=$(node -p "require('./apps/backend/package.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
 
   release-webapp:
     needs: [release-backend]
