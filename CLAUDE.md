@@ -1,29 +1,35 @@
 # Mirante — Sistema de Gerenciamento Financeiro
 
-Monorepo NestJS + React + Prisma + PostgreSQL para controle de gastos, contas bancárias e veículos.
+Monorepo Go + React + PostgreSQL para controle de gastos, contas bancárias e veículos.
 
 ## Estrutura do monorepo
 
 ```
-apps/backend/     → NestJS REST API
-apps/webapp/      → React + TanStack Router + TanStack Query
-packages/database/→ Prisma schema, migrations, seed, client gerado
+apps/backend/        → Go REST API (net/http + pgx/v5)
+apps/webapp/         → React + TanStack Router + TanStack Query
+database/migrations/ → SQL migrations (golang-migrate)
 ```
 
 ## Comandos principais
 
 ```bash
-# Tipos TypeScript (sem precisar do DB)
-cd packages/database && npx prisma generate
+# Backend Go
+cd apps/backend
+go run ./cmd/api            # servidor local
+go run ./cmd/migrate up     # aplica migrations (requer DATABASE_URL)
+go run ./cmd/migrate down   # reverte 1 migration
+go run ./cmd/migrate version
+go build ./...              # compila tudo
 
-# Migração (requer DB na porta 5433)
-cd packages/database && npx prisma migrate dev --name <nome-descritivo>
+# Webapp
+cd apps/webapp && npm run dev
 
-# Seed
-cd packages/database && npx prisma db seed
+# Nova migration
+# cria dois arquivos: 000002_<nome>.up.sql e 000002_<nome>.down.sql
+# em database/migrations/
 ```
 
-O banco roda na porta **5433** (configurado em `packages/database/.env`).
+O banco roda na porta **5433** (variável `DATABASE_URL`).
 
 ---
 
@@ -31,58 +37,67 @@ O banco roda na porta **5433** (configurado em `packages/database/.env`).
 
 ### Regra central — sem CREDIT_CARD
 
-**Não existe mais `CREDIT_CARD` como tipo de conta.** A lógica de crédito foi unificada na conta:
+**Não existe `CREDIT_CARD` como tipo de conta.** A lógica de crédito é unificada na conta:
 
-- Qualquer conta pode ter `creditLimit?: Decimal` (opcional)
-- `Transaction.paymentMethod` enum `DEBIT | CREDIT` indica como a transação foi feita
-- O toggle DEBIT/CREDIT só aparece no UI se a conta tiver `creditLimit > 0`
+- Qualquer conta pode ter `credit_limit_cents` (BIGINT, opcional)
+- `payment_method` enum `DEBIT | CREDIT` indica como a transação foi feita
+- O toggle DEBIT/CREDIT só aparece no UI se a conta tiver `credit_limit_cents > 0`
 
-`AccountType` válidos: `CHECKING | SAVINGS | CASH | WALLET | INVESTMENT`
+`account_type` válidos: `CHECKING | SAVINGS | CASH | WALLET | INVESTMENT`
 
-### Titularidade de contas (`AccountOwnership`)
+### Titularidade de contas (`account_ownership`)
 
-- `PERSONAL` → preenche campo `cpf` (VarChar 14, ex: `"06143981183"`)
-- `BUSINESS` → preenche campo `cnpj` (VarChar 18)
-- Múltiplas contas **podem** ter o mesmo CPF/CNPJ (sem `@unique` na conta)
-- O `@unique` de CPF/CNPJ existe **somente** no modelo `User`
+- `PERSONAL` → preenche campo `cpf` (VARCHAR 14)
+- `BUSINESS` → preenche campo `cnpj` (VARCHAR 18)
+- Múltiplas contas **podem** ter o mesmo CPF/CNPJ
+- O UNIQUE de CPF/CNPJ existe **somente** na tabela `users`
 
-### Cartões (`Card`)
+### Cartões (`cards`)
 
-- Cartões são entidades separadas vinculadas a uma `Account` via `accountId`
-- `Card.type`: `CREDIT | DEBIT`
-- `Transaction.cardId` é opcional — transações sem cartão são diretas na conta
+- Cartões são entidades separadas vinculadas a `accounts` via `account_id`
+- `card.type`: `CREDIT | DEBIT`
+- `transaction.card_id` é opcional — transações sem cartão são diretas na conta
 
 ### Transações e saldo
 
-- `affectsAccount: false` em transações de cartão CREDIT (não afeta saldo da conta mãe)
-- Soft delete: `isActive: false` + `deletedAt` — **nunca deletar fisicamente**
+- `affects_account = false` em transações de cartão CREDIT (não afeta saldo da conta mãe)
+- Soft delete: `is_active = false` + `deleted_at` — **nunca deletar fisicamente**
 - Datas sempre em UTC 12:00 para evitar problemas de fuso horário
+- Valores monetários em **centavos** (BIGINT no banco, int64 no Go)
 
 ---
 
-## Padrão de módulos NestJS
+## Padrão de handlers Go
 
-Cada módulo segue: `module` → `controller` → `service` → `dto/create-*.dto.ts` + `dto/update-*.dto.ts`
+Cada feature é um método no struct `Handler` em `internal/handlers/`:
 
-```typescript
-// DTOs
-import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
-// UpdateDto sempre estende PartialType
-export class UpdateXxxDto extends PartialType(CreateXxxDto) {}
+```go
+// Handler central
+type Handler struct {
+    db     *pgxpool.Pool
+    jwtKey []byte
+}
+
+// Rotas registradas em internal/routes/routes.go com Go 1.22 patterns:
+mux.HandleFunc("GET /api/v1/accounts", h.Auth(h.ListAccounts))
+mux.HandleFunc("POST /api/v1/accounts", h.Auth(h.CreateAccount))
+mux.HandleFunc("GET /api/v1/accounts/{id}", h.Auth(h.GetAccount))
 ```
 
-- Serviços injetam `DatabaseService` (wrapper do PrismaClient em `src/database/`)
-- Módulos devem ser registrados em `apps/backend/src/app.module.ts`
-- Valores financeiros: `new Prisma.Decimal(value)` no service, `@db.Decimal(12, 2)` no schema
+- Middleware de auth injeta `AuthClaims` no contexto via `middleware.ClaimsFromContext(ctx)`
+- Validação manual: cada DTO tem método `Validate() error`
+- Valores monetários: helpers `money.ToCents()` / `money.ToReais()` em `internal/money/`
+- Configuração via `os.Getenv` (sem godotenv): `PORT`, `DATABASE_URL`, `JWT_SECRET`, `ENV`
 
 ---
 
-## Convenções de schema Prisma
+## Convenções SQL / migrations
 
-- `@map("snake_case")` em todos os campos camelCase
-- `@@map("table_name")` em todos os modelos (plural, snake_case)
-- `@db.VarChar(n)` em todos os campos String com limite conhecido
-- Enums com `@map` nas migrations quando necessário
+- Arquivos em `database/migrations/` seguindo padrão `NNNNNN_nome.up.sql` / `.down.sql`
+- IDs como `TEXT DEFAULT gen_random_uuid()::TEXT`
+- Timestamps como `TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+- Valores monetários como `BIGINT` (centavos)
+- Medidas físicas (km, litros) como `NUMERIC(n,m)`
 
 ---
 

@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/nilbyte/mirante/backend-v2/internal/config"
-	"github.com/nilbyte/mirante/backend-v2/internal/database"
-	"github.com/nilbyte/mirante/backend-v2/internal/routes"
+	"github.com/nilbyte/mirante/backend/internal/config"
+	"github.com/nilbyte/mirante/backend/internal/database"
+	"github.com/nilbyte/mirante/backend/internal/routes"
 )
 
 func main() {

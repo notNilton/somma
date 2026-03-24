@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nilbyte/mirante/backend-v2/internal/middleware"
-	"github.com/nilbyte/mirante/backend-v2/internal/models"
+	"github.com/nilbyte/mirante/backend/internal/middleware"
+	"github.com/nilbyte/mirante/backend/internal/models"
 )
 
 type updateUserDto struct {

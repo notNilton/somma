@@ -1,0 +1,25 @@
+DROP TABLE IF EXISTS import_fingerprints CASCADE;
+DROP TABLE IF EXISTS vehicle_maintenances CASCADE;
+DROP TABLE IF EXISTS refueling_logs CASCADE;
+DROP TABLE IF EXISTS vehicles CASCADE;
+DROP TABLE IF EXISTS transfers CASCADE;
+DROP TABLE IF EXISTS transaction_tags CASCADE;
+DROP TABLE IF EXISTS transactions CASCADE;
+DROP TABLE IF EXISTS tags CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS account_access CASCADE;
+DROP TABLE IF EXISTS cards CASCADE;
+DROP TABLE IF EXISTS accounts CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+DROP TYPE IF EXISTS fuel_type;
+DROP TYPE IF EXISTS maintenance_type;
+DROP TYPE IF EXISTS transaction_channel;
+DROP TYPE IF EXISTS payment_method;
+DROP TYPE IF EXISTS transaction_status;
+DROP TYPE IF EXISTS transaction_classification;
+DROP TYPE IF EXISTS transaction_type;
+DROP TYPE IF EXISTS access_role;
+DROP TYPE IF EXISTS card_type;
+DROP TYPE IF EXISTS account_ownership;
+DROP TYPE IF EXISTS account_type;

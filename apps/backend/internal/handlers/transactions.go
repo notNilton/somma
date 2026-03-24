@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nilbyte/mirante/backend-v2/internal/middleware"
-	"github.com/nilbyte/mirante/backend-v2/internal/models"
-	"github.com/nilbyte/mirante/backend-v2/internal/money"
+	"github.com/nilbyte/mirante/backend/internal/middleware"
+	"github.com/nilbyte/mirante/backend/internal/models"
+	"github.com/nilbyte/mirante/backend/internal/money"
 )
 
 type createTransactionDto struct {

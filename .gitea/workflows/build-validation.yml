@@ -12,9 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       BACKEND_CHANGED: ${{ steps.check.outputs.BACKEND_CHANGED }}
-      BACKEND_V2_CHANGED: ${{ steps.check.outputs.BACKEND_V2_CHANGED }}
       WEBAPP_CHANGED: ${{ steps.check.outputs.WEBAPP_CHANGED }}
-      DATABASE_CHANGED: ${{ steps.check.outputs.DATABASE_CHANGED }}
+      MIGRATIONS_CHANGED: ${{ steps.check.outputs.MIGRATIONS_CHANGED }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -32,14 +31,6 @@ jobs:
             echo "ℹ️ No Backend changes"
           fi
 
-          if git diff HEAD~1 HEAD -- apps/backend-v2/ | grep -q .; then
-            echo "BACKEND_V2_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Backend v2 changes detected"
-          else
-            echo "BACKEND_V2_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Backend v2 changes"
-          fi
-
           if git diff HEAD~1 HEAD -- apps/webapp/ | grep -q .; then
             echo "WEBAPP_CHANGED=true" >> $GITHUB_OUTPUT
             echo "✅ Webapp changes detected"
@@ -48,17 +39,17 @@ jobs:
             echo "ℹ️ No Webapp changes"
           fi
 
-          if git diff HEAD~1 HEAD -- packages/database/ | grep -q .; then
-            echo "DATABASE_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Database changes detected"
+          if git diff HEAD~1 HEAD -- database/migrations/ | grep -q .; then
+            echo "MIGRATIONS_CHANGED=true" >> $GITHUB_OUTPUT
+            echo "✅ Migration changes detected"
           else
-            echo "DATABASE_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Database changes"
+            echo "MIGRATIONS_CHANGED=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No Migration changes"
           fi
 
   build-backend:
     needs: detect-changes
-    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
+    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.MIGRATIONS_CHANGED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -71,22 +62,6 @@ jobs:
         run: |
           docker build -f apps/backend/Dockerfile -t mirante-backend:dev-test .
           echo "✅ Backend build successful"
-
-  build-backend-v2:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.BACKEND_V2_CHANGED == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
-      - name: Build Backend v2 image (validation only)
-        run: |
-          docker build -f apps/backend-v2/Dockerfile apps/backend-v2/ -t mirante-backend-v2:dev-test
-          echo "✅ Backend v2 build successful"
 
   build-webapp:
     needs: detect-changes

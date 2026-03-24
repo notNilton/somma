@@ -26,7 +26,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      NODE_ENV: production
+      ENV: production
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-mirante}
       WEBAPP_URL: http://localhost:3400

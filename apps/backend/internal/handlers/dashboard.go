@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/nilbyte/mirante/backend-v2/internal/middleware"
-	"github.com/nilbyte/mirante/backend-v2/internal/money"
+	"github.com/nilbyte/mirante/backend/internal/middleware"
+	"github.com/nilbyte/mirante/backend/internal/money"
 )
 
 func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {

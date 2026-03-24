@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nilbyte/mirante/backend-v2/internal/handlers"
-	"github.com/nilbyte/mirante/backend-v2/internal/middleware"
+	"github.com/nilbyte/mirante/backend/internal/handlers"
+	"github.com/nilbyte/mirante/backend/internal/middleware"
 )
 
 func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte) {
