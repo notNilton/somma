@@ -6,7 +6,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o main ./cmd/api && \
+ARG BUILD_VERSION=dev
+RUN go build -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${BUILD_VERSION}" -o main ./cmd/api && \
     go build -o migrate ./cmd/migrate
 
 # ---

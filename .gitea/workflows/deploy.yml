@@ -9,7 +9,7 @@ on:
 
 jobs:
   # ========================================================
-  # 1. Release Jobs (Sequential to avoid Git conflicts)
+  # 1. Release Jobs (Parallel — cada app independente)
   # ========================================================
   release-backend:
     runs-on: ubuntu-latest
@@ -35,14 +35,12 @@ jobs:
       - name: Release Backend
         id: version
         run: |
-          npx standard-version --path apps/backend --tag-prefix backend-v --message "chore(backend): release %s [skip ci]"
+          npx standard-version --path apps/backend --tag-prefix backend-v --no-changelog --message "chore(backend): release %s [skip ci]"
           git push --follow-tags origin HEAD:main
           VERSION=$(node -p "require('./apps/backend/package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
   release-webapp:
-    needs: [release-backend]
-    if: always() && needs.release-backend.result == 'success'
     runs-on: ubuntu-latest
     outputs:
       VERSION: ${{ steps.version.outputs.VERSION }}
@@ -63,13 +61,10 @@ jobs:
           git config --global user.name "CI Bot"
           git config --global user.email "bot@nilbyte.com"
 
-      - name: Pull latest changes
-        run: git pull origin main
-
       - name: Release Webapp
         id: version
         run: |
-          npx standard-version --path apps/webapp --tag-prefix webapp-v --message "chore(webapp): release %s [skip ci]"
+          npx standard-version --path apps/webapp --tag-prefix webapp-v --no-changelog --message "chore(webapp): release %s [skip ci]"
           git push --follow-tags origin HEAD:main
           VERSION=$(node -p "require('./apps/webapp/package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
@@ -100,6 +95,8 @@ jobs:
         with:
           context: .
           file: apps/backend/Dockerfile
+          build-args: |
+            BUILD_VERSION=${{ needs.release-backend.outputs.VERSION }}
           push: true
           tags: |
             gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest

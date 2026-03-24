@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"net/http"
+
+	"github.com/nilbyte/mirante/backend/internal/version"
 )
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
@@ -19,6 +21,6 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, status, map[string]string{
 		"status":   "ok",
 		"database": dbStatus,
-		"version":  "2.0.0",
+		"version":  version.Version,
 	})
 }
