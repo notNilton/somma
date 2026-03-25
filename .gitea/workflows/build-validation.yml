@@ -81,6 +81,19 @@ jobs:
         working-directory: apps/backend
         run: go mod download
 
+      - name: Wait for PostgreSQL
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres 2>/dev/null; then
+              echo "PostgreSQL ready"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          echo "PostgreSQL did not start"
+          exit 1
+
       - name: Apply migrations
         working-directory: apps/backend
         env:
