@@ -43,13 +43,13 @@ jobs:
       - name: Apply migrations
         working-directory: apps/backend
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/mirante_test?sslmode=disable
+          DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/mirante_test?sslmode=disable
         run: go run ./cmd/migrate up
 
       - name: Run tests
         working-directory: apps/backend
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/mirante_test?sslmode=disable
+          DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/mirante_test?sslmode=disable
         run: go test ./internal/handlers/... -v -count=1
 
   # ========================================================
