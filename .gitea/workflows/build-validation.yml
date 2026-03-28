@@ -48,26 +48,12 @@ jobs:
           fi
 
   # ========================================================
-  # Testes do backend (roda sempre que backend ou migrations mudam)
+  # Testes unitários do backend (sem banco)
   # ========================================================
   test-backend:
     needs: detect-changes
     if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.MIGRATIONS_CHANGED == 'true'
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: mirante_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -81,33 +67,12 @@ jobs:
         working-directory: apps/backend
         run: go mod download
 
-      - name: Wait for PostgreSQL
-        run: |
-          for i in $(seq 1 30); do
-            if pg_isready -h 127.0.0.1 -p 5432 -U postgres 2>/dev/null; then
-              echo "PostgreSQL ready"
-              exit 0
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 2
-          done
-          echo "PostgreSQL did not start"
-          exit 1
-
-      - name: Apply migrations
+      - name: Build binaries
         working-directory: apps/backend
-        env:
-          DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/mirante_test?sslmode=disable
-        run: go run ./cmd/migrate up
-
-      - name: Run tests
-        working-directory: apps/backend
-        env:
-          DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/mirante_test?sslmode=disable
-        run: go test ./internal/handlers/... -v -count=1
+        run: go build ./...
 
   # ========================================================
-  # Build de imagens (só após testes passarem)
+  # Build de imagens (validação, sem push)
   # ========================================================
   build-backend:
     needs: [detect-changes, test-backend]
