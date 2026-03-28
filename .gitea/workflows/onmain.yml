@@ -1,5 +1,5 @@
-name: Deploy Mirante (Main)
-run-name: Deploy Main - ${{ gitea.actor }}
+name: On Main
+run-name: On Main - ${{ gitea.actor }}
 
 on:
   push:

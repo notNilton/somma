@@ -1,5 +1,5 @@
-name: Build Validation (Dev)
-run-name: Build Validation - ${{ gitea.actor }}
+name: On Dev
+run-name: On Dev - ${{ gitea.actor }}
 
 on:
   push:
