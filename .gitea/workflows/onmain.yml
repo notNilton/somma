@@ -9,7 +9,7 @@ on:
 
 jobs:
   # ========================================================
-  # 1. Detectar o que mudou
+  # 1. Detecta o que mudou
   # ========================================================
   detect-changes:
     runs-on: ubuntu-latest
@@ -27,31 +27,30 @@ jobs:
         run: |
           if git diff HEAD~1 HEAD -- apps/backend/ database/migrations/ | grep -q .; then
             echo "BACKEND_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Backend changed"
+            echo "Backend changed"
           else
             echo "BACKEND_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ Backend unchanged"
+            echo "Backend unchanged"
           fi
+
           if git diff HEAD~1 HEAD -- apps/webapp/ | grep -q .; then
             echo "WEBAPP_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Webapp changed"
+            echo "Webapp changed"
           else
             echo "WEBAPP_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ Webapp unchanged"
+            echo "Webapp unchanged"
           fi
 
   # ========================================================
-  # 2. Bump de versão — sequenciais para evitar conflito no main
-  #    Versão vive dentro de cada projeto:
-  #    backend → apps/backend/VERSION
-  #    webapp  → apps/webapp/package.json
+  # 2. Bumpa versoes, commita e cria tags (job unico = sem conflito)
   # ========================================================
-  bump-backend:
+  bump-versions:
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true'
+    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
     runs-on: ubuntu-latest
     outputs:
-      VERSION: ${{ steps.bump.outputs.VERSION }}
+      BACKEND_VERSION: ${{ steps.bump.outputs.BACKEND_VERSION }}
+      WEBAPP_VERSION: ${{ steps.bump.outputs.WEBAPP_VERSION }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -61,74 +60,66 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config --global user.name "CI Bot"
-          git config --global user.email "bot@nilbyte.com"
+          git config user.name "CI Bot"
+          git config user.email "bot@nilbyte.com"
 
-      - name: Bump backend version
+      - name: Bump versions, commit and tag
         id: bump
         run: |
-          CURRENT=$(cat apps/backend/VERSION | tr -d '[:space:]')
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          PATCH=$((PATCH + 1))
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          echo "$NEW_VERSION" > apps/backend/VERSION
-          git add apps/backend/VERSION
-          git commit -m "chore(backend): bump version to ${NEW_VERSION} [skip ci]"
-          git push origin HEAD:main
-          git tag -a "backend-v${NEW_VERSION}" -m "backend-v${NEW_VERSION}"
-          git push origin "backend-v${NEW_VERSION}"
-          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          BACKEND_CHANGED="${{ needs.detect-changes.outputs.BACKEND_CHANGED }}"
+          WEBAPP_CHANGED="${{ needs.detect-changes.outputs.WEBAPP_CHANGED }}"
+          FILES_CHANGED=""
 
-  bump-webapp:
-    needs: [detect-changes, bump-backend]
-    if: always() && needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      VERSION: ${{ steps.bump.outputs.VERSION }}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
+          if [ "$BACKEND_CHANGED" = "true" ]; then
+            CURRENT=$(cat apps/backend/VERSION)
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            echo "$NEW_VERSION" > apps/backend/VERSION
+            git add apps/backend/VERSION
+            FILES_CHANGED="$FILES_CHANGED backend-v${NEW_VERSION}"
+            echo "BACKEND_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "BACKEND_VERSION=$(cat apps/backend/VERSION)" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
+          if [ "$WEBAPP_CHANGED" = "true" ]; then
+            CURRENT=$(jq -r '.version' apps/webapp/package.json)
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            jq --arg v "$NEW_VERSION" '.version = $v' apps/webapp/package.json > /tmp/pkg.json
+            mv /tmp/pkg.json apps/webapp/package.json
+            git add apps/webapp/package.json
+            FILES_CHANGED="$FILES_CHANGED webapp-v${NEW_VERSION}"
+            echo "WEBAPP_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "WEBAPP_VERSION=$(jq -r '.version' apps/webapp/package.json)" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Configure Git
-        run: |
-          git config --global user.name "CI Bot"
-          git config --global user.email "bot@nilbyte.com"
+          if [ -n "$FILES_CHANGED" ]; then
+            git commit -m "chore: bump versions${FILES_CHANGED} [skip ci]"
+            git push origin HEAD:main
+          fi
 
-      - name: Bump webapp version
-        id: bump
-        run: |
-          git pull origin main
-          CURRENT=$(node -p "require('./apps/webapp/package.json').version")
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          PATCH=$((PATCH + 1))
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('apps/webapp/package.json'));
-            pkg.version = '${NEW_VERSION}';
-            fs.writeFileSync('apps/webapp/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          git add apps/webapp/package.json
-          git commit -m "chore(webapp): bump version to ${NEW_VERSION} [skip ci]"
-          git push origin HEAD:main
-          git tag -a "webapp-v${NEW_VERSION}" -m "webapp-v${NEW_VERSION}"
-          git push origin "webapp-v${NEW_VERSION}"
-          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+          if [ "$BACKEND_CHANGED" = "true" ]; then
+            BV=$(cat apps/backend/VERSION)
+            git tag -a "backend-v${BV}" -m "backend-v${BV}"
+            git push origin "backend-v${BV}"
+          fi
+
+          if [ "$WEBAPP_CHANGED" = "true" ]; then
+            WV=$(jq -r '.version' apps/webapp/package.json)
+            git tag -a "webapp-v${WV}" -m "webapp-v${WV}"
+            git push origin "webapp-v${WV}"
+          fi
 
   # ========================================================
-  # 3. Build & Push — só o que mudou
+  # 3. Build & Push (paralelos)
   # ========================================================
   build-backend:
-    needs: [bump-backend]
-    if: always() && needs.bump-backend.result == 'success'
+    needs: [detect-changes, bump-versions]
+    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -150,15 +141,15 @@ jobs:
           context: .
           file: apps/backend/Dockerfile
           build-args: |
-            BUILD_VERSION=${{ needs.bump-backend.outputs.VERSION }}
+            BUILD_VERSION=${{ needs.bump-versions.outputs.BACKEND_VERSION }}
           push: true
           tags: |
             gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-backend.outputs.VERSION }}
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
 
   build-webapp:
-    needs: [bump-webapp]
-    if: always() && needs.bump-webapp.result == 'success'
+    needs: [detect-changes, bump-versions]
+    if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -181,8 +172,8 @@ jobs:
           file: apps/webapp/Dockerfile
           build-args: |
             VITE_API_URL=https://mirante-api.nilbyte.com.br
-            VITE_APP_VERSION=${{ needs.bump-webapp.outputs.VERSION }}
+            VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
           push: true
           tags: |
             gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-webapp.outputs.VERSION }}
+            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
