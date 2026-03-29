@@ -8,6 +8,12 @@ import tailwindcss from '@tailwindcss/vite';
 const config = defineConfig({
   server: {
     port: 3400,
+    proxy: {
+      '/api': 'http://localhost:3000',
+      '/auth': 'http://localhost:3000',
+      '/users': 'http://localhost:3000',
+      '/health': 'http://localhost:3000',
+    },
   },
   plugins: [
     devtools(),
