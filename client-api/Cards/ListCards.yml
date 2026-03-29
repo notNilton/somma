@@ -1,12 +1,14 @@
 info:
-  name: Health
+  name: ListCards
   type: http
   seq: 1
 
 http:
   method: GET
-  url: "{{baseUrl}}/health"
-  auth: none
+  url: "{{baseUrl}}/api/v1/cards"
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
 
 runtime:
   variables:

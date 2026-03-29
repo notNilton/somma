@@ -1,0 +1,31 @@
+info:
+  name: CreateVehicle
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/vehicles"
+  auth: inherit
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Fiat Uno Mille",
+        "brand": "Fiat",
+        "model": "Uno Mille",
+        "year": 2012,
+        "licensePlate": "NIL-0001",
+        "tank": 50.0
+      }
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

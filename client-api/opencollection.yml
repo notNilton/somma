@@ -5,6 +5,10 @@ info:
 bundled: false
 extensions:
   bruno:
+    auth:
+      mode: bearer
+    auth:bearer:
+      token: "{{accessToken}}"
     ignore:
       - node_modules
       - .git

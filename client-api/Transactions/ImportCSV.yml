@@ -1,0 +1,21 @@
+info:
+  name: ImportCSV
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/transactions/import-csv"
+  auth: inherit
+  body:
+    type: multipartForm
+    data:
+      - name: file
+        file: /path/to/transactions.csv
+        type: file
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -11,10 +11,21 @@ http:
     type: json
     data: |-
       {
-        "email": "user@example.com",
-        "password": "password123",
-        "name": "Test User"
+        "email": "{{userEmail}}",
+        "password": "{{userPassword}}",
+        "name": "Nilton Santos"
       }
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 200 || res.status === 201) {
+          bru.setEnvVar("accessToken", res.body.accessToken);
+        }
 
 settings:
   encodeUrl: true

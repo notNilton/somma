@@ -6,7 +6,14 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/api/v1/vehicles"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
 
 settings:
   encodeUrl: true

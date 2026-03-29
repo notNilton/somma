@@ -1,0 +1,23 @@
+info:
+  name: CreateCategory
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/categories"
+  auth: inherit
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Alimentação",
+        "type": "EXPENSE",
+        "color": "#FF5252"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

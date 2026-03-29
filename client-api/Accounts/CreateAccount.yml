@@ -4,9 +4,26 @@ info:
   seq: 1
 
 http:
-  method: GET
-  url: ""
-  auth: inherit
+  method: POST
+  url: "{{baseUrl}}/api/v1/accounts"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Conta Corrente Nubank",
+        "type": "CHECKING",
+        "bankName": "Nubank",
+        "balance": 1500.50,
+        "color": "#8A05BE"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
 
 settings:
   encodeUrl: true
