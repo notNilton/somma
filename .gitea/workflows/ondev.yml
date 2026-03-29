@@ -48,9 +48,9 @@ jobs:
           fi
 
   # ========================================================
-  # Testes unitários do backend (sem banco)
+  # Build e teste do backend (compilação + imagem)
   # ========================================================
-  test-backend:
+  build-backend:
     needs: detect-changes
     if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.MIGRATIONS_CHANGED == 'true'
     runs-on: ubuntu-latest
@@ -71,17 +71,6 @@ jobs:
         working-directory: apps/backend
         run: go build ./...
 
-  # ========================================================
-  # Build de imagens (validação, sem push)
-  # ========================================================
-  build-backend:
-    needs: [detect-changes, test-backend]
-    if: always() && needs.test-backend.result == 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
@@ -90,6 +79,9 @@ jobs:
           docker build -f apps/backend/Dockerfile -t mirante-backend:dev-test .
           echo "✅ Backend build successful"
 
+  # ========================================================
+  # Build da webapp (imagem)
+  # ========================================================
   build-webapp:
     needs: detect-changes
     if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
@@ -104,6 +96,5 @@ jobs:
       - name: Build Webapp image (validation only)
         run: |
           docker build -f apps/webapp/Dockerfile \
-            --build-arg VITE_API_URL=https://mirante-api.nilbyte.com.br \
             -t mirante-webapp:dev-test .
           echo "✅ Webapp build successful"
