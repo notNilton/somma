@@ -17,7 +17,7 @@ import PrivacyAmount from '../../components/PrivacyAmount';
 import Fab from '../../components/Fab';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { api } from '../../lib/api';
-import type { Vehicle, RefuelingLog, VehicleStats, VehicleMaintenanceLog } from '../_types';
+import type { Vehicle, RefuelingLog, VehicleExpenseStats, VehicleMaintenanceLog } from '../-_types';
 
 export const Route = createFileRoute('/vehicles/')({
   component: VehiclesPage,
@@ -29,15 +29,15 @@ function FuelCharts({ data }: { data: RefuelingLog[] }) {
     .map((log, index, array) => {
       const nextLog = array[index + 1];
       if (!nextLog) return null;
-      const kmDiff = Number(nextLog.odometer) - Number(log.odometer);
+      const kmDiff = Number(nextLog.currentKm) - Number(log.currentKm);
       if (kmDiff <= 0) return null;
       return {
-        date: new Date(nextLog.transaction.date).toLocaleDateString('pt-BR', {
+        date: new Date(nextLog.createdAt).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: 'short',
         }),
-        consumo: Number((kmDiff / Number(nextLog.fuelLiters)).toFixed(2)),
-        gasto: Math.abs(Number(nextLog.transaction.amount)),
+        consumo: Number((kmDiff / Number(nextLog.liters)).toFixed(2)),
+        gasto: Number((Number(nextLog.pricePerLiter) * Number(nextLog.liters)).toFixed(2)),
       };
     })
     .filter(Boolean);
@@ -126,7 +126,7 @@ function VehiclesPage() {
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: () => api.get<Vehicle[]>('/vehicles'),
+    queryFn: () => api.get<Vehicle[]>('/api/v1/vehicles'),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -135,27 +135,27 @@ function VehiclesPage() {
 
   const { data: refuelings = [], isLoading: refuelingsLoading } = useQuery({
     queryKey: ['vehicle-refuelings', activeVehicleId],
-    queryFn: () => api.get<RefuelingLog[]>(`/vehicles/${activeVehicleId}/refuelings`),
+    queryFn: () => api.get<RefuelingLog[]>(`/api/v1/vehicles/${activeVehicleId}/refuelings`),
     enabled: !!activeVehicleId,
     staleTime: 1000 * 60,
   });
 
   const { data: maintenances = [], isLoading: maintenancesLoading } = useQuery({
     queryKey: ['vehicle-maintenances', activeVehicleId],
-    queryFn: () => api.get<VehicleMaintenanceLog[]>(`/vehicles/${activeVehicleId}/maintenances`),
+    queryFn: () => api.get<VehicleMaintenanceLog[]>(`/api/v1/vehicles/${activeVehicleId}/maintenances`),
     enabled: !!activeVehicleId,
     staleTime: 1000 * 60,
   });
 
   const { data: vehicleStats } = useQuery({
     queryKey: ['vehicle-stats', activeVehicleId],
-    queryFn: () => api.get<VehicleStats>(`/vehicles/${activeVehicleId}/stats`),
+    queryFn: () => api.get<VehicleExpenseStats>(`/api/v1/vehicles/${activeVehicleId}/expenses-stats`),
     enabled: !!activeVehicleId,
     staleTime: 1000 * 60,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/vehicles/${id}`),
+    mutationFn: (id: string) => api.delete(`/api/v1/vehicles/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       setSelectedVehicleId(null);
@@ -168,12 +168,10 @@ function VehiclesPage() {
     activeVehicleId &&
     void navigate({ to: '/vehicles/crud-vehicles', search: { vehicleId: activeVehicleId } });
 
-  const filteredMaintenances = maintenances.filter(
-    (m) => m.transaction.category?.name === 'Veículo Manutenção',
-  );
+  const filteredMaintenances = maintenances;
 
   const activeVehicleLabel = activeVehicle
-    ? (activeVehicle.nickname ?? `${activeVehicle.brand} ${activeVehicle.model}`)
+    ? (activeVehicle.name || [activeVehicle.brand, activeVehicle.model].filter(Boolean).join(' ') || '—')
     : '—';
 
   if (vehiclesLoading) {
@@ -283,7 +281,7 @@ function VehiclesPage() {
                   : 'border-border text-muted-foreground hover:bg-muted'
               }`}
             >
-              {v.nickname ?? `${v.brand} ${v.model}`}
+              {v.name || [v.brand, v.model].filter(Boolean).join(' ')}
             </button>
           ))}
         </div>
@@ -310,37 +308,39 @@ function VehiclesPage() {
               Odômetro
             </p>
             <p className="text-sm font-bold">
-              {refuelings[0] ? Number(refuelings[0].odometer).toLocaleString('pt-BR') : '—'}
+              {refuelings[0] ? Number(refuelings[0].currentKm).toLocaleString('pt-BR') : '—'}
               <span className="text-[9px] ml-0.5 opacity-50">km</span>
             </p>
           </div>
           <div className="text-center">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
-              Consumo
-            </p>
-            <p className="text-sm font-bold">
-              {vehicleStats?.avgConsumption.toFixed(1) ?? '—'}
-              <span className="text-[9px] ml-0.5 opacity-50">km/L</span>
-            </p>
-          </div>
-          <div className="text-center sm:border-l sm:border-border sm:pl-2">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
-              Gasto Médio
+              Abastecimentos
             </p>
             {vehicleStats ? (
-              <PrivacyAmount value={vehicleStats.avgCost} className="text-sm font-bold" />
+              <PrivacyAmount value={vehicleStats.totalFuel} className="text-sm font-bold" />
             ) : (
               <span className="text-sm font-bold">—</span>
             )}
           </div>
           <div className="text-center sm:border-l sm:border-border sm:pl-2">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
-              Autonomia
+              Manutenções
             </p>
-            <p className="text-sm font-bold">
-              {vehicleStats?.autonomy ?? '—'}
-              <span className="text-[9px] ml-0.5 opacity-50">km</span>
+            {vehicleStats ? (
+              <PrivacyAmount value={vehicleStats.totalMaintenance} className="text-sm font-bold" />
+            ) : (
+              <span className="text-sm font-bold">—</span>
+            )}
+          </div>
+          <div className="text-center sm:border-l sm:border-border sm:pl-2">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+              Total Gastos
             </p>
+            {vehicleStats ? (
+              <PrivacyAmount value={vehicleStats.total} className="text-sm font-bold" />
+            ) : (
+              <span className="text-sm font-bold">—</span>
+            )}
           </div>
         </div>
       </div>
@@ -406,10 +406,10 @@ function VehiclesPage() {
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
                       <Gauge className="w-3 h-3" />
-                      {Number(h.odometer).toLocaleString('pt-BR')} km
+                      {Number(h.currentKm).toLocaleString('pt-BR')} km
                     </span>
                     <span className="text-[10px] text-primary font-bold">
-                      {Number(h.fuelLiters).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} L
+                      {Number(h.liters).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} L
                     </span>
                     <span className="text-[10px] text-muted-foreground">
                       R${' '}
@@ -422,11 +422,11 @@ function VehiclesPage() {
                 </div>
                 <div className="text-right shrink-0">
                   <PrivacyAmount
-                    value={-Number(h.transaction.amount)}
+                    value={Number(h.pricePerLiter) * Number(h.liters)}
                     className="text-sm font-bold"
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    {new Date(h.transaction.date).toLocaleDateString('pt-BR', {
+                    {new Date(h.createdAt).toLocaleDateString('pt-BR', {
                       day: '2-digit',
                       month: 'short',
                       timeZone: 'UTC',
@@ -459,29 +459,14 @@ function VehiclesPage() {
                   <Wrench className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium">{h.type.replace('_', ' ')}</span>
-                  {h.description && (
-                    <p className="text-[11px] text-muted-foreground truncate">{h.description}</p>
+                  <span className="text-sm font-medium">{h.maintenanceType.replace('_', ' ')}</span>
+                  {h.provider && (
+                    <p className="text-[11px] text-muted-foreground truncate">{h.provider}</p>
                   )}
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    {h.odometer != null && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                        <Gauge className="w-3 h-3" />
-                        {Number(h.odometer).toLocaleString('pt-BR')} km
-                      </span>
-                    )}
-                    {h.provider && (
-                      <span className="text-[10px] text-muted-foreground">{h.provider}</span>
-                    )}
-                  </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <PrivacyAmount
-                    value={-Number(h.transaction.amount)}
-                    className="text-sm font-bold"
-                  />
                   <p className="text-[10px] text-muted-foreground">
-                    {new Date(h.transaction.date).toLocaleDateString('pt-BR', {
+                    {new Date(h.createdAt).toLocaleDateString('pt-BR', {
                       day: '2-digit',
                       month: 'short',
                       timeZone: 'UTC',

@@ -25,20 +25,16 @@ interface RefuelingLog {
   id: string;
   station?: string;
   fuelType: string;
-  odometer: number | string;
-  fuelLiters: number | string;
+  currentKm: number | string;
+  liters: number | string;
   pricePerLiter: number | string;
-  transaction: {
-    amount: number | string;
-    date: string;
-  };
+  createdAt: string;
 }
 
 interface VehicleStats {
-  avgConsumption: number;
-  avgCost: number;
-  avgPricePerLiter: number;
-  autonomy: number;
+  totalFuel: number;
+  totalMaintenance: number;
+  total: number;
 }
 
 function VehicleCard({
@@ -52,7 +48,7 @@ function VehicleCard({
 }) {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['vehicle-stats', vehicle.id],
-    queryFn: () => api.get<VehicleStats>(`/vehicles/${vehicle.id}/stats`),
+    queryFn: () => api.get<VehicleStats>(`/api/v1/vehicles/${vehicle.id}/expenses-stats`),
   });
 
   return (
@@ -113,16 +109,16 @@ function VehicleCard({
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border mt-auto">
         <div>
           <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">
-            Autonomia Est.
+            Combustível
           </p>
-          <p className="font-bold">{isLoading ? '...' : `${stats?.autonomy ?? 0} km`}</p>
+          <p className="font-bold">{isLoading ? '...' : `R$ ${(stats?.totalFuel ?? 0).toFixed(2)}`}</p>
         </div>
         <div>
           <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">
-            Consumo Médio
+            Total Gastos
           </p>
           <p className="font-bold text-primary">
-            {isLoading ? '...' : `${stats?.avgConsumption ?? 0} km/l`}
+            {isLoading ? '...' : `R$ ${(stats?.total ?? 0).toFixed(2)}`}
           </p>
         </div>
       </div>
@@ -140,7 +136,7 @@ function VehiclesPage() {
 
   const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: () => api.get<Vehicle[]>('/vehicles'),
+    queryFn: () => api.get<Vehicle[]>('/api/v1/vehicles'),
   });
 
   // Auto-select first vehicle for history
@@ -149,12 +145,12 @@ function VehiclesPage() {
   const { data: refuelings = [], isLoading: isHistoryLoading } = useQuery({
     queryKey: ['vehicle-refuelings', activeHistoryId],
     queryFn: () =>
-      activeHistoryId ? api.get<RefuelingLog[]>(`/vehicles/${activeHistoryId}/refuelings`) : [],
+      activeHistoryId ? api.get<RefuelingLog[]>(`/api/v1/vehicles/${activeHistoryId}/refuelings`) : [],
     enabled: !!activeHistoryId,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/vehicles/${id}`),
+    mutationFn: (id: string) => api.delete(`/api/v1/vehicles/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
     },
@@ -300,7 +296,7 @@ function VehiclesPage() {
                   refuelings.map((log) => (
                     <tr key={log.id} className="hover:bg-muted/20 transition-smooth group">
                       <td className="px-6 py-4 text-xs font-semibold">
-                        {new Date(log.transaction.date).toLocaleDateString('pt-BR', {
+                        {new Date(log.createdAt).toLocaleDateString('pt-BR', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
@@ -316,11 +312,11 @@ function VehiclesPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-xs font-medium text-muted-foreground">
-                        {Number(log.odometer).toLocaleString('pt-BR')}{' '}
+                        {Number(log.currentKm).toLocaleString('pt-BR')}{' '}
                         <span className="text-[9px] uppercase opacity-60">km</span>
                       </td>
                       <td className="px-6 py-4 text-xs font-bold text-primary/80">
-                        {Number(log.fuelLiters).toLocaleString('pt-BR', {
+                        {Number(log.liters).toLocaleString('pt-BR', {
                           minimumFractionDigits: 2,
                         })}{' '}
                         <span className="text-[9px] uppercase opacity-60">L</span>
@@ -333,7 +329,7 @@ function VehiclesPage() {
                       </td>
                       <td className="px-6 py-4 text-right border-l border-border/10">
                         <PrivacyAmount
-                          value={-Number(log.transaction.amount)}
+                          value={Number(log.pricePerLiter) * Number(log.liters)}
                           className="font-bold text-xs"
                         />
                       </td>
