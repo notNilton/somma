@@ -17,6 +17,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  migrate:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    container_name: mirante-migrate
+    restart: no
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-mirante}?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+
   backend:
     build:
       context: .

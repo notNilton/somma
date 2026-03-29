@@ -1,5 +1,22 @@
 -- Seed Data for Mirante - Nilton Santos
 
+-- 0. Limpa tudo em ordem (respeita FK)
+TRUNCATE TABLE
+    transaction_tags,
+    refueling_logs,
+    vehicle_maintenances,
+    transfers,
+    transactions,
+    import_fingerprints,
+    account_access,
+    cards,
+    categories,
+    tags,
+    accounts,
+    vehicles,
+    users
+RESTART IDENTITY CASCADE;
+
 -- 1. Create User: Nilton Santos
 -- Password: @2Organela
 INSERT INTO users (id, email, name, password_hash)
@@ -30,8 +47,8 @@ VALUES (
     'Fiat', 
     'Uno Mille', 
     2012, 
-    'NIL-0001', 
-    50.00
+    'OBH-2417', 
+    45.00
 ) ON CONFLICT (id) DO NOTHING;
 
 -- 4. Create Categories

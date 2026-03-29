@@ -13,8 +13,7 @@ COPY database/ ./database/
 ARG BUILD_VERSION=dev
 RUN go build \
       -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${BUILD_VERSION}" \
-      -o main ./apps/backend/cmd/api && \
-    go build -o migrate ./database/cmd/migrate
+      -o main ./apps/backend/cmd/api
 
 # ---
 
@@ -26,14 +25,9 @@ RUN apk --no-cache add ca-certificates tzdata && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=builder /app/main .
-COPY --from=builder /app/migrate .
-COPY database/migrations/ /database/migrations/
-COPY database/seeds/ /database/seeds/
 
 USER appuser
 
 EXPOSE 3000
-
-ENV MIGRATIONS_PATH=/database/migrations
 
 CMD ["./main"]
