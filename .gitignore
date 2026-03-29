@@ -14,18 +14,25 @@ node_modules
 # misc
 .DS_Store
 *.pem
+
+# environment — ignorar todos os .env exceto exemplos
 .env
 .env.local
 .env.*
+!.env.example
 
 # coverage
 coverage
 
 # IDEs and editors
 .idea/
+.vscode/
 *.swp
 *.swo
 
-# Go binaries
+# Go — binários e cache
+*.exe
 apps/backend/main
 apps/backend/migrate
+apps/backend/tmp/
+database/migrate
