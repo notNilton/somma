@@ -28,6 +28,7 @@ RUN apk --no-cache add ca-certificates tzdata && \
 COPY --from=builder /app/main .
 COPY --from=builder /app/migrate .
 COPY database/migrations/ /database/migrations/
+COPY database/seeds/ /database/seeds/
 
 USER appuser
 

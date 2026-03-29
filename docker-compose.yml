@@ -28,7 +28,7 @@ services:
     environment:
       ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-mirante}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-mirante}?sslmode=disable
       WEBAPP_URL: ${WEBAPP_URL:-http://localhost:3400}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
     depends_on:
