@@ -5,9 +5,9 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -o ./tmp/main ./cmd/api"
-  bin = "./tmp/main"
-  full_bin = "./tmp/main"
+  cmd = "go build -o ./tmp/main.exe ./cmd/api"
+  bin = "./tmp/main.exe"
+  full_bin = "./tmp/main.exe"
   include_ext = ["go", "env"]
   exclude_dir = ["tmp", "vendor"]
   delay = 1000
