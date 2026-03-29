@@ -5,7 +5,7 @@ Este diretório contém toda a lógica de gerenciamento de banco de dados do pro
 ## Estrutura
 
 - `migrations/`: Arquivos SQL de migração (versionamento do esquema).
-- `seed.sql`: Script SQL para semear o banco com dados de teste.
+- `seeds/`: Scripts SQL para semear o banco com dados de teste (ex: `initial_seed.sql`).
 - `cmd/migrate/`: Ferramenta em Go para aplicar migrations e seeds.
 - `database.go`: Conector central para o PostgreSQL.
 
