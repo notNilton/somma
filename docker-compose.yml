@@ -51,8 +51,6 @@ services:
     build:
       context: .
       dockerfile: apps/webapp/Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
     container_name: mirante-webapp
     restart: always
     ports:
