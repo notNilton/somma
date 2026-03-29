@@ -6,40 +6,31 @@ export interface Category {
 
 export interface Vehicle {
   id: string;
-  nickname?: string;
-  brand: string;
-  model: string;
+  name: string;
+  brand?: string;
+  model?: string;
   licensePlate?: string;
 }
 
 export interface RefuelingLog {
   id: string;
-  createdAt: string;
+  vehicleId: string;
+  transactionId?: string;
   station?: string;
   fuelType: string;
-  fuelLiters: number | string;
-  odometer: number | string;
+  currentKm: number | string;
+  liters: number | string;
   pricePerLiter: number | string;
-  transaction: {
-    amount: number | string;
-    date: string;
-  };
+  createdAt: string;
 }
 
 export interface VehicleMaintenanceLog {
   id: string;
-  createdAt: string;
-  type: string;
-  description?: string;
-  odometer?: number | string;
+  vehicleId: string;
+  transactionId?: string;
+  maintenanceType: string;
   provider?: string;
-  transaction: {
-    amount: number | string;
-    date: string;
-    category?: {
-      name: string;
-    } | null;
-  };
+  createdAt: string;
 }
 
 export interface VehicleStats {

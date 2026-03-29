@@ -168,7 +168,7 @@ export function useTransactionsList(opts: {
       opts.selectedAccount,
       opts.selectedStatus,
     ],
-    queryFn: () => api.get<Tx[]>(`/transactions?${buildTxParams({ ...opts })}`),
+    queryFn: () => api.get<Tx[]>(`/api/v1/transactions?${buildTxParams({ ...opts })}`),
     staleTime: 1000 * 30,
   });
 }
@@ -180,7 +180,7 @@ export function useMonthExpenses() {
     queryKey: ['transactions-month-expenses', from],
     queryFn: () =>
       api.get<Tx[]>(
-        `/transactions?${buildTxParams({
+        `/api/v1/transactions?${buildTxParams({
           search: '',
           filterType: 'EXPENSE',
           selectedCategory: 'all',
@@ -206,7 +206,7 @@ export function useFutureTransactions(opts: {
     queryKey: ['transactions-future', opts.search, opts.filterType, opts.selectedCategory],
     queryFn: () =>
       api.get<Tx[]>(
-        `/transactions/future?${buildTxParams({
+        `/api/v1/transactions/future?${buildTxParams({
           search: opts.search,
           filterType: opts.filterType,
           selectedCategory: opts.selectedCategory,

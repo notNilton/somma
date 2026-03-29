@@ -33,7 +33,7 @@ import {
   sumCreditExpenses,
   sumIncome,
   useTransactionsList,
-} from '../transactions.queries';
+} from '../-transactions.queries';
 
 export const Route = createFileRoute('/transactions/')({
   component: TransactionsPage,
@@ -73,13 +73,13 @@ function TransactionsPage() {
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => api.get<TxCategory[]>('/categories'),
+    queryFn: () => api.get<TxCategory[]>('/api/v1/categories'),
     staleTime: 1000 * 60 * 5,
   });
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
-    queryFn: () => api.get<Array<{ id: string; name: string }>>('/accounts'),
+    queryFn: () => api.get<Array<{ id: string; name: string }>>('/api/v1/accounts'),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -89,13 +89,13 @@ function TransactionsPage() {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/transactions/${id}`),
+    mutationFn: (id: string) => api.delete(`/api/v1/transactions/${id}`),
     onSuccess: invalidate,
   });
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      await Promise.all(ids.map((id) => api.delete(`/transactions/${id}`)));
+      await Promise.all(ids.map((id) => api.delete(`/api/v1/transactions/${id}`)));
     },
     onSuccess: () => {
       invalidate();
@@ -104,12 +104,12 @@ function TransactionsPage() {
   });
 
   const markPaidMutation = useMutation({
-    mutationFn: (id: string) => api.patch(`/transactions/${id}`, { status: 'COMPLETED' }),
+    mutationFn: (id: string) => api.patch(`/api/v1/transactions/${id}`, { status: 'COMPLETED' }),
     onSuccess: invalidate,
   });
 
   const stopRecurringMutation = useMutation({
-    mutationFn: (id: string) => api.patch(`/transactions/${id}`, { isRecurring: false }),
+    mutationFn: (id: string) => api.patch(`/api/v1/transactions/${id}`, { isRecurring: false }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
   });
 

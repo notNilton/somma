@@ -192,7 +192,7 @@ function CrudTransactionsPage() {
   // Fetch transaction when editing
   const { data: initialData, isLoading: isLoadingTx } = useQuery({
     queryKey: ['transaction', transactionId],
-    queryFn: () => api.get<Transaction>(`/transactions/${transactionId}`),
+    queryFn: () => api.get<Transaction>(`/api/v1/transactions/${transactionId}`),
     enabled: !!transactionId,
     staleTime: 0,
   });
@@ -200,19 +200,19 @@ function CrudTransactionsPage() {
   // Fetch supporting data
   const { data: allCategories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => api.get<Category[]>('/categories'),
+    queryFn: () => api.get<Category[]>('/api/v1/categories'),
     staleTime: 1000 * 60 * 5,
   });
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
-    queryFn: () => api.get<Account[]>('/accounts'),
+    queryFn: () => api.get<Account[]>('/api/v1/accounts'),
     staleTime: 1000 * 60 * 5,
   });
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: () => api.get<Vehicle[]>('/vehicles'),
+    queryFn: () => api.get<Vehicle[]>('/api/v1/vehicles'),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -429,9 +429,9 @@ function CrudTransactionsPage() {
       };
 
       if (isEditing && transactionId) {
-        await api.patch(`/transactions/${transactionId}`, payload);
+        await api.patch(`/api/v1/transactions/${transactionId}`, payload);
       } else {
-        await api.post('/transactions', payload);
+        await api.post('/api/v1/transactions', payload);
       }
 
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
