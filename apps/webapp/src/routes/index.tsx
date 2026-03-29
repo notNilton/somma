@@ -25,17 +25,16 @@ interface DashboardData {
   monthlyExpenses: number;
   safeToSpend: number;
   accounts: Array<{
-    label: string;
-    val: number;
-    color: string;
-    icon: string;
+    name: string;
+    balance: number;
   }>;
   recentTransactions: Array<{
-    label: string;
-    cat: string;
-    val: number;
+    id: string;
+    description: string;
+    amount: number;
+    type: string;
     date: string;
-    icon: string;
+    category: { name: string; color: string } | null;
   }>;
   cashFlow: Array<{
     day: string;
@@ -82,7 +81,7 @@ function UserDashboard() {
   const navigate = useNavigate();
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
-    queryFn: () => api.get<DashboardData>('/dashboard'),
+    queryFn: () => api.get<DashboardData>('/api/v1/dashboard'),
     staleTime: 1000 * 60,
   });
 
@@ -200,21 +199,21 @@ function UserDashboard() {
                   Nenhuma transação recente.
                 </p>
               ) : (
-                data.recentTransactions.map((t, i) => (
+                data.recentTransactions.map((t) => (
                   <div
-                    key={i}
+                    key={t.id}
                     className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
                   >
                     <div>
-                      <p className="text-sm font-medium leading-tight">{t.label}</p>
+                      <p className="text-sm font-medium leading-tight">{t.description}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {t.cat} · {t.date}
+                        {t.category?.name ?? '—'} · {new Date(t.date).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                     <PrivacyAmount
-                      value={t.val}
+                      value={t.type === 'INCOME' ? t.amount : -t.amount}
                       showSign
-                      className={`text-sm font-bold ${t.val > 0 ? 'text-emerald-500' : 'text-foreground'}`}
+                      className={`text-sm font-bold ${t.type === 'INCOME' ? 'text-emerald-500' : 'text-foreground'}`}
                     />
                   </div>
                 ))
@@ -243,8 +242,8 @@ function UserDashboard() {
                 key={i}
                 className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
               >
-                <p className="text-sm font-medium">{acc.label}</p>
-                <PrivacyAmount value={acc.val} className="text-sm font-bold" />
+                <p className="text-sm font-medium">{acc.name}</p>
+                <PrivacyAmount value={acc.balance} className="text-sm font-bold" />
               </div>
             ))}
           </div>
