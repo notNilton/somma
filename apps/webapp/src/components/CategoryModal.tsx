@@ -69,9 +69,9 @@ export function CategoryModal({
       }
 
       if (isEditing && initialData) {
-        await api.patch(`/categories/${initialData.id}`, payload);
+        await api.patch(`/api/v1/categories/${initialData.id}`, payload);
       } else {
-        await api.post('/categories', payload);
+        await api.post('/api/v1/categories', payload);
       }
 
       onSuccess();

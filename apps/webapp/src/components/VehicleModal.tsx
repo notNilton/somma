@@ -70,9 +70,9 @@ export function VehicleModal({
       };
 
       if (isEditing && initialData) {
-        await api.patch(`/vehicles/${initialData.id}`, payload);
+        await api.patch(`/api/v1/vehicles/${initialData.id}`, payload);
       } else {
-        await api.post('/vehicles', payload);
+        await api.post('/api/v1/vehicles', payload);
       }
 
       onSuccess();

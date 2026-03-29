@@ -26,7 +26,7 @@ function CategoriesSettingsPage() {
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ['settings-categories'],
-    queryFn: () => api.get<Category[]>('/categories'),
+    queryFn: () => api.get<Category[]>('/api/v1/categories'),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -58,7 +58,7 @@ function CategoriesSettingsPage() {
 
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/categories/${id}`);
+      return api.delete(`/api/v1/categories/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings-categories'] });

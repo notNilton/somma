@@ -151,7 +151,7 @@ function useTransactionModalQueries({
 }) {
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => api.get<Category[]>('/categories'),
+    queryFn: () => api.get<Category[]>('/api/v1/categories'),
     staleTime: 1000 * 60 * 5,
     enabled: isOpen,
   });
@@ -162,14 +162,14 @@ function useTransactionModalQueries({
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
-    queryFn: () => api.get<Account[]>('/accounts'),
+    queryFn: () => api.get<Account[]>('/api/v1/accounts'),
     staleTime: 1000 * 60 * 5,
     enabled: isOpen,
   });
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: () => api.get<Vehicle[]>('/vehicles'),
+    queryFn: () => api.get<Vehicle[]>('/api/v1/vehicles'),
     staleTime: 1000 * 60 * 5,
     enabled: isOpen,
   });
@@ -499,9 +499,9 @@ export function useTransactionModalModel({
       });
 
       if (isEditing && transactionId) {
-        await api.patch(`/transactions/${transactionId}`, payload);
+        await api.patch(`/api/v1/transactions/${transactionId}`, payload);
       } else {
-        await api.post('/transactions', payload);
+        await api.post('/api/v1/transactions', payload);
       }
 
       onSuccess();

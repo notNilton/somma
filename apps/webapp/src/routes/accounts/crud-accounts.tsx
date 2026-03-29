@@ -134,7 +134,7 @@ function CrudAccountsPage() {
 
   const { data: initialAccount, isLoading: isLoadingAccount } = useQuery({
     queryKey: ['account', accountId],
-    queryFn: () => api.get<Account>(`/accounts/${accountId}`),
+    queryFn: () => api.get<Account>(`/api/v1/accounts/${accountId}`),
     enabled: !!accountId,
     staleTime: 0,
   });
@@ -204,9 +204,9 @@ function CrudAccountsPage() {
       };
 
       if (isEditing && accountId) {
-        await api.patch(`/accounts/${accountId}`, payload);
+        await api.patch(`/api/v1/accounts/${accountId}`, payload);
       } else {
-        await api.post('/accounts', payload);
+        await api.post('/api/v1/accounts', payload);
       }
 
       queryClient.invalidateQueries({ queryKey: ['accounts'] });

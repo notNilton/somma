@@ -60,7 +60,7 @@ function getInitials(name?: string, email?: string): string {
 function SettingsPage() {
   const { data: profile, isLoading } = useQuery({
     queryKey: ['settings-profile'],
-    queryFn: () => api.get<UserProfile>('/settings/profile'),
+    queryFn: () => api.get<UserProfile>('/api/v1/settings/profile'),
     staleTime: 1000 * 60 * 5,
   });
 

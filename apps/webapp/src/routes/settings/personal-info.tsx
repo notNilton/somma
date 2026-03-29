@@ -36,7 +36,7 @@ function PersonalInfoPage() {
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['settings-profile'],
-    queryFn: () => api.get<UserProfile>('/settings/profile'),
+    queryFn: () => api.get<UserProfile>('/api/v1/settings/profile'),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -48,7 +48,7 @@ function PersonalInfoPage() {
 
   const updateMutation = useMutation({
     mutationFn: (data: { name?: string; email?: string }) =>
-      api.patch<UserProfile>('/settings/profile', data),
+      api.patch<UserProfile>('/api/v1/settings/profile', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings-profile'] });
       setSaved(true);

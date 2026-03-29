@@ -29,7 +29,7 @@ function CrudVehiclesPage() {
         model?: string;
         year?: number;
         tank?: number;
-      }>(`/vehicles/${vehicleId}`),
+      }>(`/api/v1/vehicles/${vehicleId}`),
     enabled: isEditing,
   });
 
@@ -72,9 +72,9 @@ function CrudVehiclesPage() {
       };
 
       if (isEditing && vehicleId) {
-        await api.patch(`/vehicles/${vehicleId}`, payload);
+        await api.patch(`/api/v1/vehicles/${vehicleId}`, payload);
       } else {
-        await api.post('/vehicles', payload);
+        await api.post('/api/v1/vehicles', payload);
       }
 
       void navigate({ to: '/vehicles/' });

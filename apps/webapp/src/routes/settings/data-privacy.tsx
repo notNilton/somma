@@ -26,14 +26,14 @@ function DataPrivacyPage() {
 
   const { data: profile } = useQuery({
     queryKey: ['settings-profile'],
-    queryFn: () => api.get<UserProfile>('/settings/profile'),
+    queryFn: () => api.get<UserProfile>('/api/v1/settings/profile'),
     staleTime: 1000 * 60 * 5,
   });
 
   // Toggle privacy mode
   const privacyMutation = useMutation({
     mutationFn: (enabled: boolean) =>
-      api.patch<UserProfile>('/settings/profile', { privacyModeEnabled: enabled }),
+      api.patch<UserProfile>('/api/v1/settings/profile', { privacyModeEnabled: enabled }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings-profile'] });
     },
@@ -42,7 +42,7 @@ function DataPrivacyPage() {
   // Change password
   const passwordMutation = useMutation({
     mutationFn: (data: { currentPassword: string; newPassword: string }) =>
-      api.patch('/settings/change-password', data),
+      api.patch('/api/v1/settings/change-password', data),
     onSuccess: () => {
       setPasswordSaved(true);
       setCurrentPassword('');
@@ -58,7 +58,7 @@ function DataPrivacyPage() {
 
   // Delete account
   const deleteMutation = useMutation({
-    mutationFn: () => api.delete('/settings/account'),
+    mutationFn: () => api.delete('/api/v1/settings/account'),
     onSuccess: () => {
       auth.logout();
     },

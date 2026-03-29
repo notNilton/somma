@@ -171,19 +171,19 @@ function AccountsPage() {
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['accounts'],
-    queryFn: () => api.get<Account[]>('/accounts'),
+    queryFn: () => api.get<Account[]>('/api/v1/accounts'),
   });
 
   const { data: creditSummary } = useQuery({
     queryKey: ['accounts', 'credit-summary'],
     queryFn: () =>
       api.get<{ totalCreditLimit: number; creditUsed: number; availableCredit: number }>(
-        '/accounts/credit-summary',
+        '/api/v1/accounts/credit-summary',
       ),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/accounts/${id}`),
+    mutationFn: (id: string) => api.delete(`/api/v1/accounts/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['accounts'] }),
   });
 
