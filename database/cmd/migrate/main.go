@@ -79,18 +79,30 @@ func runSeed(dbURL string) error {
 	}
 	defer pool.Close()
 
-	// Relative to binary or source
 	migrationsPath := migrationsDir()
-	seedPath := filepath.Join(filepath.Dir(migrationsPath), "seeds", "initial_seed.sql")
+	seedsDir := filepath.Join(filepath.Dir(migrationsPath), "seeds")
 
-	content, err := os.ReadFile(seedPath)
+	files, err := filepath.Glob(filepath.Join(seedsDir, "*.sql"))
 	if err != nil {
-		return fmt.Errorf("read seed file failed (%s): %v", seedPath, err)
+		return fmt.Errorf("list seeds failed: %v", err)
 	}
 
-	_, err = pool.Exec(ctx, string(content))
-	if err != nil {
-		return fmt.Errorf("exec seed failed: %v", err)
+	if len(files) == 0 {
+		fmt.Println("⚠️ No seed files found in", seedsDir)
+		return nil
+	}
+
+	for _, file := range files {
+		fmt.Printf("🌱 Running seed: %s\n", filepath.Base(file))
+		content, err := os.ReadFile(file)
+		if err != nil {
+			return fmt.Errorf("read seed file %s failed: %v", file, err)
+		}
+
+		_, err = pool.Exec(ctx, string(content))
+		if err != nil {
+			return fmt.Errorf("exec seed %s failed: %v", file, err)
+		}
 	}
 
 	return nil
