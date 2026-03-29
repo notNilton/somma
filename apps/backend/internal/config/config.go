@@ -7,6 +7,7 @@ type Config struct {
 	DatabaseURL string
 	JWTSecret   string
 	Env         string
+	WebappURL   string
 }
 
 func Load() *Config {
@@ -15,6 +16,7 @@ func Load() *Config {
 		DatabaseURL: getEnv("DATABASE_URL", ""),
 		JWTSecret:   getEnv("JWT_SECRET", "changeme"),
 		Env:         getEnv("ENV", "development"),
+		WebappURL:   getEnv("WEBAPP_URL", "http://localhost:3400"),
 	}
 }
 

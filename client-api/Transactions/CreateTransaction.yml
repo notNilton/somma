@@ -1,0 +1,26 @@
+info:
+  name: CreateTransaction
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/transactions"
+  auth: inherit
+  body:
+    type: json
+    data: |-
+      {
+        "accountId": "UUID_HERE",
+        "categoryId": "UUID_HERE",
+        "amount": 50.0,
+        "description": "Lunch",
+        "date": "2024-03-29",
+        "type": "EXPENSE"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

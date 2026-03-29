@@ -2,13 +2,19 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-COPY apps/backend/go.mod apps/backend/go.sum ./
+COPY go.work ./
+COPY apps/backend/go.mod apps/backend/go.sum ./apps/backend/
+COPY database/go.mod ./database/
 RUN go mod download
 
-COPY apps/backend/ .
+COPY apps/backend/ ./apps/backend/
+COPY database/ ./database/
+
 ARG BUILD_VERSION=dev
-RUN go build -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${BUILD_VERSION}" -o main ./cmd/api && \
-    go build -o migrate ./cmd/migrate
+RUN go build \
+      -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${BUILD_VERSION}" \
+      -o main ./apps/backend/cmd/api && \
+    go build -o migrate ./database/cmd/migrate
 
 # ---
 

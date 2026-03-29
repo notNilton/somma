@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -58,31 +60,56 @@ func main() {
 		}
 		fmt.Printf("version: %d, dirty: %v\n", version, dirty)
 
+	case "seed":
+		if err := runSeed(dbURL); err != nil {
+			log.Fatalf("seed failed: %v", err)
+		}
+		fmt.Println("✅ Seed data applied")
+
 	default:
-		log.Fatalf("unknown command %q — use: up | down | drop | version", command)
+		log.Fatalf("unknown command %q — use: up | down | drop | version | seed", command)
 	}
 }
 
-// migrationsDir resolve o path para database/migrations/
-// funciona tanto em go run ./cmd/migrate quanto no binário compilado no Docker.
+func runSeed(dbURL string) error {
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, dbURL)
+	if err != nil {
+		return fmt.Errorf("connect failed: %v", err)
+	}
+	defer pool.Close()
+
+	// Relative to binary or source
+	migrationsPath := migrationsDir()
+	seedPath := filepath.Join(filepath.Dir(migrationsPath), "seeds", "initial_seed.sql")
+
+	content, err := os.ReadFile(seedPath)
+	if err != nil {
+		return fmt.Errorf("read seed file failed (%s): %v", seedPath, err)
+	}
+
+	_, err = pool.Exec(ctx, string(content))
+	if err != nil {
+		return fmt.Errorf("exec seed failed: %v", err)
+	}
+
+	return nil
+}
+
 func migrationsDir() string {
-	// 1. Variável de ambiente explícita (Docker/CI)
 	if p := os.Getenv("MIGRATIONS_PATH"); p != "" {
 		return p
 	}
 
-	// 2. Relativo ao arquivo-fonte (desenvolvimento local com go run)
 	_, filename, _, ok := runtime.Caller(0)
 	if ok {
-		// apps/backend/cmd/migrate/main.go → ../../.. → raiz → database/migrations
-		root := filepath.Join(filepath.Dir(filename), "..", "..", "..", "..")
-		candidate := filepath.Join(root, "database", "migrations")
-		if _, err := os.Stat(candidate); err == nil {
-			abs, _ := filepath.Abs(candidate)
+		// database/cmd/migrate/main.go -> ../../migrations
+		root := filepath.Join(filepath.Dir(filename), "..", "..", "migrations")
+		if _, err := os.Stat(root); err == nil {
+			abs, _ := filepath.Abs(root)
 			return abs
 		}
 	}
 
-	// 3. Relativo ao binário compilado (assumindo que está em /app)
-	return "/database/migrations"
+	return "./migrations"
 }

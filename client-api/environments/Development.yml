@@ -1,0 +1,33 @@
+name: Development
+values:
+  - name: baseUrl
+    value: http://localhost:3000
+    enabled: true
+  - name: accessToken
+    value: ""
+    enabled: true
+    secret: true
+  - name: userEmail
+    value: user@example.com
+    enabled: true
+  - name: userPassword
+    value: password123
+    enabled: true
+  - name: accountId
+    value: ""
+    enabled: true
+  - name: categoryId
+    value: ""
+    enabled: true
+  - name: tagId
+    value: ""
+    enabled: true
+  - name: transactionId
+    value: ""
+    enabled: true
+  - name: vehicleId
+    value: ""
+    enabled: true
+  - name: cardId
+    value: ""
+    enabled: true
