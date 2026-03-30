@@ -1,16 +1,24 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/joho/godotenv"
+	"github.com/nilbyte/mirante/backend/internal/cache"
 	"github.com/nilbyte/mirante/backend/internal/config"
+	"github.com/nilbyte/mirante/backend/internal/jobs"
 	"github.com/nilbyte/mirante/backend/internal/routes"
 	"github.com/nilbyte/mirante/database"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: .env file not found")
+	}
+
 	cfg := config.Load()
 
 	db, err := database.Connect(cfg.DatabaseURL)
@@ -19,8 +27,16 @@ func main() {
 	}
 	defer db.Close()
 
+	c := cache.New()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	scheduler := jobs.New(db, ctx)
+	scheduler.Start()
+
 	mux := http.NewServeMux()
-	routes.Register(mux, db, []byte(cfg.JWTSecret))
+	routes.Register(mux, db, []byte(cfg.JWTSecret), c)
 
 	cors := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
