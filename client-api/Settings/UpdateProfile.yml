@@ -6,7 +6,9 @@ info:
 http:
   method: PATCH
   url: "{{baseUrl}}/api/v1/settings/profile"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
   body:
     type: json
     data: |-

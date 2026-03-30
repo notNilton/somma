@@ -6,7 +6,9 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/api/v1/transactions/import-csv"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
   body:
     type: multipartForm
     data:

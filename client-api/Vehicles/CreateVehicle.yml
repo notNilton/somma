@@ -6,7 +6,9 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/api/v1/vehicles"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
   body:
     type: json
     data: |-
