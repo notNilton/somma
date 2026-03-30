@@ -25,7 +25,8 @@ jobs:
       - name: Detect changed projects
         id: check
         run: |
-          if git diff HEAD~1 HEAD -- apps/backend/ database/migrations/ | grep -q .; then
+          # go.work e .dockerignore na raiz afetam o build do backend
+          if git diff HEAD~1 HEAD -- apps/backend/ database/migrations/ go.work go.work.sum .dockerignore | grep -q .; then
             echo "BACKEND_CHANGED=true" >> $GITHUB_OUTPUT
             echo "Backend changed"
           else
@@ -33,7 +34,8 @@ jobs:
             echo "Backend unchanged"
           fi
 
-          if git diff HEAD~1 HEAD -- apps/webapp/ | grep -q .; then
+          # .dockerignore na raiz afeta o build da webapp
+          if git diff HEAD~1 HEAD -- apps/webapp/ .dockerignore | grep -q .; then
             echo "WEBAPP_CHANGED=true" >> $GITHUB_OUTPUT
             echo "Webapp changed"
           else
