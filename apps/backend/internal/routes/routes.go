@@ -4,12 +4,13 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nilbyte/mirante/backend/internal/cache"
 	"github.com/nilbyte/mirante/backend/internal/handlers"
 	"github.com/nilbyte/mirante/backend/internal/middleware"
 )
 
-func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte) {
-	h := handlers.New(db, jwtKey)
+func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cache) {
+	h := handlers.New(db, jwtKey, c)
 	auth := middleware.Auth(jwtKey)
 
 	// Health
@@ -34,9 +35,15 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte) {
 	// Cards
 	mux.HandleFunc("GET /api/v1/cards", auth(h.ListCards))
 	mux.HandleFunc("GET /api/v1/cards/{id}", auth(h.GetCard))
+	mux.HandleFunc("GET /api/v1/cards/{id}/statement", auth(h.GetCardStatement))
 	mux.HandleFunc("POST /api/v1/cards", auth(h.CreateCard))
 	mux.HandleFunc("PATCH /api/v1/cards/{id}", auth(h.UpdateCard))
 	mux.HandleFunc("DELETE /api/v1/cards/{id}", auth(h.DeleteCard))
+
+	// Transfers
+	mux.HandleFunc("GET /api/v1/transfers", auth(h.ListTransfers))
+	mux.HandleFunc("POST /api/v1/transfers", auth(h.CreateTransfer))
+	mux.HandleFunc("DELETE /api/v1/transfers/{id}", auth(h.DeleteTransfer))
 
 	// Categories
 	mux.HandleFunc("GET /api/v1/categories", auth(h.ListCategories))
@@ -54,6 +61,7 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte) {
 
 	// Transactions
 	mux.HandleFunc("GET /api/v1/transactions", auth(h.ListTransactions))
+	mux.HandleFunc("GET /api/v1/transactions/export", auth(h.ExportTransactionsCSV))
 	mux.HandleFunc("GET /api/v1/transactions/future", auth(h.ListFutureTransactions))
 	mux.HandleFunc("GET /api/v1/transactions/{id}", auth(h.GetTransaction))
 	mux.HandleFunc("POST /api/v1/transactions", auth(h.CreateTransaction))
@@ -71,8 +79,27 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte) {
 	mux.HandleFunc("PATCH /api/v1/vehicles/{id}", auth(h.UpdateVehicle))
 	mux.HandleFunc("DELETE /api/v1/vehicles/{id}", auth(h.DeleteVehicle))
 
-	// Dashboard
+	// Account Access (Colaboração)
+	mux.HandleFunc("GET /api/v1/accounts/{id}/members", auth(h.ListAccountMembers))
+	mux.HandleFunc("POST /api/v1/accounts/{id}/members", auth(h.InviteMember))
+	mux.HandleFunc("PATCH /api/v1/accounts/{id}/members/{userId}", auth(h.UpdateMemberRole))
+	mux.HandleFunc("DELETE /api/v1/accounts/{id}/members/{userId}", auth(h.RevokeMember))
+
+	// Calendário Financeiro
+	mux.HandleFunc("GET /api/v1/calendar", auth(h.GetFinancialCalendar))
+
+	// Dashboard & Analytics
 	mux.HandleFunc("GET /api/v1/dashboard", auth(h.GetDashboard))
+	mux.HandleFunc("GET /api/v1/dashboard/monthly-evolution", auth(h.GetMonthlyEvolution))
+	mux.HandleFunc("GET /api/v1/dashboard/category-breakdown", auth(h.GetCategoryBreakdown))
+
+	// Budgets
+	mux.HandleFunc("GET /api/v1/budgets", auth(h.ListBudgets))
+	mux.HandleFunc("GET /api/v1/budgets/status", auth(h.GetBudgetsStatus))
+	mux.HandleFunc("GET /api/v1/budgets/{id}", auth(h.GetBudget))
+	mux.HandleFunc("POST /api/v1/budgets", auth(h.CreateBudget))
+	mux.HandleFunc("PATCH /api/v1/budgets/{id}", auth(h.UpdateBudget))
+	mux.HandleFunc("DELETE /api/v1/budgets/{id}", auth(h.DeleteBudget))
 
 	// Settings
 	mux.HandleFunc("GET /api/v1/settings/profile", auth(h.GetProfile))
