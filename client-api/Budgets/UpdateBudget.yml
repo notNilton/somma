@@ -1,11 +1,18 @@
 info:
-  name: Dashboard
+  name: UpdateBudget
   type: http
-  seq: 1
+  seq: 5
 
 http:
-  method: GET
-  url: "{{baseUrl}}/api/v1/dashboard?month=2025-01"
+  method: PATCH
+  url: "{{baseUrl}}/api/v1/budgets/{{budgetId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "amount": 1200.00,
+        "notes": "Ajustado para janeiro"
+      }
   auth:
     type: bearer
     token: "{{accessToken}}"

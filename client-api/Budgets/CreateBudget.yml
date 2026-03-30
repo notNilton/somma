@@ -1,0 +1,38 @@
+info:
+  name: CreateBudget
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/budgets"
+  body:
+    type: json
+    data: |-
+      {
+        "categoryId": "{{categoryId}}",
+        "amount": 1000.00,
+        "month": 1,
+        "year": 2025,
+        "notes": "Orçamento de alimentação"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201) {
+          bru.setEnvVar("budgetId", res.body.id);
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
