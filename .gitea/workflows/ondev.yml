@@ -8,88 +8,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      BACKEND_CHANGED: ${{ steps.check.outputs.BACKEND_CHANGED }}
-      WEBAPP_CHANGED: ${{ steps.check.outputs.WEBAPP_CHANGED }}
-      MIGRATIONS_CHANGED: ${{ steps.check.outputs.MIGRATIONS_CHANGED }}
-      COMPOSE_CHANGED: ${{ steps.check.outputs.COMPOSE_CHANGED }}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-
-      - name: Detect changed apps
-        id: check
-        run: |
-          # go.work e .dockerignore na raiz afetam o build do backend
-          if git diff HEAD~1 HEAD -- apps/backend/ database/migrations/ go.work go.work.sum .dockerignore | grep -q .; then
-            echo "BACKEND_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Backend changes detected"
-          else
-            echo "BACKEND_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Backend changes"
-          fi
-
-          # .dockerignore na raiz afeta o build da webapp
-          if git diff HEAD~1 HEAD -- apps/webapp/ .dockerignore | grep -q .; then
-            echo "WEBAPP_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Webapp changes detected"
-          else
-            echo "WEBAPP_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Webapp changes"
-          fi
-
-          # database/Dockerfile afeta a imagem de migration
-          if git diff HEAD~1 HEAD -- database/migrations/ database/Dockerfile | grep -q .; then
-            echo "MIGRATIONS_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Migration changes detected"
-          else
-            echo "MIGRATIONS_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Migration changes"
-          fi
-
-          # docker-compose na raiz afeta o ambiente de dev/prod
-          if git diff HEAD~1 HEAD -- docker-compose.yml docker-compose.prod.yml | grep -q .; then
-            echo "COMPOSE_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Compose changes detected"
-          else
-            echo "COMPOSE_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Compose changes"
-          fi
-
   # ========================================================
-  # Valida arquivos docker-compose alterados
-  # ========================================================
-  validate-compose:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.COMPOSE_CHANGED == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
-      - name: Validate docker-compose.yml
-        run: |
-          docker compose -f docker-compose.yml config --quiet
-          echo "✅ docker-compose.yml válido"
-
-      - name: Validate docker-compose.prod.yml
-        run: |
-          docker compose -f docker-compose.prod.yml config --quiet
-          echo "✅ docker-compose.prod.yml válido"
-
-  # ========================================================
-  # Build e teste do backend (compilação + imagem)
+  # Build e teste do backend (compilação + imagem Docker)
   # ========================================================
   build-backend:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.MIGRATIONS_CHANGED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -117,11 +39,9 @@ jobs:
           echo "✅ Backend build successful"
 
   # ========================================================
-  # Build da webapp (imagem)
+  # Build da webapp (imagem Docker)
   # ========================================================
   build-webapp:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -135,3 +55,25 @@ jobs:
           docker build -f apps/webapp/Dockerfile \
             -t mirante-webapp:dev-test .
           echo "✅ Webapp build successful"
+
+  # ========================================================
+  # Valida arquivos docker-compose
+  # ========================================================
+  validate-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Fix Docker Socket Permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
+      - name: Validate docker-compose.yml
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          echo "✅ docker-compose.yml válido"
+
+      - name: Validate docker-compose.prod.yml
+        run: |
+          docker compose -f docker-compose.prod.yml config --quiet
+          echo "✅ docker-compose.prod.yml válido"
