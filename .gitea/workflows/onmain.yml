@@ -21,8 +21,8 @@ jobs:
         run: |
           git config --global credential.helper store
           echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
-          git clone "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
-          git checkout ${{ gitea.sha }}
+          echo "http://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea:3000" >> ~/.git-credentials
+          git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Configure Git
         run: |
@@ -58,6 +58,8 @@ jobs:
           PUSH_URL=$(echo "${{ gitea.server_url }}/${{ gitea.repository }}.git" | sed "s|://|://oauth2:${{ secrets.PACKAGES_TOKEN }}@|")
 
           git commit -m "chore: bump versions $FILES_CHANGED [skip ci]"
+          
+          git pull --rebase origin main || { git rebase --abort; exit 1; }
           git push "$PUSH_URL" HEAD:main
 
           git tag -a "backend-v${BACKEND_NEW}" -m "backend-v${BACKEND_NEW}"
