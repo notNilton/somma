@@ -113,7 +113,7 @@ jobs:
 
       - name: Build and push Backend image
         run: |
-          docker build -f apps/backend/Dockerfile \
+          docker build --network=host -f apps/backend/Dockerfile \
             -t gitea:3000/nilbyte-studios/mirante/backend:latest \
             -t gitea:3000/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
             .
@@ -161,7 +161,7 @@ jobs:
 
       - name: Build and push Database/Migrate image
         run: |
-          docker build -f database/Dockerfile \
+          docker build --network=host -f database/Dockerfile \
             -t gitea:3000/nilbyte-studios/mirante/database:latest \
             .
           docker push gitea:3000/nilbyte-studios/mirante/database:latest
@@ -197,7 +197,7 @@ jobs:
 
       - name: Build and push Webapp image
         run: |
-          docker build -f apps/webapp/Dockerfile \
+          docker build --network=host -f apps/webapp/Dockerfile \
             -t gitea:3000/nilbyte-studios/mirante/webapp:latest \
             -t gitea:3000/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
             .

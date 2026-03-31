@@ -102,48 +102,53 @@ Para criar uma nova migration, adicionar dois arquivos em `database/migrations/`
 Internet
    │
    ▼
-Cloudflare (proxy + TLS)
-   │  HTTPS  gitea.nilbyte.com.br
-   │  HTTPS  mirante-api.nilbyte.com.br
-   │  HTTPS  mirante.nilbyte.com.br
+Cloudflare  ←  *.nilbyte.com.br DNS aponta aqui
+   │  Tunnel (cloudflared) — apenas HTTP/HTTPS
+   │  TLS termina no Cloudflare
    ▼
-VPS (niflheim)
+VPS niflheim (Ubuntu)
    │
    ▼
-Caddy (reverse proxy interno, porta 80/443)
-   ├── gitea.nilbyte.com.br       → gitea:3000
-   ├── mirante-api.nilbyte.com.br → mirante_backend_prod:3000
-   └── mirante.nilbyte.com.br     → mirante_webapp_prod:80
+Caddy (container, http:// apenas — sem certificados próprios)
+   ├── gitea.nilbyte.com.br         → gitea:3000
+   ├── mirante-api.nilbyte.com.br   → mirante_backend_prod:3000
+   └── mirante.nilbyte.com.br       → mirante_webapp_prod:80
 ```
 
-### Redes Docker no servidor
+O tráfego externo entra via **Cloudflare Tunnel** (`cloudflared` rodando no servidor), não por portas abertas diretamente na internet. O Cloudflare termina TLS e envia HTTP para o Caddy internamente. Por isso o Caddy usa blocos `http://` no Caddyfile — ele nunca precisa de certificados.
 
-O servidor usa redes Docker nomeadas para isolar e conectar os serviços:
+**Consequência importante:** Cloudflare só roteia HTTP/HTTPS. Qualquer outro protocolo (SSH, TCP raw) é bloqueado silenciosamente antes de chegar ao servidor.
+
+### Redes Docker no servidor
 
 | Rede | Propósito |
 |------|-----------|
 | `nilbyte-git` | Gitea + act_runner (CI) |
 | `mirante-internal` | DB + backend + webapp do Mirante |
 
-O **Caddy** está conectado a todas as redes relevantes para fazer o proxy reverso entre elas.
+O **Caddy** está conectado a todas as redes para fazer o proxy reverso. O gateway da rede `nilbyte-git` é `172.20.0.1`.
 
 ### Por que `gitea:3000` e não `gitea.nilbyte.com.br` no CI
 
 O runner do Gitea Actions roda como container na rede `nilbyte-git`. Dessa rede:
 
-- `gitea:3000` → **acessível** (Docker DNS interno)
-- `gitea.nilbyte.com.br` → **inacessível** — o domínio aponta para o IP público via Cloudflare, e o tráfego de dentro da rede Docker não consegue roteamento de volta para o próprio host pelo IP público
+- `gitea:3000` → **acessível** via Docker DNS interno
+- `gitea.nilbyte.com.br` → **inacessível** — o domínio vai para o Cloudflare Tunnel, que é externo; o container não consegue rotear de volta para o próprio host pelo IP público
 
-Por isso, operações de git (clone, push) no CI usam `gitea.server_url` (que o runner resolve como `http://gitea:3000`) e o docker login/push usa `gitea:3000` com o registry configurado como insecure:
+Por isso, o docker login/push no CI usa `gitea:3000` com o daemon configurado para aceitar registry HTTP insecure:
 
 ```json
-// /etc/docker/daemon.json no runner
+// configurado em runtime no CI antes do docker login
 { "insecure-registries": ["gitea:3000"] }
 ```
 
-### Split DNS — solução recomendada
+### Por que `--network=host` nos docker builds
 
-Para eliminar esse problema permanentemente, configurar o `extra_hosts` no act_runner para que `gitea.nilbyte.com.br` resolva para o gateway da rede interna (`172.20.0.1` — onde o Caddy escuta):
+Os containers de build (`docker build`) herdam o DNS isolado da rede `nilbyte-git`, que não resolve domínios externos como `registry-1.docker.io` (Docker Hub). Com `--network=host`, o build usa a rede do host do VPS, que tem DNS externo funcionando normalmente — permitindo puxar `alpine`, `golang`, `node`, `nginx` etc.
+
+### Split DNS — melhoria futura opcional
+
+Para que `gitea.nilbyte.com.br` resolva corretamente de dentro dos containers do runner (sem precisar de insecure registry), configurar `extra_hosts` no act_runner:
 
 ```yaml
 # config.yaml do act_runner
@@ -153,33 +158,7 @@ container:
     - "gitea.nilbyte.com.br:172.20.0.1"
 ```
 
-Com isso, dentro dos containers do runner, `gitea.nilbyte.com.br` vai direto para o Caddy interno → TLS funciona → `docker login gitea.nilbyte.com.br` passa a funcionar normalmente, sem precisar de registry insecure.
-
-O gateway `172.20.0.1` foi obtido com:
-
-```bash
-docker network inspect nilbyte-git | grep Gateway
-```
-
-### Docker Hub no CI
-
-O runner não tem acesso ao Docker Hub (`registry-1.docker.io`) porque o DNS externo não funciona dentro dos containers do runner. Duas soluções:
-
-**Opção A — `--network=host` no docker build** (mais simples):
-O build usa a rede do host, que tem DNS externo funcionando.
-
-**Opção B — Espelhar imagens base no Gitea** (uma vez, da máquina local):
-```bash
-docker login gitea.nilbyte.com.br
-
-docker pull alpine:3.19
-docker tag alpine:3.19 gitea.nilbyte.com.br/nilbyte-studios/mirante/base/alpine:3.19
-docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/base/alpine:3.19
-
-docker pull nginx:alpine
-docker tag nginx:alpine gitea.nilbyte.com.br/nilbyte-studios/mirante/base/nginx:alpine
-docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/base/nginx:alpine
-```
+Com isso, `gitea.nilbyte.com.br` aponta para `172.20.0.1` (gateway → Caddy) dentro dos containers. O Caddy faz o proxy para `gitea:3000`. Docker login passaria a funcionar com o domínio real, sem precisar de insecure registry.
 
 ---
 
@@ -271,20 +250,48 @@ Migrations nunca precisam ser rodadas manualmente no servidor.
 
 ### SSH para o Gitea (porta 2222)
 
-O Gitea expõe SSH na porta **2222** (não 22, que é reservada para o SSH do próprio servidor).
+O Gitea expõe SSH na porta **2222**. O SSH **não passa pelo Cloudflare** — o Cloudflare Tunnel só roteia HTTP/HTTPS. Dependendo de onde você está:
+
+#### Do próprio servidor / CI (containers na rede `nilbyte-git`)
+
+O Gitea é acessível diretamente pelo nome do container. A porta interna do container é 22:
 
 ```bash
-# Clone via SSH
-git clone ssh://git@gitea.nilbyte.com.br:2222/nilbyte-studios/mirante.git
+ssh://git@gitea:22/nilbyte-studios/mirante.git
+```
 
-# Config no ~/.ssh/config para simplificar
-Host gitea.nilbyte.com.br
+Ou via `localhost` se rodar fora de container no próprio host:
+
+```bash
+ssh://git@localhost:2222/nilbyte-studios/mirante.git
+```
+
+#### De uma máquina externa com Tailscale (recomendado)
+
+O servidor está na VPN Tailscale com o hostname `niflhel`. O tráfego vai direto pelo túnel VPN, contornando o Cloudflare:
+
+```bash
+git clone ssh://git@niflhel:2222/nilbyte-studios/mirante.git
+
+# Testar conexão
+ssh -T git@niflhel -p 2222
+# Resposta esperada: Hi there, <user>! You've successfully authenticated...
+```
+
+```
+# ~/.ssh/config
+Host gitea
+  HostName niflhel
   Port 2222
   User git
   IdentityFile ~/.ssh/id_ed25519
 ```
 
-> **Nota:** SSH na porta 2222 **não funciona de dentro da rede Docker** (`nilbyte-git`). O tráfego não consegue rotear do container de volta para o host pelo domínio externo. Por isso o CI usa HTTPS (com token) para todas as operações git.
+#### De uma máquina externa sem Tailscale
+
+Não funciona. O domínio `gitea.nilbyte.com.br:2222` vai para o Cloudflare, que descarta o TCP silenciosamente. Alternativa: usar HTTPS com token para operações git.
+
+> O CI (`bump-versions`) usa HTTPS com `PACKAGES_TOKEN` para push de volta ao repositório — não depende de SSH externo.
 
 ---
 
