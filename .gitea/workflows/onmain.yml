@@ -101,19 +101,14 @@ jobs:
             -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
             -o main ./cmd/api
 
-      - name: Resolve Gitea registry IP and login
+      - name: Login to Gitea registry
         run: |
           GITEA_IP=$(docker network inspect nilbyte-git \
             --format '{{range .Containers}}{{if eq .Name "gitea"}}{{.IPv4Address}}{{end}}{{end}}' \
             | cut -d/ -f1)
-          echo "Gitea container IP: $GITEA_IP"
+          echo "Gitea IP: $GITEA_IP"
           REGISTRY="${GITEA_IP}:3000"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
-
-          sudo mkdir -p /etc/docker
-          echo "{\"insecure-registries\": [\"${REGISTRY}\"]}" | sudo tee /etc/docker/daemon.json
-          sudo kill -s HUP $(pidof dockerd) 2>/dev/null || true
-          sleep 3
           sudo chmod 666 /var/run/docker.sock
           echo "${{ secrets.PACKAGES_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
@@ -155,19 +150,14 @@ jobs:
           GOWORK: "off"
         run: go build -mod=vendor -o migrate ./cmd/migrate
 
-      - name: Resolve Gitea registry IP and login
+      - name: Login to Gitea registry
         run: |
           GITEA_IP=$(docker network inspect nilbyte-git \
             --format '{{range .Containers}}{{if eq .Name "gitea"}}{{.IPv4Address}}{{end}}{{end}}' \
             | cut -d/ -f1)
-          echo "Gitea container IP: $GITEA_IP"
+          echo "Gitea IP: $GITEA_IP"
           REGISTRY="${GITEA_IP}:3000"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
-
-          sudo mkdir -p /etc/docker
-          echo "{\"insecure-registries\": [\"${REGISTRY}\"]}" | sudo tee /etc/docker/daemon.json
-          sudo kill -s HUP $(pidof dockerd) 2>/dev/null || true
-          sleep 3
           sudo chmod 666 /var/run/docker.sock
           echo "${{ secrets.PACKAGES_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
@@ -197,19 +187,14 @@ jobs:
           VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
           npm run build
 
-      - name: Resolve Gitea registry IP and login
+      - name: Login to Gitea registry
         run: |
           GITEA_IP=$(docker network inspect nilbyte-git \
             --format '{{range .Containers}}{{if eq .Name "gitea"}}{{.IPv4Address}}{{end}}{{end}}' \
             | cut -d/ -f1)
-          echo "Gitea container IP: $GITEA_IP"
+          echo "Gitea IP: $GITEA_IP"
           REGISTRY="${GITEA_IP}:3000"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
-
-          sudo mkdir -p /etc/docker
-          echo "{\"insecure-registries\": [\"${REGISTRY}\"]}" | sudo tee /etc/docker/daemon.json
-          sudo kill -s HUP $(pidof dockerd) 2>/dev/null || true
-          sleep 3
           sudo chmod 666 /var/run/docker.sock
           echo "${{ secrets.PACKAGES_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
