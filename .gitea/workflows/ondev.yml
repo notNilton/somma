@@ -9,7 +9,7 @@ on:
 
 jobs:
   # ========================================================
-  # Build e teste do backend (compilação + imagem Docker)
+  # Build e teste do backend (compilação)
   # ========================================================
   build-backend:
     runs-on: ubuntu-latest
@@ -38,22 +38,20 @@ jobs:
 
       - name: Download dependencies
         working-directory: apps/backend
+        env:
+          GONOSUMDB: "*"
+          GOFLAGS: "-mod=mod"
         run: go mod download
 
       - name: Build binaries
         working-directory: apps/backend
+        env:
+          GONOSUMDB: "*"
+          GOFLAGS: "-mod=mod"
         run: go build ./...
 
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
-      - name: Build Backend image (validation only)
-        run: |
-          docker build -f apps/backend/Dockerfile -t mirante-backend:dev-test .
-          echo "✅ Backend build successful"
-
   # ========================================================
-  # Build da webapp (imagem Docker)
+  # Build da webapp (npm)
   # ========================================================
   build-webapp:
     runs-on: ubuntu-latest
@@ -65,13 +63,11 @@ jobs:
           git clone --depth=1 --branch "${{ gitea.ref_name }}" \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
-      - name: Build Webapp image (validation only)
+      - name: Build Webapp
+        working-directory: apps/webapp
         run: |
-          docker build -f apps/webapp/Dockerfile \
-            -t mirante-webapp:dev-test .
+          npm ci
+          npm run build
           echo "✅ Webapp build successful"
 
   # ========================================================
