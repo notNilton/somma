@@ -17,11 +17,19 @@ jobs:
       BACKEND_VERSION: ${{ steps.bump.outputs.BACKEND_VERSION }}
       WEBAPP_VERSION: ${{ steps.bump.outputs.WEBAPP_VERSION }}
     steps:
+      - name: Configure SSH deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p 2222 gitea.nilbyte.com.br >> ~/.ssh/known_hosts 2>/dev/null || true
+
       - name: Check out repository code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            git clone --depth=0 \
+            "ssh://git@gitea.nilbyte.com.br:2222/nilbyte-studios/mirante.git" .
+          git checkout ${{ gitea.sha }}
 
       - name: Configure Git
         run: |
@@ -55,13 +63,16 @@ jobs:
           echo "WEBAPP_VERSION=$WEBAPP_NEW" >> $GITHUB_OUTPUT
 
           git commit -m "chore: bump versions $FILES_CHANGED [skip ci]"
-          git push origin HEAD:main
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            git push origin HEAD:main
 
           git tag -a "backend-v${BACKEND_NEW}" -m "backend-v${BACKEND_NEW}"
-          git push origin "backend-v${BACKEND_NEW}"
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            git push origin "backend-v${BACKEND_NEW}"
 
           git tag -a "webapp-v${WEBAPP_NEW}" -m "webapp-v${WEBAPP_NEW}"
-          git push origin "webapp-v${WEBAPP_NEW}"
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            git push origin "webapp-v${WEBAPP_NEW}"
 
   # ========================================================
   # 2. Build & Push — sempre, paralelo
@@ -71,12 +82,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch main \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.24'
+        run: |
+          ln -sf /usr/local/go/bin/go /usr/local/bin/go
+          go version
 
       - name: Download dependencies
         working-directory: apps/backend
@@ -90,50 +105,46 @@ jobs:
         run: sudo chmod 666 /var/run/docker.sock
 
       - name: Login to registry
-        uses: docker/login-action@v2
-        with:
-          registry: gitea.nilbyte.com.br
-          username: notNilton
-          password: ${{ secrets.PACKAGES_TOKEN }}
+        run: |
+          echo "${{ secrets.PACKAGES_TOKEN }}" | \
+            docker login gitea.nilbyte.com.br -u notNilton --password-stdin
 
       - name: Build and push Backend image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: apps/backend/Dockerfile
-          build-args: |
-            BUILD_VERSION=${{ needs.bump-versions.outputs.BACKEND_VERSION }}
-          push: true
-          tags: |
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
+        run: |
+          docker build -f apps/backend/Dockerfile \
+            --build-arg BUILD_VERSION=${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
+            .
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
 
   build-webapp:
     needs: bump-versions
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch main \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
       - name: Login to registry
-        uses: docker/login-action@v2
-        with:
-          registry: gitea.nilbyte.com.br
-          username: notNilton
-          password: ${{ secrets.PACKAGES_TOKEN }}
+        run: |
+          echo "${{ secrets.PACKAGES_TOKEN }}" | \
+            docker login gitea.nilbyte.com.br -u notNilton --password-stdin
 
       - name: Build and push Webapp image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: apps/webapp/Dockerfile
-          build-args: |
-            VITE_API_URL=https://mirante-api.nilbyte.com.br
-            VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
-          push: true
-          tags: |
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
+        run: |
+          docker build -f apps/webapp/Dockerfile \
+            --build-arg VITE_API_URL=https://mirante-api.nilbyte.com.br \
+            --build-arg VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
+            .
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}

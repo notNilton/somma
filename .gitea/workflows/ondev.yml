@@ -15,12 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.24'
+        run: |
+          ln -sf /usr/local/go/bin/go /usr/local/bin/go
+          go version
 
       - name: Download dependencies
         working-directory: apps/backend
@@ -45,7 +49,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
@@ -63,17 +71,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
       - name: Validate docker-compose.yml
         run: |
+          JWT_SECRET=ci-dummy-secret \
+          DATABASE_URL=postgres://ci:ci@localhost:5432/ci \
           docker compose -f docker-compose.yml config --quiet
           echo "✅ docker-compose.yml válido"
 
       - name: Validate docker-compose.prod.yml
         run: |
+          JWT_SECRET=ci-dummy-secret \
+          DATABASE_URL=postgres://ci:ci@localhost:5432/ci \
           docker compose -f docker-compose.prod.yml config --quiet
           echo "✅ docker-compose.prod.yml válido"
