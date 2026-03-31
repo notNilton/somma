@@ -86,38 +86,39 @@ jobs:
             if [ -x "${GO_DIR}/go" ]; then
               echo "${GO_DIR}" >> $GITHUB_PATH
               export PATH="${GO_DIR}:$PATH"
-              echo "Found Go at ${GO_DIR}/go"
               go version
               exit 0
             fi
           done
-          echo "ERROR: go not found, searching..."
-          find / -maxdepth 8 -name go -type f 2>/dev/null | head -10 || true
           exit 1
 
-      - name: Build binaries
+      - name: Build binary
         working-directory: apps/backend
         env:
           GOWORK: "off"
-        run: go build -mod=vendor ./...
-
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
-      - name: Login to registry
         run: |
+          go build -mod=vendor \
+            -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
+            -o main ./cmd/api
+
+      - name: Configure insecure registry and login
+        run: |
+          sudo mkdir -p /etc/docker
+          echo '{"insecure-registries": ["gitea:3000"]}' | sudo tee /etc/docker/daemon.json
+          sudo kill -s HUP $(pidof dockerd) 2>/dev/null || true
+          sleep 3
+          sudo chmod 666 /var/run/docker.sock
           echo "${{ secrets.PACKAGES_TOKEN }}" | \
-            docker login gitea.nilbyte.com.br -u notNilton --password-stdin
+            docker login gitea:3000 -u notNilton --password-stdin
 
       - name: Build and push Backend image
         run: |
           docker build -f apps/backend/Dockerfile \
-            --build-arg BUILD_VERSION=${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
-            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest \
-            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
+            -t gitea:3000/nilbyte-studios/mirante/backend:latest \
+            -t gitea:3000/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
             .
-          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
-          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
+          docker push gitea:3000/nilbyte-studios/mirante/backend:latest
+          docker push gitea:3000/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
 
   build-database:
     needs: bump-versions
@@ -130,20 +131,40 @@ jobs:
           git clone --depth=1 --branch main \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
-      - name: Login to registry
+      - name: Setup Go
         run: |
+          for GO_DIR in /opt/hostedtoolcache/go/*/x64/bin /usr/local/go/bin /usr/bin /usr/local/bin /snap/bin; do
+            if [ -x "${GO_DIR}/go" ]; then
+              echo "${GO_DIR}" >> $GITHUB_PATH
+              export PATH="${GO_DIR}:$PATH"
+              go version
+              exit 0
+            fi
+          done
+          exit 1
+
+      - name: Build migrate binary
+        working-directory: database
+        env:
+          GOWORK: "off"
+        run: go build -mod=vendor -o migrate ./cmd/migrate
+
+      - name: Configure insecure registry and login
+        run: |
+          sudo mkdir -p /etc/docker
+          echo '{"insecure-registries": ["gitea:3000"]}' | sudo tee /etc/docker/daemon.json
+          sudo kill -s HUP $(pidof dockerd) 2>/dev/null || true
+          sleep 3
+          sudo chmod 666 /var/run/docker.sock
           echo "${{ secrets.PACKAGES_TOKEN }}" | \
-            docker login gitea.nilbyte.com.br -u notNilton --password-stdin
+            docker login gitea:3000 -u notNilton --password-stdin
 
       - name: Build and push Database/Migrate image
         run: |
           docker build -f database/Dockerfile \
-            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/database:latest \
+            -t gitea:3000/nilbyte-studios/mirante/database:latest \
             .
-          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/database:latest
+          docker push gitea:3000/nilbyte-studios/mirante/database:latest
 
   build-webapp:
     needs: bump-versions
@@ -156,21 +177,29 @@ jobs:
           git clone --depth=1 --branch main \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
-      - name: Login to registry
+      - name: Build Webapp
+        working-directory: apps/webapp
         run: |
+          npm ci
+          VITE_API_URL=https://mirante-api.nilbyte.com.br \
+          VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
+          npm run build
+
+      - name: Configure insecure registry and login
+        run: |
+          sudo mkdir -p /etc/docker
+          echo '{"insecure-registries": ["gitea:3000"]}' | sudo tee /etc/docker/daemon.json
+          sudo kill -s HUP $(pidof dockerd) 2>/dev/null || true
+          sleep 3
+          sudo chmod 666 /var/run/docker.sock
           echo "${{ secrets.PACKAGES_TOKEN }}" | \
-            docker login gitea.nilbyte.com.br -u notNilton --password-stdin
+            docker login gitea:3000 -u notNilton --password-stdin
 
       - name: Build and push Webapp image
         run: |
           docker build -f apps/webapp/Dockerfile \
-            --build-arg VITE_API_URL=https://mirante-api.nilbyte.com.br \
-            --build-arg VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
-            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest \
-            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
+            -t gitea:3000/nilbyte-studios/mirante/webapp:latest \
+            -t gitea:3000/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
             .
-          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
-          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
+          docker push gitea:3000/nilbyte-studios/mirante/webapp:latest
+          docker push gitea:3000/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
