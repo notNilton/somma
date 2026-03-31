@@ -112,10 +112,10 @@ jobs:
           REGISTRY="${GITEA_IP}:3000"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
           
-          # Fix Host DNS timeout for dockerd: resolve via container and patch host /etc/hosts
+          # Fix Host DNS timeout for dockerd without sed -i (which breaks on bind mounts)
           CF_IP=$(getent hosts gitea.nilbyte.com.br | awk '{print $1}' | head -n 1)
           if [ -n "$CF_IP" ]; then
-            docker run --rm -v /etc/hosts:/host_hosts alpine sh -c "sed -i '/gitea.nilbyte.com.br/d' /host_hosts && echo '$CF_IP gitea.nilbyte.com.br' >> /host_hosts"
+            docker run --rm -v /etc/hosts:/host_hosts alpine sh -c "grep -v 'gitea.nilbyte.com.br' /host_hosts > /tmp/h || true; echo '$CF_IP gitea.nilbyte.com.br' >> /tmp/h; cat /tmp/h > /host_hosts"
           fi
           
           sudo chmod 666 /var/run/docker.sock
@@ -168,10 +168,10 @@ jobs:
           REGISTRY="${GITEA_IP}:3000"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
           
-          # Fix Host DNS timeout for dockerd: resolve via container and patch host /etc/hosts
+          # Fix Host DNS timeout for dockerd without sed -i (which breaks on bind mounts)
           CF_IP=$(getent hosts gitea.nilbyte.com.br | awk '{print $1}' | head -n 1)
           if [ -n "$CF_IP" ]; then
-            docker run --rm -v /etc/hosts:/host_hosts alpine sh -c "sed -i '/gitea.nilbyte.com.br/d' /host_hosts && echo '$CF_IP gitea.nilbyte.com.br' >> /host_hosts"
+            docker run --rm -v /etc/hosts:/host_hosts alpine sh -c "grep -v 'gitea.nilbyte.com.br' /host_hosts > /tmp/h || true; echo '$CF_IP gitea.nilbyte.com.br' >> /tmp/h; cat /tmp/h > /host_hosts"
           fi
           
           sudo chmod 666 /var/run/docker.sock
@@ -212,10 +212,10 @@ jobs:
           REGISTRY="${GITEA_IP}:3000"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
           
-          # Fix Host DNS timeout for dockerd: resolve via container and patch host /etc/hosts
+          # Fix Host DNS timeout for dockerd without sed -i (which breaks on bind mounts)
           CF_IP=$(getent hosts gitea.nilbyte.com.br | awk '{print $1}' | head -n 1)
           if [ -n "$CF_IP" ]; then
-            docker run --rm -v /etc/hosts:/host_hosts alpine sh -c "sed -i '/gitea.nilbyte.com.br/d' /host_hosts && echo '$CF_IP gitea.nilbyte.com.br' >> /host_hosts"
+            docker run --rm -v /etc/hosts:/host_hosts alpine sh -c "grep -v 'gitea.nilbyte.com.br' /host_hosts > /tmp/h || true; echo '$CF_IP gitea.nilbyte.com.br' >> /tmp/h; cat /tmp/h > /host_hosts"
           fi
           
           sudo chmod 666 /var/run/docker.sock
