@@ -103,9 +103,9 @@ jobs:
 
       - name: Resolve Gitea registry IP and login
         run: |
-          GITEA_IP=$(docker inspect --format '{{.NetworkSettings.Networks.nilbyte-git.IPAddress}}' gitea 2>/dev/null || \
-                     docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
-                       $(docker ps --filter "name=gitea" --format "{{.Names}}" | head -1))
+          GITEA_IP=$(docker network inspect nilbyte-git \
+            --format '{{range .Containers}}{{if eq .Name "gitea"}}{{.IPv4Address}}{{end}}{{end}}' \
+            | cut -d/ -f1)
           echo "Gitea container IP: $GITEA_IP"
           REGISTRY="${GITEA_IP}:3000"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
@@ -157,9 +157,9 @@ jobs:
 
       - name: Resolve Gitea registry IP and login
         run: |
-          GITEA_IP=$(docker inspect --format '{{.NetworkSettings.Networks.nilbyte-git.IPAddress}}' gitea 2>/dev/null || \
-                     docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
-                       $(docker ps --filter "name=gitea" --format "{{.Names}}" | head -1))
+          GITEA_IP=$(docker network inspect nilbyte-git \
+            --format '{{range .Containers}}{{if eq .Name "gitea"}}{{.IPv4Address}}{{end}}{{end}}' \
+            | cut -d/ -f1)
           echo "Gitea container IP: $GITEA_IP"
           REGISTRY="${GITEA_IP}:3000"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
@@ -199,9 +199,9 @@ jobs:
 
       - name: Resolve Gitea registry IP and login
         run: |
-          GITEA_IP=$(docker inspect --format '{{.NetworkSettings.Networks.nilbyte-git.IPAddress}}' gitea 2>/dev/null || \
-                     docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
-                       $(docker ps --filter "name=gitea" --format "{{.Names}}" | head -1))
+          GITEA_IP=$(docker network inspect nilbyte-git \
+            --format '{{range .Containers}}{{if eq .Name "gitea"}}{{.IPv4Address}}{{end}}{{end}}' \
+            | cut -d/ -f1)
           echo "Gitea container IP: $GITEA_IP"
           REGISTRY="${GITEA_IP}:3000"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
