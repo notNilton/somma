@@ -103,19 +103,11 @@ jobs:
           find / -maxdepth 8 -name go -type f 2>/dev/null | head -10 || true
           exit 1
 
-      - name: Download dependencies
-        working-directory: apps/backend
-        env:
-          GONOSUMDB: "*"
-          GOWORK: "off"
-        run: go mod download
-
       - name: Build binaries
         working-directory: apps/backend
         env:
-          GONOSUMDB: "*"
           GOWORK: "off"
-        run: go build ./...
+        run: go build -mod=vendor ./...
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
