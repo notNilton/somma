@@ -23,7 +23,7 @@ jobs:
 
       - name: Setup Go
         run: |
-          for GO_DIR in /usr/local/go/bin /usr/bin /usr/local/bin /snap/bin; do
+          for GO_DIR in /opt/hostedtoolcache/go/*/x64/bin /usr/local/go/bin /usr/bin /usr/local/bin /snap/bin; do
             if [ -x "${GO_DIR}/go" ]; then
               echo "${GO_DIR}" >> $GITHUB_PATH
               export PATH="${GO_DIR}:$PATH"
