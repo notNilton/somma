@@ -17,18 +17,11 @@ jobs:
       BACKEND_VERSION: ${{ steps.bump.outputs.BACKEND_VERSION }}
       WEBAPP_VERSION: ${{ steps.bump.outputs.WEBAPP_VERSION }}
     steps:
-      - name: Configure SSH deploy key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p 2222 gitea.nilbyte.com.br >> ~/.ssh/known_hosts 2>/dev/null || true
-
       - name: Check out repository code
         run: |
-          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            git clone \
-            "ssh://git@gitea.nilbyte.com.br:2222/nilbyte-studios/mirante.git" .
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
           git checkout ${{ gitea.sha }}
 
       - name: Configure Git
@@ -63,16 +56,13 @@ jobs:
           echo "WEBAPP_VERSION=$WEBAPP_NEW" >> $GITHUB_OUTPUT
 
           git commit -m "chore: bump versions $FILES_CHANGED [skip ci]"
-          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            git push origin HEAD:main
+          git push origin HEAD:main
 
           git tag -a "backend-v${BACKEND_NEW}" -m "backend-v${BACKEND_NEW}"
-          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            git push origin "backend-v${BACKEND_NEW}"
+          git push origin "backend-v${BACKEND_NEW}"
 
           git tag -a "webapp-v${WEBAPP_NEW}" -m "webapp-v${WEBAPP_NEW}"
-          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            git push origin "webapp-v${WEBAPP_NEW}"
+          git push origin "webapp-v${WEBAPP_NEW}"
 
   # ========================================================
   # 2. Build & Push — sempre, paralelo
