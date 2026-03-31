@@ -1,6 +1,6 @@
 import { auth } from './auth';
 
-const BASE_URL = '';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 interface FetchOptions {
   method?: string;

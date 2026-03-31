@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ShieldCheck, ArrowRight, Mail, Lock, User, Phone, FileText, Loader2 } from 'lucide-react';
 import { auth } from '../lib/auth';
+import { api } from '../lib/api';
 
 export const Route = createFileRoute('/register')({
   component: RegisterPage,
@@ -26,18 +27,7 @@ function RegisterPage() {
     setError(null);
 
     try {
-      const response = await fetch('/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Falha ao cadastrar.');
-      }
-
-      const { accessToken } = await response.json();
+      const { accessToken } = await api.post<{ accessToken: string }>('/auth/register', formData);
       auth.setToken(accessToken);
 
       setTimeout(() => {

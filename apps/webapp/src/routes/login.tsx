@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ShieldCheck, ArrowRight, Mail, Lock, Loader2 } from 'lucide-react';
 import { auth } from '../lib/auth';
+import { api } from '../lib/api';
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -20,18 +21,7 @@ function LoginPage() {
     setError(null);
 
     try {
-      const response = await fetch('/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Falha ao entrar.');
-      }
-
-      const { accessToken } = await response.json();
+      const { accessToken } = await api.post<{ accessToken: string }>('/auth/login', { email, password });
       auth.setToken(accessToken);
 
       // Pequeno delay para feedback visual
