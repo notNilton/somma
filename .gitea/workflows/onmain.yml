@@ -99,7 +99,7 @@ jobs:
         env:
           GOWORK: "off"
         run: |
-          go build -mod=vendor \
+          CGO_ENABLED=0 go build -mod=vendor \
             -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
             -o main ./cmd/api
 
@@ -157,7 +157,7 @@ jobs:
         working-directory: database
         env:
           GOWORK: "off"
-        run: go build -mod=vendor -o migrate ./cmd/migrate
+        run: CGO_ENABLED=0 go build -mod=vendor -o migrate ./cmd/migrate
 
       - name: Login to Gitea registry
         run: |
