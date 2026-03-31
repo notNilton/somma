@@ -119,6 +119,32 @@ jobs:
           docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
           docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
 
+  build-database:
+    needs: bump-versions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch main \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+
+      - name: Fix Docker Socket Permissions
+        run: sudo chmod 666 /var/run/docker.sock
+
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.PACKAGES_TOKEN }}" | \
+            docker login gitea.nilbyte.com.br -u notNilton --password-stdin
+
+      - name: Build and push Database/Migrate image
+        run: |
+          docker build -f database/Dockerfile \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/database:latest \
+            .
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/database:latest
+
   build-webapp:
     needs: bump-versions
     runs-on: ubuntu-latest

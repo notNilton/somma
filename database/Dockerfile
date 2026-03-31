@@ -2,14 +2,10 @@ FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-COPY database/go.mod ./
-
-ENV GOWORK=off
-RUN go mod download
-
 COPY database/ .
 
-RUN go build -o migrate ./cmd/migrate
+ENV GOWORK=off
+RUN go build -mod=vendor -o migrate ./cmd/migrate
 
 # ---
 
