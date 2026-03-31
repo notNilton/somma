@@ -1,0 +1,28 @@
+info:
+  name: UpdateMemberRole
+  type: http
+  seq: 9
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/v1/accounts/{{accountId}}/members/{{memberId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "role": "EDITOR"
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3000
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

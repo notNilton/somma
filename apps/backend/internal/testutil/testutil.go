@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nilbyte/mirante/backend/internal/cache"
 	"github.com/nilbyte/mirante/backend/internal/handlers"
 	"github.com/nilbyte/mirante/backend/internal/routes"
 )
@@ -39,7 +40,7 @@ func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 	t.Cleanup(func() { pool.Close() })
 
 	mux := http.NewServeMux()
-	routes.Register(mux, pool, JWTKey)
+	routes.Register(mux, pool, JWTKey, cache.New())
 
 	return pool, mux
 }
@@ -129,5 +130,5 @@ func DecodeJSON(t *testing.T, rec *httptest.ResponseRecorder, v any) {
 
 // NewHandler cria um Handler isolado para testes que precisam injetar deps direto.
 func NewHandler(pool *pgxpool.Pool) *handlers.Handler {
-	return handlers.New(pool, JWTKey)
+	return handlers.New(pool, JWTKey, cache.New())
 }

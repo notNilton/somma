@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nilbyte/mirante/backend/internal/cache"
 	"github.com/nilbyte/mirante/backend/internal/middleware"
 	"github.com/nilbyte/mirante/backend/internal/models"
 	"github.com/nilbyte/mirante/backend/internal/money"
@@ -300,6 +301,7 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		`, dto.VehicleID, t.ID, dto.MaintenanceType, dto.Provider)
 	}
 
+	h.cache.DeletePrefix(cache.DashboardPrefix(claims.UserID))
 	writeJSON(w, http.StatusCreated, transactionResponse(models.TransactionWithCategory{Transaction: t}))
 }
 
@@ -346,6 +348,7 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.cache.DeletePrefix(cache.DashboardPrefix(claims.UserID))
 	writeJSON(w, http.StatusOK, transactionResponse(models.TransactionWithCategory{Transaction: t}))
 }
 
@@ -363,6 +366,7 @@ func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.cache.DeletePrefix(cache.DashboardPrefix(claims.UserID))
 	w.WriteHeader(http.StatusNoContent)
 }
 

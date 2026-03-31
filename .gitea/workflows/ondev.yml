@@ -8,130 +8,86 @@ on:
   workflow_dispatch:
 
 jobs:
-  detect-changes:
+  # ========================================================
+  # Build e teste do backend (compilação)
+  # ========================================================
+  build-backend:
     runs-on: ubuntu-latest
-    outputs:
-      BACKEND_CHANGED: ${{ steps.check.outputs.BACKEND_CHANGED }}
-      WEBAPP_CHANGED: ${{ steps.check.outputs.WEBAPP_CHANGED }}
-      MIGRATIONS_CHANGED: ${{ steps.check.outputs.MIGRATIONS_CHANGED }}
-      COMPOSE_CHANGED: ${{ steps.check.outputs.COMPOSE_CHANGED }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-
-      - name: Detect changed apps
-        id: check
         run: |
-          # go.work e .dockerignore na raiz afetam o build do backend
-          if git diff HEAD~1 HEAD -- apps/backend/ database/migrations/ go.work go.work.sum .dockerignore | grep -q .; then
-            echo "BACKEND_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Backend changes detected"
-          else
-            echo "BACKEND_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Backend changes"
-          fi
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-          # .dockerignore na raiz afeta o build da webapp
-          if git diff HEAD~1 HEAD -- apps/webapp/ .dockerignore | grep -q .; then
-            echo "WEBAPP_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Webapp changes detected"
-          else
-            echo "WEBAPP_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Webapp changes"
-          fi
+      - name: Setup Go
+        run: |
+          for GO_DIR in /opt/hostedtoolcache/go/*/x64/bin /usr/local/go/bin /usr/bin /usr/local/bin /snap/bin; do
+            if [ -x "${GO_DIR}/go" ]; then
+              echo "${GO_DIR}" >> $GITHUB_PATH
+              export PATH="${GO_DIR}:$PATH"
+              echo "Found Go at ${GO_DIR}/go"
+              go version
+              exit 0
+            fi
+          done
+          echo "ERROR: go not found, searching..."
+          find / -maxdepth 8 -name go -type f 2>/dev/null | head -10 || true
+          exit 1
 
-          # database/Dockerfile afeta a imagem de migration
-          if git diff HEAD~1 HEAD -- database/migrations/ database/Dockerfile | grep -q .; then
-            echo "MIGRATIONS_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Migration changes detected"
-          else
-            echo "MIGRATIONS_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Migration changes"
-          fi
-
-          # docker-compose na raiz afeta o ambiente de dev/prod
-          if git diff HEAD~1 HEAD -- docker-compose.yml docker-compose.prod.yml | grep -q .; then
-            echo "COMPOSE_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "✅ Compose changes detected"
-          else
-            echo "COMPOSE_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No Compose changes"
-          fi
+      - name: Build binaries
+        working-directory: apps/backend
+        env:
+          GOWORK: "off"
+        run: go build -mod=vendor ./...
 
   # ========================================================
-  # Valida arquivos docker-compose alterados
+  # Build da webapp (npm)
+  # ========================================================
+  build-webapp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+
+      - name: Build Webapp
+        working-directory: apps/webapp
+        run: |
+          npm ci
+          npm run build
+          echo "✅ Webapp build successful"
+
+  # ========================================================
+  # Valida arquivos docker-compose
   # ========================================================
   validate-compose:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.COMPOSE_CHANGED == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
       - name: Validate docker-compose.yml
         run: |
+          JWT_SECRET=ci-dummy-secret \
+          DATABASE_URL=postgres://ci:ci@localhost:5432/ci \
           docker compose -f docker-compose.yml config --quiet
           echo "✅ docker-compose.yml válido"
 
       - name: Validate docker-compose.prod.yml
         run: |
+          JWT_SECRET=ci-dummy-secret \
+          DATABASE_URL=postgres://ci:ci@localhost:5432/ci \
           docker compose -f docker-compose.prod.yml config --quiet
           echo "✅ docker-compose.prod.yml válido"
-
-  # ========================================================
-  # Build e teste do backend (compilação + imagem)
-  # ========================================================
-  build-backend:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.MIGRATIONS_CHANGED == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.24'
-
-      - name: Download dependencies
-        working-directory: apps/backend
-        run: go mod download
-
-      - name: Build binaries
-        working-directory: apps/backend
-        run: go build ./...
-
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
-      - name: Build Backend image (validation only)
-        run: |
-          docker build -f apps/backend/Dockerfile -t mirante-backend:dev-test .
-          echo "✅ Backend build successful"
-
-  # ========================================================
-  # Build da webapp (imagem)
-  # ========================================================
-  build-webapp:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
-      - name: Build Webapp image (validation only)
-        run: |
-          docker build -f apps/webapp/Dockerfile \
-            -t mirante-webapp:dev-test .
-          echo "✅ Webapp build successful"

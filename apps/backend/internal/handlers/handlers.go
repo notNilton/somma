@@ -5,15 +5,17 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nilbyte/mirante/backend/internal/cache"
 )
 
 type Handler struct {
 	db     *pgxpool.Pool
 	jwtKey []byte
+	cache  *cache.Cache
 }
 
-func New(db *pgxpool.Pool, jwtKey []byte) *Handler {
-	return &Handler{db: db, jwtKey: jwtKey}
+func New(db *pgxpool.Pool, jwtKey []byte, c *cache.Cache) *Handler {
+	return &Handler{db: db, jwtKey: jwtKey, cache: c}
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

@@ -6,7 +6,9 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/api/v1/accounts/credit-summary"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
 
 settings:
   encodeUrl: true

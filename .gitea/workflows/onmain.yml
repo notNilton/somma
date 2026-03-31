@@ -9,56 +9,27 @@ on:
 
 jobs:
   # ========================================================
-  # 1. Detecta o que mudou
-  # ========================================================
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      BACKEND_CHANGED: ${{ steps.check.outputs.BACKEND_CHANGED }}
-      WEBAPP_CHANGED: ${{ steps.check.outputs.WEBAPP_CHANGED }}
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-
-      - name: Detect changed projects
-        id: check
-        run: |
-          # go.work e .dockerignore na raiz afetam o build do backend
-          if git diff HEAD~1 HEAD -- apps/backend/ database/migrations/ go.work go.work.sum .dockerignore | grep -q .; then
-            echo "BACKEND_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "Backend changed"
-          else
-            echo "BACKEND_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "Backend unchanged"
-          fi
-
-          # .dockerignore na raiz afeta o build da webapp
-          if git diff HEAD~1 HEAD -- apps/webapp/ .dockerignore | grep -q .; then
-            echo "WEBAPP_CHANGED=true" >> $GITHUB_OUTPUT
-            echo "Webapp changed"
-          else
-            echo "WEBAPP_CHANGED=false" >> $GITHUB_OUTPUT
-            echo "Webapp unchanged"
-          fi
-
-  # ========================================================
-  # 2. Bumpa versoes, commita e cria tags (job unico = sem conflito)
+  # 1. Bumpa versões, commita e cria tags (sempre)
   # ========================================================
   bump-versions:
-    needs: [detect-changes]
-    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
     runs-on: ubuntu-latest
     outputs:
       BACKEND_VERSION: ${{ steps.bump.outputs.BACKEND_VERSION }}
       WEBAPP_VERSION: ${{ steps.bump.outputs.WEBAPP_VERSION }}
     steps:
+      - name: Configure SSH deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p 2222 gitea.nilbyte.com.br >> ~/.ssh/known_hosts 2>/dev/null || true
+
       - name: Check out repository code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            git clone --depth=0 \
+            "ssh://git@gitea.nilbyte.com.br:2222/nilbyte-studios/mirante.git" .
+          git checkout ${{ gitea.sha }}
 
       - name: Configure Git
         run: |
@@ -68,114 +39,120 @@ jobs:
       - name: Bump versions, commit and tag
         id: bump
         run: |
-          BACKEND_CHANGED="${{ needs.detect-changes.outputs.BACKEND_CHANGED }}"
-          WEBAPP_CHANGED="${{ needs.detect-changes.outputs.WEBAPP_CHANGED }}"
           FILES_CHANGED=""
 
-          if [ "$BACKEND_CHANGED" = "true" ]; then
-            CURRENT=$(cat apps/backend/VERSION)
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-            PATCH=$((PATCH + 1))
-            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-            echo "$NEW_VERSION" > apps/backend/VERSION
-            git add apps/backend/VERSION
-            FILES_CHANGED="$FILES_CHANGED backend-v${NEW_VERSION}"
-            echo "BACKEND_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "BACKEND_VERSION=$(cat apps/backend/VERSION)" >> $GITHUB_OUTPUT
-          fi
+          # Backend — sempre bump
+          CURRENT=$(cat apps/backend/VERSION)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          PATCH=$((PATCH + 1))
+          BACKEND_NEW="${MAJOR}.${MINOR}.${PATCH}"
+          echo "$BACKEND_NEW" > apps/backend/VERSION
+          git add apps/backend/VERSION
+          FILES_CHANGED="$FILES_CHANGED backend-v${BACKEND_NEW}"
+          echo "BACKEND_VERSION=$BACKEND_NEW" >> $GITHUB_OUTPUT
 
-          if [ "$WEBAPP_CHANGED" = "true" ]; then
-            CURRENT=$(jq -r '.version' apps/webapp/package.json)
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-            PATCH=$((PATCH + 1))
-            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-            jq --arg v "$NEW_VERSION" '.version = $v' apps/webapp/package.json > /tmp/pkg.json
-            mv /tmp/pkg.json apps/webapp/package.json
-            git add apps/webapp/package.json
-            FILES_CHANGED="$FILES_CHANGED webapp-v${NEW_VERSION}"
-            echo "WEBAPP_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "WEBAPP_VERSION=$(jq -r '.version' apps/webapp/package.json)" >> $GITHUB_OUTPUT
-          fi
+          # Webapp — sempre bump
+          CURRENT=$(jq -r '.version' apps/webapp/package.json)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          PATCH=$((PATCH + 1))
+          WEBAPP_NEW="${MAJOR}.${MINOR}.${PATCH}"
+          jq --arg v "$WEBAPP_NEW" '.version = $v' apps/webapp/package.json > /tmp/pkg.json
+          mv /tmp/pkg.json apps/webapp/package.json
+          git add apps/webapp/package.json
+          FILES_CHANGED="$FILES_CHANGED webapp-v${WEBAPP_NEW}"
+          echo "WEBAPP_VERSION=$WEBAPP_NEW" >> $GITHUB_OUTPUT
 
-          if [ -n "$FILES_CHANGED" ]; then
-            git commit -m "chore: bump versions${FILES_CHANGED} [skip ci]"
+          git commit -m "chore: bump versions $FILES_CHANGED [skip ci]"
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
             git push origin HEAD:main
-          fi
 
-          if [ "$BACKEND_CHANGED" = "true" ]; then
-            BV=$(cat apps/backend/VERSION)
-            git tag -a "backend-v${BV}" -m "backend-v${BV}"
-            git push origin "backend-v${BV}"
-          fi
+          git tag -a "backend-v${BACKEND_NEW}" -m "backend-v${BACKEND_NEW}"
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            git push origin "backend-v${BACKEND_NEW}"
 
-          if [ "$WEBAPP_CHANGED" = "true" ]; then
-            WV=$(jq -r '.version' apps/webapp/package.json)
-            git tag -a "webapp-v${WV}" -m "webapp-v${WV}"
-            git push origin "webapp-v${WV}"
-          fi
+          git tag -a "webapp-v${WEBAPP_NEW}" -m "webapp-v${WEBAPP_NEW}"
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            git push origin "webapp-v${WEBAPP_NEW}"
 
   # ========================================================
-  # 3. Build & Push (paralelos)
+  # 2. Build & Push — sempre, paralelo
   # ========================================================
   build-backend:
-    needs: [detect-changes, bump-versions]
-    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true'
+    needs: bump-versions
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch main \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+
+      - name: Setup Go
+        run: |
+          for GO_DIR in /opt/hostedtoolcache/go/*/x64/bin /usr/local/go/bin /usr/bin /usr/local/bin /snap/bin; do
+            if [ -x "${GO_DIR}/go" ]; then
+              echo "${GO_DIR}" >> $GITHUB_PATH
+              export PATH="${GO_DIR}:$PATH"
+              echo "Found Go at ${GO_DIR}/go"
+              go version
+              exit 0
+            fi
+          done
+          echo "ERROR: go not found, searching..."
+          find / -maxdepth 8 -name go -type f 2>/dev/null | head -10 || true
+          exit 1
+
+      - name: Build binaries
+        working-directory: apps/backend
+        env:
+          GOWORK: "off"
+        run: go build -mod=vendor ./...
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
       - name: Login to registry
-        uses: docker/login-action@v2
-        with:
-          registry: gitea.nilbyte.com.br
-          username: notNilton
-          password: ${{ secrets.PACKAGES_TOKEN }}
+        run: |
+          echo "${{ secrets.PACKAGES_TOKEN }}" | \
+            docker login gitea.nilbyte.com.br -u notNilton --password-stdin
 
       - name: Build and push Backend image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: apps/backend/Dockerfile
-          build-args: |
-            BUILD_VERSION=${{ needs.bump-versions.outputs.BACKEND_VERSION }}
-          push: true
-          tags: |
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
+        run: |
+          docker build -f apps/backend/Dockerfile \
+            --build-arg BUILD_VERSION=${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
+            .
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:latest
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
 
   build-webapp:
-    needs: [detect-changes, bump-versions]
-    if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
+    needs: bump-versions
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch main \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Fix Docker Socket Permissions
         run: sudo chmod 666 /var/run/docker.sock
 
       - name: Login to registry
-        uses: docker/login-action@v2
-        with:
-          registry: gitea.nilbyte.com.br
-          username: notNilton
-          password: ${{ secrets.PACKAGES_TOKEN }}
+        run: |
+          echo "${{ secrets.PACKAGES_TOKEN }}" | \
+            docker login gitea.nilbyte.com.br -u notNilton --password-stdin
 
       - name: Build and push Webapp image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: apps/webapp/Dockerfile
-          build-args: |
-            VITE_API_URL=https://mirante-api.nilbyte.com.br
-            VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
-          push: true
-          tags: |
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
-            gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
+        run: |
+          docker build -f apps/webapp/Dockerfile \
+            --build-arg VITE_API_URL=https://mirante-api.nilbyte.com.br \
+            --build-arg VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest \
+            -t gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
+            .
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:latest
+          docker push gitea.nilbyte.com.br/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}

@@ -3,13 +3,28 @@ package handlers
 import (
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/nilbyte/mirante/backend/internal/cache"
 	"github.com/nilbyte/mirante/backend/internal/middleware"
 	"github.com/nilbyte/mirante/backend/internal/money"
 )
 
 func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.ClaimsFromContext(r.Context())
+
+	month := r.URL.Query().Get("month")
+	if month == "" {
+		month = time.Now().Format("2006-01")
+	}
+	// Primeiro dia do mês selecionado para usar nas queries
+	monthDate := month + "-01"
+
+	cacheKey := cache.DashboardKey(claims.UserID, month)
+	if cached, ok := h.cache.Get(cacheKey); ok {
+		writeJSON(w, http.StatusOK, cached)
+		return
+	}
 
 	// Nome do usuário
 	var userName string
@@ -18,7 +33,7 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		userName = userName[:idx]
 	}
 
-	// Total balance
+	// Total balance (sempre atual, não filtrado por mês)
 	var totalBalanceCents int64
 	h.db.QueryRow(r.Context(), `
 		SELECT COALESCE(SUM(balance_cents), 0)
@@ -26,7 +41,7 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		WHERE user_id = $1 AND is_active = true AND include_in_total = true
 	`, claims.UserID).Scan(&totalBalanceCents)
 
-	// Income e expenses do mês
+	// Income e expenses do mês selecionado
 	var monthlyIncomeCents, monthlyExpensesCents int64
 	rows, err := h.db.Query(r.Context(), `
 		SELECT type, COALESCE(SUM(amount_cents), 0)
@@ -35,9 +50,10 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		  AND is_active = true
 		  AND affects_account = true
 		  AND type IN ('INCOME', 'EXPENSE')
-		  AND DATE_TRUNC('month', date) = DATE_TRUNC('month', NOW())
+		  AND classification != 'TRANSFER'
+		  AND DATE_TRUNC('month', date) = DATE_TRUNC('month', $2::date)
 		GROUP BY type
-	`, claims.UserID)
+	`, claims.UserID, monthDate)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -139,14 +155,18 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		cashFlow = []any{}
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
-		"userName":         userName,
-		"totalBalance":     money.ToReais(totalBalanceCents),
-		"monthlyIncome":    money.ToReais(monthlyIncomeCents),
-		"monthlyExpenses":  money.ToReais(monthlyExpensesCents),
-		"safeToSpend":      money.ToReais(totalBalanceCents - monthlyExpensesCents),
-		"accounts":         accounts,
+	result := map[string]any{
+		"userName":           userName,
+		"month":              month,
+		"totalBalance":       money.ToReais(totalBalanceCents),
+		"monthlyIncome":      money.ToReais(monthlyIncomeCents),
+		"monthlyExpenses":    money.ToReais(monthlyExpensesCents),
+		"safeToSpend":        money.ToReais(totalBalanceCents - monthlyExpensesCents),
+		"accounts":           accounts,
 		"recentTransactions": recentTxs,
-		"cashFlow":         cashFlow,
-	})
+		"cashFlow":           cashFlow,
+	}
+
+	h.cache.Set(cacheKey, result, 3*time.Minute)
+	writeJSON(w, http.StatusOK, result)
 }

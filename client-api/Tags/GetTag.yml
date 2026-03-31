@@ -6,7 +6,9 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/api/v1/tags/{{tagId}}"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
 
 runtime:
   variables:

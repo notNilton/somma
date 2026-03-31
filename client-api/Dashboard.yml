@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/api/v1/dashboard"
+  url: "{{baseUrl}}/api/v1/dashboard?month=2025-01"
   auth:
     type: bearer
     token: "{{accessToken}}"

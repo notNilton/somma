@@ -6,7 +6,9 @@ info:
 http:
   method: DELETE
   url: "{{baseUrl}}/api/v1/transactions/{{transactionId}}"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
 
 settings:
   encodeUrl: true

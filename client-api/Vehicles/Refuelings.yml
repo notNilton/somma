@@ -6,7 +6,9 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/api/v1/vehicles/{{vehicleId}}/refuelings"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
 
 runtime:
   variables:

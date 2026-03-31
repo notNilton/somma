@@ -9,7 +9,9 @@ variables:
   - name: userId
     value: d290f1ee-6c54-4b01-90e6-d701748f0851
   - name: accountId
-    value: acc-1
+    value: f4c941cd-ee64-478c-af44-8a4cfe08546f
+  - name: toAccountId
+    value: acc-2
   - name: categoryId
     value: cat-1
   - name: tagId
@@ -18,5 +20,13 @@ variables:
     value: tra-1
   - name: vehicleId
     value: veh-1
+  - name: cardId
+    value: card-1
+  - name: transferId
+    value: ""
+  - name: budgetId
+    value: ""
+  - name: memberId
+    value: ""
   - name: accessToken
     value: ""
