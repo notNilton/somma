@@ -27,7 +27,7 @@ jobs:
       - name: Check out repository code
         run: |
           GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            git clone --depth=0 \
+            git clone \
             "ssh://git@gitea.nilbyte.com.br:2222/nilbyte-studios/mirante.git" .
           git checkout ${{ gitea.sha }}
 
