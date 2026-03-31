@@ -101,24 +101,30 @@ jobs:
             -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
             -o main ./cmd/api
 
-      - name: Configure insecure registry and login
+      - name: Resolve Gitea registry IP and login
         run: |
+          GITEA_IP=$(docker inspect --format '{{.NetworkSettings.Networks.nilbyte-git.IPAddress}}' gitea 2>/dev/null || \
+                     docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
+                       $(docker ps --filter "name=gitea" --format "{{.Names}}" | head -1))
+          echo "Gitea container IP: $GITEA_IP"
+          REGISTRY="${GITEA_IP}:3000"
+          echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
+
           sudo mkdir -p /etc/docker
-          echo '{"insecure-registries": ["gitea:3000"]}' | sudo tee /etc/docker/daemon.json
+          echo "{\"insecure-registries\": [\"${REGISTRY}\"]}" | sudo tee /etc/docker/daemon.json
           sudo kill -s HUP $(pidof dockerd) 2>/dev/null || true
           sleep 3
           sudo chmod 666 /var/run/docker.sock
-          echo "${{ secrets.PACKAGES_TOKEN }}" | \
-            docker login gitea:3000 -u notNilton --password-stdin
+          echo "${{ secrets.PACKAGES_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
       - name: Build and push Backend image
         run: |
           docker build --network=host -f apps/backend/Dockerfile \
-            -t gitea:3000/nilbyte-studios/mirante/backend:latest \
-            -t gitea:3000/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
+            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/backend:latest \
+            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
             .
-          docker push gitea:3000/nilbyte-studios/mirante/backend:latest
-          docker push gitea:3000/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
+          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/backend:latest
+          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
 
   build-database:
     needs: bump-versions
@@ -149,22 +155,28 @@ jobs:
           GOWORK: "off"
         run: go build -mod=vendor -o migrate ./cmd/migrate
 
-      - name: Configure insecure registry and login
+      - name: Resolve Gitea registry IP and login
         run: |
+          GITEA_IP=$(docker inspect --format '{{.NetworkSettings.Networks.nilbyte-git.IPAddress}}' gitea 2>/dev/null || \
+                     docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
+                       $(docker ps --filter "name=gitea" --format "{{.Names}}" | head -1))
+          echo "Gitea container IP: $GITEA_IP"
+          REGISTRY="${GITEA_IP}:3000"
+          echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
+
           sudo mkdir -p /etc/docker
-          echo '{"insecure-registries": ["gitea:3000"]}' | sudo tee /etc/docker/daemon.json
+          echo "{\"insecure-registries\": [\"${REGISTRY}\"]}" | sudo tee /etc/docker/daemon.json
           sudo kill -s HUP $(pidof dockerd) 2>/dev/null || true
           sleep 3
           sudo chmod 666 /var/run/docker.sock
-          echo "${{ secrets.PACKAGES_TOKEN }}" | \
-            docker login gitea:3000 -u notNilton --password-stdin
+          echo "${{ secrets.PACKAGES_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
       - name: Build and push Database/Migrate image
         run: |
           docker build --network=host -f database/Dockerfile \
-            -t gitea:3000/nilbyte-studios/mirante/database:latest \
+            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/database:latest \
             .
-          docker push gitea:3000/nilbyte-studios/mirante/database:latest
+          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/database:latest
 
   build-webapp:
     needs: bump-versions
@@ -185,21 +197,27 @@ jobs:
           VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
           npm run build
 
-      - name: Configure insecure registry and login
+      - name: Resolve Gitea registry IP and login
         run: |
+          GITEA_IP=$(docker inspect --format '{{.NetworkSettings.Networks.nilbyte-git.IPAddress}}' gitea 2>/dev/null || \
+                     docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \
+                       $(docker ps --filter "name=gitea" --format "{{.Names}}" | head -1))
+          echo "Gitea container IP: $GITEA_IP"
+          REGISTRY="${GITEA_IP}:3000"
+          echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
+
           sudo mkdir -p /etc/docker
-          echo '{"insecure-registries": ["gitea:3000"]}' | sudo tee /etc/docker/daemon.json
+          echo "{\"insecure-registries\": [\"${REGISTRY}\"]}" | sudo tee /etc/docker/daemon.json
           sudo kill -s HUP $(pidof dockerd) 2>/dev/null || true
           sleep 3
           sudo chmod 666 /var/run/docker.sock
-          echo "${{ secrets.PACKAGES_TOKEN }}" | \
-            docker login gitea:3000 -u notNilton --password-stdin
+          echo "${{ secrets.PACKAGES_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
       - name: Build and push Webapp image
         run: |
           docker build --network=host -f apps/webapp/Dockerfile \
-            -t gitea:3000/nilbyte-studios/mirante/webapp:latest \
-            -t gitea:3000/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
+            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/webapp:latest \
+            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
             .
-          docker push gitea:3000/nilbyte-studios/mirante/webapp:latest
-          docker push gitea:3000/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
+          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/webapp:latest
+          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
