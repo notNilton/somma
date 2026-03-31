@@ -38,18 +38,7 @@ func main() {
 	mux := http.NewServeMux()
 	routes.Register(mux, db, []byte(cfg.JWTSecret), c)
 
-	cors := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", cfg.WebappURL)
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			if r.Method == http.MethodOptions {
-				w.WriteHeader(http.StatusNoContent)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	}
+
 
 	logger := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +50,7 @@ func main() {
 	}
 
 	log.Printf("starting server on :%s", cfg.Port)
-	if err := http.ListenAndServe(":"+cfg.Port, logger(cors(mux))); err != nil {
+	if err := http.ListenAndServe(":"+cfg.Port, logger(mux)); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }

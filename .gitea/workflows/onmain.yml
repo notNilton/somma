@@ -199,7 +199,7 @@ jobs:
         working-directory: apps/webapp
         run: |
           npm ci --cache .npm-cache
-          VITE_API_URL=https://mirante-api.nilbyte.com.br \
+          VITE_API_URL=https://api-mirante.nilbyte.com.br \
           VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
           npm run build
 
