@@ -55,14 +55,16 @@ jobs:
           FILES_CHANGED="$FILES_CHANGED webapp-v${WEBAPP_NEW}"
           echo "WEBAPP_VERSION=$WEBAPP_NEW" >> $GITHUB_OUTPUT
 
+          PUSH_URL=$(echo "${{ gitea.server_url }}/${{ gitea.repository }}.git" | sed "s|://|://oauth2:${{ secrets.PACKAGES_TOKEN }}@|")
+
           git commit -m "chore: bump versions $FILES_CHANGED [skip ci]"
-          git push origin HEAD:main
+          git push "$PUSH_URL" HEAD:main
 
           git tag -a "backend-v${BACKEND_NEW}" -m "backend-v${BACKEND_NEW}"
-          git push origin "backend-v${BACKEND_NEW}"
+          git push "$PUSH_URL" "backend-v${BACKEND_NEW}"
 
           git tag -a "webapp-v${WEBAPP_NEW}" -m "webapp-v${WEBAPP_NEW}"
-          git push origin "webapp-v${WEBAPP_NEW}"
+          git push "$PUSH_URL" "webapp-v${WEBAPP_NEW}"
 
   # ========================================================
   # 2. Build & Push — sempre, paralelo
