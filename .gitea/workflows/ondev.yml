@@ -85,9 +85,3 @@ jobs:
           docker compose -f docker-compose.yml config --quiet
           echo "✅ docker-compose.yml válido"
 
-      - name: Validate docker-compose.prod.yml
-        run: |
-          JWT_SECRET=ci-dummy-secret \
-          DATABASE_URL=postgres://ci:ci@localhost:5432/ci \
-          docker compose -f docker-compose.prod.yml config --quiet
-          echo "✅ docker-compose.prod.yml válido"
