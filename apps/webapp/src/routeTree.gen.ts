@@ -10,15 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VehiclesRouteImport } from './routes/vehicles'
+import { Route as TransfersRouteImport } from './routes/transfers'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as CardsRouteImport } from './routes/cards'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as BudgetsRouteImport } from './routes/budgets'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VehiclesIndexRouteImport } from './routes/vehicles/index'
+import { Route as TransfersIndexRouteImport } from './routes/transfers/index'
 import { Route as TransactionsIndexRouteImport } from './routes/transactions/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as CardsIndexRouteImport } from './routes/cards/index'
+import { Route as CalendarIndexRouteImport } from './routes/calendar/index'
+import { Route as BudgetsIndexRouteImport } from './routes/budgets/index'
 import { Route as AccountsIndexRouteImport } from './routes/accounts/index'
 import { Route as VehiclesCrudVehiclesRouteImport } from './routes/vehicles/crud-vehicles'
 import { Route as TransactionsCrudTransactionsRouteImport } from './routes/transactions/crud-transactions'
@@ -31,6 +39,11 @@ import { Route as AccountsCrudAccountsRouteImport } from './routes/accounts/crud
 const VehiclesRoute = VehiclesRouteImport.update({
   id: '/vehicles',
   path: '/vehicles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransfersRoute = TransfersRouteImport.update({
+  id: '/transfers',
+  path: '/transfers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TransactionsRoute = TransactionsRouteImport.update({
@@ -53,6 +66,21 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CardsRoute = CardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BudgetsRoute = BudgetsRouteImport.update({
+  id: '/budgets',
+  path: '/budgets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountsRoute = AccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
@@ -68,6 +96,11 @@ const VehiclesIndexRoute = VehiclesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => VehiclesRoute,
 } as any)
+const TransfersIndexRoute = TransfersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TransfersRoute,
+} as any)
 const TransactionsIndexRoute = TransactionsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -77,6 +110,21 @@ const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SettingsRoute,
+} as any)
+const CardsIndexRoute = CardsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CardsRoute,
+} as any)
+const CalendarIndexRoute = CalendarIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CalendarRoute,
+} as any)
+const BudgetsIndexRoute = BudgetsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BudgetsRoute,
 } as any)
 const AccountsIndexRoute = AccountsIndexRouteImport.update({
   id: '/',
@@ -123,10 +171,14 @@ const AccountsCrudAccountsRoute = AccountsCrudAccountsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accounts': typeof AccountsRouteWithChildren
+  '/budgets': typeof BudgetsRouteWithChildren
+  '/calendar': typeof CalendarRouteWithChildren
+  '/cards': typeof CardsRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRouteWithChildren
   '/transactions': typeof TransactionsRouteWithChildren
+  '/transfers': typeof TransfersRouteWithChildren
   '/vehicles': typeof VehiclesRouteWithChildren
   '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute
   '/settings/categories': typeof SettingsCategoriesRoute
@@ -136,8 +188,12 @@ export interface FileRoutesByFullPath {
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/vehicles/crud-vehicles': typeof VehiclesCrudVehiclesRoute
   '/accounts/': typeof AccountsIndexRoute
+  '/budgets/': typeof BudgetsIndexRoute
+  '/calendar/': typeof CalendarIndexRoute
+  '/cards/': typeof CardsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/transactions/': typeof TransactionsIndexRoute
+  '/transfers/': typeof TransfersIndexRoute
   '/vehicles/': typeof VehiclesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -152,18 +208,26 @@ export interface FileRoutesByTo {
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/vehicles/crud-vehicles': typeof VehiclesCrudVehiclesRoute
   '/accounts': typeof AccountsIndexRoute
+  '/budgets': typeof BudgetsIndexRoute
+  '/calendar': typeof CalendarIndexRoute
+  '/cards': typeof CardsIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/transactions': typeof TransactionsIndexRoute
+  '/transfers': typeof TransfersIndexRoute
   '/vehicles': typeof VehiclesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/accounts': typeof AccountsRouteWithChildren
+  '/budgets': typeof BudgetsRouteWithChildren
+  '/calendar': typeof CalendarRouteWithChildren
+  '/cards': typeof CardsRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRouteWithChildren
   '/transactions': typeof TransactionsRouteWithChildren
+  '/transfers': typeof TransfersRouteWithChildren
   '/vehicles': typeof VehiclesRouteWithChildren
   '/accounts/crud-accounts': typeof AccountsCrudAccountsRoute
   '/settings/categories': typeof SettingsCategoriesRoute
@@ -173,8 +237,12 @@ export interface FileRoutesById {
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/vehicles/crud-vehicles': typeof VehiclesCrudVehiclesRoute
   '/accounts/': typeof AccountsIndexRoute
+  '/budgets/': typeof BudgetsIndexRoute
+  '/calendar/': typeof CalendarIndexRoute
+  '/cards/': typeof CardsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/transactions/': typeof TransactionsIndexRoute
+  '/transfers/': typeof TransfersIndexRoute
   '/vehicles/': typeof VehiclesIndexRoute
 }
 export interface FileRouteTypes {
@@ -182,10 +250,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/accounts'
+    | '/budgets'
+    | '/calendar'
+    | '/cards'
     | '/login'
     | '/register'
     | '/settings'
     | '/transactions'
+    | '/transfers'
     | '/vehicles'
     | '/accounts/crud-accounts'
     | '/settings/categories'
@@ -195,8 +267,12 @@ export interface FileRouteTypes {
     | '/transactions/crud-transactions'
     | '/vehicles/crud-vehicles'
     | '/accounts/'
+    | '/budgets/'
+    | '/calendar/'
+    | '/cards/'
     | '/settings/'
     | '/transactions/'
+    | '/transfers/'
     | '/vehicles/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -211,17 +287,25 @@ export interface FileRouteTypes {
     | '/transactions/crud-transactions'
     | '/vehicles/crud-vehicles'
     | '/accounts'
+    | '/budgets'
+    | '/calendar'
+    | '/cards'
     | '/settings'
     | '/transactions'
+    | '/transfers'
     | '/vehicles'
   id:
     | '__root__'
     | '/'
     | '/accounts'
+    | '/budgets'
+    | '/calendar'
+    | '/cards'
     | '/login'
     | '/register'
     | '/settings'
     | '/transactions'
+    | '/transfers'
     | '/vehicles'
     | '/accounts/crud-accounts'
     | '/settings/categories'
@@ -231,18 +315,26 @@ export interface FileRouteTypes {
     | '/transactions/crud-transactions'
     | '/vehicles/crud-vehicles'
     | '/accounts/'
+    | '/budgets/'
+    | '/calendar/'
+    | '/cards/'
     | '/settings/'
     | '/transactions/'
+    | '/transfers/'
     | '/vehicles/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountsRoute: typeof AccountsRouteWithChildren
+  BudgetsRoute: typeof BudgetsRouteWithChildren
+  CalendarRoute: typeof CalendarRouteWithChildren
+  CardsRoute: typeof CardsRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   TransactionsRoute: typeof TransactionsRouteWithChildren
+  TransfersRoute: typeof TransfersRouteWithChildren
   VehiclesRoute: typeof VehiclesRouteWithChildren
 }
 
@@ -253,6 +345,13 @@ declare module '@tanstack/react-router' {
       path: '/vehicles'
       fullPath: '/vehicles'
       preLoaderRoute: typeof VehiclesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transfers': {
+      id: '/transfers'
+      path: '/transfers'
+      fullPath: '/transfers'
+      preLoaderRoute: typeof TransfersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/transactions': {
@@ -283,6 +382,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cards': {
+      id: '/cards'
+      path: '/cards'
+      fullPath: '/cards'
+      preLoaderRoute: typeof CardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/budgets': {
+      id: '/budgets'
+      path: '/budgets'
+      fullPath: '/budgets'
+      preLoaderRoute: typeof BudgetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accounts': {
       id: '/accounts'
       path: '/accounts'
@@ -304,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VehiclesIndexRouteImport
       parentRoute: typeof VehiclesRoute
     }
+    '/transfers/': {
+      id: '/transfers/'
+      path: '/'
+      fullPath: '/transfers/'
+      preLoaderRoute: typeof TransfersIndexRouteImport
+      parentRoute: typeof TransfersRoute
+    }
     '/transactions/': {
       id: '/transactions/'
       path: '/'
@@ -317,6 +444,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof SettingsIndexRouteImport
       parentRoute: typeof SettingsRoute
+    }
+    '/cards/': {
+      id: '/cards/'
+      path: '/'
+      fullPath: '/cards/'
+      preLoaderRoute: typeof CardsIndexRouteImport
+      parentRoute: typeof CardsRoute
+    }
+    '/calendar/': {
+      id: '/calendar/'
+      path: '/'
+      fullPath: '/calendar/'
+      preLoaderRoute: typeof CalendarIndexRouteImport
+      parentRoute: typeof CalendarRoute
+    }
+    '/budgets/': {
+      id: '/budgets/'
+      path: '/'
+      fullPath: '/budgets/'
+      preLoaderRoute: typeof BudgetsIndexRouteImport
+      parentRoute: typeof BudgetsRoute
     }
     '/accounts/': {
       id: '/accounts/'
@@ -391,6 +539,39 @@ const AccountsRouteWithChildren = AccountsRoute._addFileChildren(
   AccountsRouteChildren,
 )
 
+interface BudgetsRouteChildren {
+  BudgetsIndexRoute: typeof BudgetsIndexRoute
+}
+
+const BudgetsRouteChildren: BudgetsRouteChildren = {
+  BudgetsIndexRoute: BudgetsIndexRoute,
+}
+
+const BudgetsRouteWithChildren =
+  BudgetsRoute._addFileChildren(BudgetsRouteChildren)
+
+interface CalendarRouteChildren {
+  CalendarIndexRoute: typeof CalendarIndexRoute
+}
+
+const CalendarRouteChildren: CalendarRouteChildren = {
+  CalendarIndexRoute: CalendarIndexRoute,
+}
+
+const CalendarRouteWithChildren = CalendarRoute._addFileChildren(
+  CalendarRouteChildren,
+)
+
+interface CardsRouteChildren {
+  CardsIndexRoute: typeof CardsIndexRoute
+}
+
+const CardsRouteChildren: CardsRouteChildren = {
+  CardsIndexRoute: CardsIndexRoute,
+}
+
+const CardsRouteWithChildren = CardsRoute._addFileChildren(CardsRouteChildren)
+
 interface SettingsRouteChildren {
   SettingsCategoriesRoute: typeof SettingsCategoriesRoute
   SettingsDataPrivacyRoute: typeof SettingsDataPrivacyRoute
@@ -425,6 +606,18 @@ const TransactionsRouteWithChildren = TransactionsRoute._addFileChildren(
   TransactionsRouteChildren,
 )
 
+interface TransfersRouteChildren {
+  TransfersIndexRoute: typeof TransfersIndexRoute
+}
+
+const TransfersRouteChildren: TransfersRouteChildren = {
+  TransfersIndexRoute: TransfersIndexRoute,
+}
+
+const TransfersRouteWithChildren = TransfersRoute._addFileChildren(
+  TransfersRouteChildren,
+)
+
 interface VehiclesRouteChildren {
   VehiclesCrudVehiclesRoute: typeof VehiclesCrudVehiclesRoute
   VehiclesIndexRoute: typeof VehiclesIndexRoute
@@ -442,10 +635,14 @@ const VehiclesRouteWithChildren = VehiclesRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountsRoute: AccountsRouteWithChildren,
+  BudgetsRoute: BudgetsRouteWithChildren,
+  CalendarRoute: CalendarRouteWithChildren,
+  CardsRoute: CardsRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   SettingsRoute: SettingsRouteWithChildren,
   TransactionsRoute: TransactionsRouteWithChildren,
+  TransfersRoute: TransfersRouteWithChildren,
   VehiclesRoute: VehiclesRouteWithChildren,
 }
 export const routeTree = rootRouteImport

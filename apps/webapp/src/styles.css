@@ -161,3 +161,12 @@ code {
 .transition-smooth {
   @apply transition-all duration-300 ease-in-out;
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

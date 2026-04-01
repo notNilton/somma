@@ -41,6 +41,7 @@ database/
 - Node.js 22+
 - Docker + Docker Compose
 - PostgreSQL rodando na porta **5433** (via Docker)
+- [Air](https://github.com/air-verse/air) (para hot-reload no Go)
 
 ### Setup
 
@@ -55,8 +56,8 @@ cp apps/backend/.env.example apps/backend/.env
 cd apps/backend
 go run ./cmd/migrate up   # requer DATABASE_URL no .env
 
-# 4. Backend
-go run ./cmd/api
+# 4. Backend (com hot-reload via air)
+air
 
 # 5. Webapp (outro terminal)
 cd apps/webapp

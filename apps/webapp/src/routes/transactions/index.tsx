@@ -4,11 +4,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import PrivacyAmount from '../../components/PrivacyAmount';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ImportModal } from '../../components/ImportModal';
-import Fab from '../../components/Fab';
 import { api } from '../../lib/api';
+import Fab from '../../components/Fab';
+import { FuelModal } from '../../components/FuelModal';
 import {
   Plus,
   FileUp,
+  FileDown,
   Search,
   ArrowUpRight,
   ArrowDownLeft,
@@ -22,6 +24,7 @@ import {
   Ban,
   SlidersHorizontal,
   X,
+  Fuel,
 } from 'lucide-react';
 import {
   type Tx,
@@ -56,6 +59,15 @@ function TransactionsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState<string>(() => currentMonthKey());
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isFuelOpen, setIsFuelOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [exportFrom, setExportFrom] = useState(() => {
+    const d = new Date(); d.setDate(1);
+    return d.toISOString().split('T')[0];
+  });
+  const [exportTo, setExportTo] = useState(() => new Date().toISOString().split('T')[0]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Record<string, true>>({});
@@ -113,7 +125,8 @@ function TransactionsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
   });
 
-  const handleCreate = () => void navigate({ to: '/transactions/crud-transactions' });
+  const handleCreate = () =>
+    void navigate({ to: '/transactions/crud-transactions', search: { transactionId: undefined } });
   const handleEdit = (t: Tx) =>
     void navigate({ to: '/transactions/crud-transactions', search: { transactionId: t.id } });
 
@@ -178,6 +191,25 @@ function TransactionsPage() {
     setFilterType('all');
     setSelectedCategory('all');
     setSelectedAccount('all');
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      const blob = await api.exportTransactions(exportFrom, exportTo);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transacoes_${exportFrom}_${exportTo}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setIsExportOpen(false);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'Erro ao exportar.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -289,6 +321,20 @@ function TransactionsPage() {
             <FileUp className="w-4 h-4" />
           </button>
           <button
+            onClick={() => setIsExportOpen(true)}
+            className="p-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted transition-smooth"
+            title="Exportar CSV"
+          >
+            <FileDown className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setIsFuelOpen(true)}
+            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-smooth"
+          >
+            <Fuel className="w-3.5 h-3.5" />
+            Abastecimento
+          </button>
+          <button
             onClick={handleCreate}
             className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
           >
@@ -297,6 +343,49 @@ function TransactionsPage() {
           </button>
         </div>
       </div>
+
+      {/* Export Modal */}
+      {isExportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-card rounded-2xl border border-border shadow-2xl p-5 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <p className="text-base font-bold font-display">Exportar CSV</p>
+              <button onClick={() => setIsExportOpen(false)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {exportError && (
+              <p className="text-sm text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+                {exportError}
+              </p>
+            )}
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">De</label>
+                <input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)}
+                  className="w-full bg-muted/40 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Até</label>
+                <input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)}
+                  className="w-full bg-muted/40 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-2">
+              <button onClick={() => setIsExportOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-all">
+                Cancelar
+              </button>
+              <button onClick={() => void handleExport()}
+                disabled={isExporting}
+                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                Exportar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Resumo + seletor de mês */}
       <div className="card-premium p-3 sm:p-4 flex flex-col gap-3">
@@ -561,9 +650,7 @@ function TransactionsPage() {
                         className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center ${
                           isIncome
                             ? 'bg-emerald-500/10 text-emerald-500'
-                            : t.classification === 'TRANSFER'
-                              ? 'bg-amber-500/10 text-amber-500'
-                              : 'bg-rose-500/10 text-rose-500'
+                            : 'bg-rose-500/10 text-rose-500'
                         }`}
                       >
                         {isIncome ? (
@@ -658,6 +745,15 @@ function TransactionsPage() {
 
       {/* FAB mobile */}
       <Fab label="Nova transação" onClick={handleCreate} />
+
+      <FuelModal
+        isOpen={isFuelOpen}
+        onClose={() => setIsFuelOpen(false)}
+        onSuccess={() => {
+          setIsFuelOpen(false);
+          invalidate();
+        }}
+      />
     </div>
   );
 }

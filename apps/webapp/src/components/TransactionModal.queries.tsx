@@ -18,7 +18,7 @@ function normalize(value: string) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-type BaseClassification = 'COMMON' | 'FUEL' | 'MAINTENANCE';
+type BaseClassification = 'COMMON' | 'MAINTENANCE';
 type Classification = BaseClassification | 'TRANSFER';
 
 type TransactionModalTab = 'expense' | 'income' | 'bill_payment';
@@ -50,7 +50,6 @@ function inferClassificationFromCategory({
 
   const norm = normalize(currentCat.name);
 
-  if (norm === 'veiculo-combustivel' || norm.includes('abastecimento')) return 'FUEL';
   if (norm === 'veiculo-manutencao' || norm.includes('manutencao')) return 'MAINTENANCE';
 
   return currentClassification !== 'COMMON' ? 'COMMON' : currentClassification;
@@ -60,10 +59,8 @@ function buildTransactionPayload({
   isEditing,
   initialData,
   classification,
-  vehicleFuelCategoryId,
   expenseKind,
   amountInCents,
-  litersInMililiters,
   date,
   isExpense,
   isRecurring,
@@ -74,16 +71,13 @@ function buildTransactionPayload({
   accountId,
   vehicleId,
   currentKm,
-  fuelType,
   description,
 }: {
   isEditing: boolean;
   initialData?: Transaction | null;
   classification: Classification;
-  vehicleFuelCategoryId: string | null;
   expenseKind: ExpenseKind;
   amountInCents: number;
-  litersInMililiters: number;
   date: string;
   isExpense: boolean;
   isRecurring: boolean;
@@ -94,45 +88,30 @@ function buildTransactionPayload({
   accountId: string;
   vehicleId: string;
   currentKm: number;
-  fuelType: string;
   description: string;
 }) {
   const actualAmount = amountInCents / 100;
-  const actualLiters = litersInMililiters / 1000;
-  const forcedCategoryIdForFuel = classification === 'FUEL' ? vehicleFuelCategoryId : null;
   const channel = expenseKindToChannel(expenseKind);
 
   const payload = {
     description:
-      classification === 'FUEL'
-        ? 'Abastecimento'
-        : classification === 'MAINTENANCE'
+      classification === 'MAINTENANCE'
           ? 'Manutenção veicular'
           : description,
     amount: actualAmount,
     date,
     type: isExpense ? 'EXPENSE' : 'INCOME',
-    isRecurring: classification === 'FUEL' || totalInstallments > 1 ? false : isRecurring,
-    categoryId:
-      (classification === 'FUEL' ? (forcedCategoryIdForFuel ?? categoryId) : categoryId) ||
-      undefined,
+    isRecurring: totalInstallments > 1 ? false : isRecurring,
+    categoryId: categoryId || undefined,
     accountId,
     channel,
     classification,
     ...(!isEditing && totalInstallments > 1 && { totalInstallments }),
     ...(!isEditing && totalInstallments > 1 && hasPaidInstallments && { paidInstallments }),
-    ...(classification === 'FUEL' && {
-      vehicleId,
-      currentKm,
-      liters: actualLiters,
-      pricePerLiter: actualLiters > 0 ? actualAmount / actualLiters : 0,
-      fuelType,
-    }),
     ...(classification === 'MAINTENANCE' && {
       vehicleId,
       currentKm,
       maintenanceType: 'OTHER',
-      provider: undefined,
     }),
   };
 
@@ -174,10 +153,7 @@ function useTransactionModalQueries({
     enabled: isOpen,
   });
 
-  const vehicleFuelCategoryId =
-    filteredCategories.find((c) => normalize(c.name) === 'veiculo-combustivel')?.id ?? null;
-
-  return { filteredCategories, accounts, vehicles, vehicleFuelCategoryId };
+  return { filteredCategories, accounts, vehicles };
 }
 
 function useTransactionModalFormState({
@@ -191,8 +167,6 @@ function useTransactionModalFormState({
   defaultClassification?: Classification;
   isOpen: boolean;
 }) {
-  const fuelData = initialData?.refuelingLog;
-
   const [isExpense, setIsExpense] = useState(initialData ? initialData.type === 'EXPENSE' : true);
   const [isRecurring, setIsRecurring] = useState(initialData?.isRecurring ?? false);
   const [date, setDate] = useState(() => {
@@ -221,24 +195,12 @@ function useTransactionModalFormState({
       'COMMON',
   );
   const [vehicleId, setVehicleId] = useState(
-    fuelData?.vehicleId ?? initialData?.vehicleId ?? defaultVehicleId ?? '',
+    initialData?.vehicleId ?? defaultVehicleId ?? '',
   );
   const [currentKm, setCurrentKm] = useState(
-    fuelData?.odometer
-      ? Math.floor(Number(fuelData.odometer)).toString()
-      : initialData?.currentKm
+    initialData?.currentKm
         ? Math.floor(Number(initialData.currentKm)).toString()
         : '0',
-  );
-  const [liters, setLiters] = useState(
-    fuelData?.fuelLiters
-      ? Math.floor(Number(fuelData.fuelLiters) * 1000).toString()
-      : initialData?.liters
-        ? Math.floor(Number(initialData.liters) * 1000).toString()
-        : '0',
-  );
-  const [fuelType, setFuelType] = useState(
-    fuelData?.fuelType ?? initialData?.fuelType ?? 'GASOLINA_COMUM',
   );
 
   useEffect(() => {
@@ -267,8 +229,6 @@ function useTransactionModalFormState({
     setAmount(e.target.value.replace(/\D/g, ''));
   const handleKmChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setCurrentKm(e.target.value.replace(/\D/g, ''));
-  const handleLitersChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setLiters(e.target.value.replace(/\D/g, ''));
 
   const formattedAmount = (Number(amount) / 100).toLocaleString('pt-BR', {
     style: 'currency',
@@ -281,10 +241,6 @@ function useTransactionModalFormState({
     currency: 'BRL',
   });
   const formattedKm = Number(currentKm).toLocaleString('pt-BR');
-  const formattedLiters = (Number(liters) / 1000).toLocaleString('pt-BR', {
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
-  });
 
   return {
     isExpense,
@@ -313,19 +269,13 @@ function useTransactionModalFormState({
     setVehicleId,
     currentKm,
     setCurrentKm,
-    liters,
-    setLiters,
-    fuelType,
-    setFuelType,
     handleAmountChange,
     handleKmChange,
-    handleLitersChange,
     formattedAmount,
     amountValue,
     installmentValue,
     formattedInstallment,
     formattedKm,
-    formattedLiters,
   };
 }
 
@@ -387,19 +337,14 @@ export function useTransactionModalModel({
     setVehicleId,
     currentKm,
     handleKmChange,
-    liters,
-    handleLitersChange,
-    fuelType,
-    setFuelType,
     handleAmountChange,
     formattedAmount,
     installmentValue,
     formattedInstallment,
     formattedKm,
-    formattedLiters,
   } = form;
 
-  const { filteredCategories, accounts, vehicles, vehicleFuelCategoryId } =
+  const { filteredCategories, accounts, vehicles } =
     useTransactionModalQueries({ isOpen, isExpense });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -465,7 +410,6 @@ export function useTransactionModalModel({
     return n === 'veiculo' || n === 'mobilidade';
   }, [filteredCategories, categoryId]);
 
-  const isFuel = classification === 'FUEL';
   const isMaintenance = classification === 'MAINTENANCE';
 
   const isSubmitDisabled = Number(amount) <= 0 || !date || !accountId;
@@ -480,10 +424,8 @@ export function useTransactionModalModel({
         isEditing,
         initialData,
         classification: classification as Classification,
-        vehicleFuelCategoryId,
         expenseKind,
         amountInCents: Number(amount),
-        litersInMililiters: Number(liters),
         date,
         isExpense,
         isRecurring,
@@ -494,9 +436,8 @@ export function useTransactionModalModel({
         accountId,
         vehicleId,
         currentKm: Number(currentKm),
-        fuelType,
         description,
-      });
+      } as any);
 
       if (isEditing && transactionId) {
         await api.patch(`/api/v1/transactions/${transactionId}`, payload);
@@ -515,7 +456,6 @@ export function useTransactionModalModel({
 
   return {
     isEditing,
-    isFuel,
     isMaintenance,
     activeTab,
     setActiveTab,
@@ -547,15 +487,10 @@ export function useTransactionModalModel({
     setVehicleId,
     currentKm,
     handleKmChange,
-    liters,
-    handleLitersChange,
-    fuelType,
-    setFuelType,
     formattedAmount,
     installmentValue,
     formattedInstallment,
     formattedKm,
-    formattedLiters,
     isVehicleCategory,
     filteredCategories,
     accounts,

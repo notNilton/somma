@@ -41,16 +41,6 @@ export interface Transaction {
   account?: Account;
   vehicleId?: string;
   currentKm?: number;
-  liters?: number;
-  pricePerLiter?: number;
-  fuelType?: string;
-  refuelingLog?: {
-    vehicleId: string;
-    odometer: number;
-    fuelLiters: number;
-    fuelType: string;
-    pricePerLiter: number;
-  };
 }
 
 export interface TransactionModalProps {
@@ -183,7 +173,6 @@ export function TransactionModal({
 
   const {
     isEditing,
-    isFuel,
     isMaintenance,
     activeTab,
     isExpense,
@@ -192,7 +181,6 @@ export function TransactionModal({
     setDate,
     description,
     setDescription,
-    amount,
     handleAmountChange,
     categoryId,
     setCategoryId,
@@ -207,22 +195,14 @@ export function TransactionModal({
     vehicleId,
     setVehicleId,
     handleKmChange,
-    liters,
-    handleLitersChange,
-    fuelType,
-    setFuelType,
     formattedAmount,
     formattedInstallment,
     formattedKm,
-    formattedLiters,
     filteredCategories,
     accounts,
     vehicles,
     expenseKind,
     setExpenseKind,
-    isVehicleCategory,
-    classification,
-    setClassification,
     isLoading,
     isSubmitDisabled,
     error,
@@ -467,23 +447,8 @@ export function TransactionModal({
               />
             </div>
 
-            {/* Toggle Abastecimento */}
-            {isVehicleCategory && (
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={classification === 'FUEL'}
-                  onChange={(e) => setClassification(e.target.checked ? 'FUEL' : 'COMMON')}
-                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20 transition-smooth cursor-pointer"
-                />
-                <span className="text-xs font-bold uppercase tracking-widest group-hover:text-foreground transition-smooth">
-                  Abastecimento?
-                </span>
-              </label>
-            )}
-
-            {/* Veículo + combustível */}
-            {(isFuel || isMaintenance) && (
+            {/* Veículo (só para manutenção agora) */}
+            {isMaintenance && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Veículo</label>
@@ -505,22 +470,6 @@ export function TransactionModal({
                     }))}
                   />
                 </div>
-                {isFuel && (
-                  <div>
-                    <label className={labelCls}>Combustível</label>
-                    <CustomSelect
-                      value={fuelType}
-                      onChange={setFuelType}
-                      options={[
-                        { value: 'GASOLINA_COMUM', label: 'Gasolina Comum' },
-                        { value: 'GASOLINA_ADITIVADA', label: 'Gasolina Aditivada' },
-                        { value: 'ETANOL', label: 'Etanol' },
-                        { value: 'DIESEL', label: 'Diesel' },
-                        { value: 'GNV', label: 'GNV' },
-                      ]}
-                    />
-                  </div>
-                )}
                 <div>
                   <label className={labelCls}>Odômetro (km)</label>
                   <input
@@ -532,35 +481,11 @@ export function TransactionModal({
                     className={inputCls}
                   />
                 </div>
-                {isFuel && (
-                  <div>
-                    <label className={labelCls}>Litros</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={formattedLiters}
-                        onChange={handleLitersChange}
-                        placeholder="Ex: 45,234"
-                        className={inputCls}
-                      />
-                      {Number(liters) > 0 && Number(amount) > 0 && (
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary">
-                          {(Number(amount) / 100 / (Number(liters) / 1000)).toLocaleString(
-                            'pt-BR',
-                            { style: 'currency', currency: 'BRL' },
-                          )}
-                          /L
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
             {/* Observações */}
-            {!isFuel && !isMaintenance && (
+            {!isMaintenance && (
               <div>
                 <label className={labelCls}>Observações</label>
                 <textarea
@@ -606,7 +531,7 @@ export function TransactionModal({
               ) : activeTab === 'bill_payment' ? (
                 'Confirmar Pagamento'
               ) : (
-                `Confirmar ${isFuel ? 'Abastecimento' : isExpense ? 'Despesa' : 'Receita'}`
+                `Confirmar ${isMaintenance ? 'Manutenção' : isExpense ? 'Despesa' : 'Receita'}`
               )}
             </button>
           </div>

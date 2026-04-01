@@ -1,8 +1,23 @@
+import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
 import PrivacyAmount from '../components/PrivacyAmount';
 import Fab from '../components/Fab';
 import { api } from '../lib/api';
+import { MonthSelector } from '../components/MonthSelector';
+import {
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  ComposedChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import {
   Plus,
   ArrowUpRight,
@@ -11,11 +26,18 @@ import {
   ShieldCheck,
   Wallet,
   Loader2,
+  BarChart3,
+  PieChart as PieChartIcon,
   type LucideIcon,
 } from 'lucide-react';
 
+const dashboardSearchSchema = z.object({
+  month: z.string().optional(),
+});
+
 export const Route = createFileRoute('/')({
   component: UserDashboard,
+  validateSearch: dashboardSearchSchema,
 });
 
 interface DashboardData {
@@ -77,11 +99,40 @@ function MetricCard({
   );
 }
 
+const formatBrl = (val: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
 function UserDashboard() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const [breakdownType, setBreakdownType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
+
+  const currentMonthValue = search.month || (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  })();
+
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: () => api.get<DashboardData>('/api/v1/dashboard'),
+    queryKey: ['dashboard', currentMonthValue],
+    queryFn: () => api.getDashboard<DashboardData>(currentMonthValue),
+    staleTime: 1000 * 60,
+  });
+
+  const { data: evolutionData = [] } = useQuery({
+    queryKey: ['dashboard', 'monthly-evolution'],
+    queryFn: async () => {
+      const res = await api.getMonthlyEvolution<any>();
+      return Array.isArray(res) ? res : (res as any)?.data ?? [];
+    },
+    staleTime: 1000 * 60,
+  });
+
+  const { data: breakdownData = [] } = useQuery({
+    queryKey: ['dashboard', 'category-breakdown', currentMonthValue, breakdownType],
+    queryFn: async () => {
+      const res = await api.getCategoryBreakdown<any>(currentMonthValue, breakdownType);
+      return Array.isArray(res) ? res : (res as any)?.data ?? [];
+    },
     staleTime: 1000 * 60,
   });
 
@@ -96,7 +147,8 @@ function UserDashboard() {
 
   if (!data) return null;
 
-  const currentMonth = new Date().toLocaleString('pt-BR', { month: 'long' });
+  const [yearStr, monthStr] = currentMonthValue.split('-');
+  const currentMonth = new Date(parseInt(yearStr), parseInt(monthStr) - 1).toLocaleString('pt-BR', { month: 'long' });
   const maxFlow = Math.max(...data.cashFlow.map((d) => d.value), 1);
 
   return (
@@ -106,17 +158,23 @@ function UserDashboard() {
         <div>
           <h1 className="text-xl sm:text-2xl font-display font-bold">Olá, {data.userName} 👋</h1>
           <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
-            Aqui está o seu painel financeiro de hoje.
+            Aqui está o seu painel financeiro para {currentMonth}.
           </p>
         </div>
-        {/* Botão visível apenas no desktop — mobile usa FAB */}
-        <button
-          onClick={() => void navigate({ to: '/transactions/crud-transactions' })}
-          className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Nova Transação
-        </button>
+        <div className="flex items-center gap-3">
+          <MonthSelector
+            value={currentMonthValue}
+            onChange={(m) => navigate({ to: '/', search: { month: m } })}
+          />
+          {/* Botão visível apenas no desktop — mobile usa FAB */}
+          <button
+            onClick={() => void navigate({ to: '/transactions/crud-transactions', search: { transactionId: undefined } })}
+            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Nova Transação
+          </button>
+        </div>
       </div>
 
       {/* Metrics */}
@@ -177,6 +235,85 @@ function UserDashboard() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Monthly Evolution */}
+          <div className="card-premium p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="w-3.5 h-3.5 text-muted-foreground" />
+              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Evolução (6 meses)
+              </h2>
+            </div>
+            <div className="h-[250px] w-full text-xs">
+              {evolutionData.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  Sem dados para evolução.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={evolutionData}>
+                    <XAxis dataKey="month" fontSize={10} axisLine={false} tickLine={false} />
+                    <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={(val) => `R$ ${val / 1000}k`} />
+                    <RechartsTooltip cursor={{ fill: 'transparent' }} formatter={(val: number) => formatBrl(val)} />
+                    <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} name="Receita" />
+                    <Bar dataKey="expense" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={40} name="Despesa" />
+                    <Line type="monotone" dataKey="net" stroke="#3b82f6" strokeWidth={2} name="Líquido" dot={{ r: 4 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          {/* Category Breakdown */}
+          <div className="card-premium p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <PieChartIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Despesas por Categoria
+                </h2>
+              </div>
+              <div className="flex gap-1 bg-muted/50 p-1 rounded-lg">
+                <button
+                  onClick={() => setBreakdownType('EXPENSE')}
+                  className={`text-[10px] font-bold px-2 py-1 rounded transition-smooth ${breakdownType === 'EXPENSE' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  DESPESAS
+                </button>
+                <button
+                  onClick={() => setBreakdownType('INCOME')}
+                  className={`text-[10px] font-bold px-2 py-1 rounded transition-smooth ${breakdownType === 'INCOME' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  RECEITAS
+                </button>
+              </div>
+            </div>
+            <div className="h-[250px] w-full flex items-center justify-center text-xs">
+              {breakdownData.length === 0 ? (
+                <p className="text-muted-foreground">Sem dados neste período.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={breakdownData}
+                      dataKey="amount"
+                      nameKey="category"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={2}
+                    >
+                      {(breakdownData as { color?: string }[]).map((entry, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || '#8884d8'} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip formatter={(val: number) => formatBrl(val)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 
@@ -261,7 +398,7 @@ function UserDashboard() {
       {/* FAB mobile — Nova Transação */}
       <Fab
         label="Nova transação"
-        onClick={() => void navigate({ to: '/transactions/crud-transactions' })}
+        onClick={() => void navigate({ to: '/transactions/crud-transactions', search: { transactionId: undefined } })}
       />
     </div>
   );

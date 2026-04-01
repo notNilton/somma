@@ -6,14 +6,14 @@
 Adicionar as chamadas para todos os novos endpoints do backend.
 
 ### Dashboard & Analytics
-- [ ] `getDashboard(month?: string)` — `GET /api/v1/dashboard?month=YYYY-MM`
-- [ ] `getMonthlyEvolution()` — `GET /api/v1/dashboard/monthly-evolution`
-- [ ] `getCategoryBreakdown(month?: string, type?: string)` — `GET /api/v1/dashboard/category-breakdown`
+- [x] `getDashboard(month?: string)` — `GET /api/v1/dashboard?month=YYYY-MM`
+- [x] `getMonthlyEvolution()` — `GET /api/v1/dashboard/monthly-evolution`
+- [x] `getCategoryBreakdown(month?: string, type?: string)` — `GET /api/v1/dashboard/category-breakdown`
 
 ### Transfers
-- [ ] `listTransfers()` — `GET /api/v1/transfers`
-- [ ] `createTransfer(dto)` — `POST /api/v1/transfers`
-- [ ] `deleteTransfer(id)` — `DELETE /api/v1/transfers/{id}`
+- [x] `listTransfers()` — `GET /api/v1/transfers`
+- [x] `createTransfer(dto)` — `POST /api/v1/transfers`
+- [x] `deleteTransfer(id)` — `DELETE /api/v1/transfers/{id}`
 
 ### Budgets
 - [ ] `listBudgets(month?: string)` — `GET /api/v1/budgets?month=YYYY-MM`
@@ -42,20 +42,20 @@ Adicionar as chamadas para todos os novos endpoints do backend.
 ## 📊 2. Dashboard (`src/routes/index.tsx`)
 
 ### Seletor de período
-- [ ] Adicionar seletor de mês (ex: `<select>` com os últimos 12 meses + mês atual como padrão)
-- [ ] Passar `month` como parâmetro de busca para a query do dashboard
-- [ ] Persistir mês selecionado em `searchParams` da rota
+- [x] Adicionar seletor de mês (ex: `<select>` com os últimos 12 meses + mês atual como padrão)
+- [x] Passar `month` como parâmetro de busca para a query do dashboard
+- [x] Persistir mês selecionado em `searchParams` da rota
 
 ### Gráfico de evolução mensal
-- [ ] Adicionar seção "Evolução dos últimos 6 meses" abaixo dos MetricCards
-- [ ] Usar `BarChart` ou `AreaChart` do Recharts com dados de `getMonthlyEvolution()`
-- [ ] Duas séries: receita (verde) e despesa (vermelho), eixo X = mês
-- [ ] Mostrar variação líquida (net) como linha sobreposta opcional
+- [x] Adicionar seção "Evolução dos últimos 6 meses" abaixo dos MetricCards
+- [x] Usar `BarChart` ou `AreaChart` do Recharts com dados de `getMonthlyEvolution()`
+- [x] Duas séries: receita (verde) e despesa (vermelho), eixo X = mês
+- [x] Mostrar variação líquida (net) como linha sobreposta opcional
 
 ### Breakdown por categoria
-- [ ] Adicionar seção "Maiores categorias de gasto" no dashboard
-- [ ] Usar `PieChart` ou `BarChart` horizontal do Recharts com dados de `getCategoryBreakdown()`
-- [ ] Toggle EXPENSE / INCOME para alternar a visualização
+- [x] Adicionar seção "Maiores categorias de gasto" no dashboard
+- [x] Usar `PieChart` ou `BarChart` horizontal do Recharts com dados de `getCategoryBreakdown()`
+- [x] Toggle EXPENSE / INCOME para alternar a visualização
 - [ ] Respeitar `PrivacyAmount` nos valores exibidos
 
 ---
@@ -63,91 +63,91 @@ Adicionar as chamadas para todos os novos endpoints do backend.
 ## 💸 3. Transferências (`src/routes/transfers/`)
 
 ### Nova página `/transfers`
-- [ ] Criar `src/routes/transfers.tsx` (layout) e `src/routes/transfers/index.tsx`
-- [ ] Listar transferências com origem → destino, valor e data
-- [ ] Botão "Nova Transferência" abre `TransferModal`
-- [ ] Ação de excluir transferência com `ConfirmDialog`
+- [x] Criar `src/routes/transfers.tsx` (layout) e `src/routes/transfers/index.tsx`
+- [x] Listar transferências com origem → destino, valor e data
+- [x] Botão "Nova Transferência" abre `TransferModal`
+- [x] Ação de excluir transferência com `ConfirmDialog`
 
 ### Novo componente `TransferModal.tsx`
-- [ ] Campos: conta de origem (select), conta de destino (select), valor, data, descrição opcional
-- [ ] Validação: contas diferentes, valor > 0
-- [ ] Ao confirmar, chama `createTransfer()` e invalida queries
+- [x] Campos: conta de origem (select), conta de destino (select), valor, data, descrição opcional
+- [x] Validação: contas diferentes, valor > 0
+- [x] Ao confirmar, chama `createTransfer()` e invalida queries
 
 ### Navegação
-- [ ] Adicionar link "Transferências" no `Header.tsx` (desktop)
-- [ ] Adicionar item no `BottomNav.tsx` ou acessar via modal no FAB
+- [x] Adicionar link "Transferências" no `Header.tsx` (desktop)
+- [x] Adicionar item no `BottomNav.tsx` ou acessar via modal no FAB
 
 ---
 
 ## 💳 4. Fatura de Cartão (`src/routes/cards/`)
 
 ### Nova página `/cards`
-- [ ] Criar `src/routes/cards.tsx` e `src/routes/cards/index.tsx`
-- [ ] Listar cartões do usuário (já existe `GET /api/v1/cards`)
-- [ ] Cada cartão com chip colorido, bandeira, últimos 4 dígitos, limite disponível
-- [ ] Botão "Ver Fatura" abre `CardStatementDrawer`
+- [x] Criar `src/routes/cards.tsx` e `src/routes/cards/index.tsx`
+- [x] Listar cartões do usuário (já existe `GET /api/v1/cards`)
+- [x] Cada cartão com chip colorido, bandeira, últimos 4 dígitos, limite disponível
+- [x] Botão "Ver Fatura" abre `CardStatementDrawer`
 
 ### Novo componente `CardStatementDrawer.tsx`
-- [ ] Drawer/Sheet lateral com fatura do cartão selecionado
-- [ ] Seletor de período de fechamento (inicia com período atual inferido pelo backend)
-- [ ] Separação visual: **Compras** (despesas reais) vs **Pagamento de Fatura** (informativo)
-- [ ] Total de compras em destaque
-- [ ] Lista de transações da fatura com categoria, valor e data
+- [x] Drawer/Sheet lateral com fatura do cartão selecionado
+- [x] Seletor de período de fechamento (inicia com período atual inferido pelo backend)
+- [x] Separação visual: **Compras** (despesas reais) vs **Pagamento de Fatura** (informativo)
+- [x] Total de compras em destaque
+- [x] Lista de transações da fatura com categoria, valor e data
 - [ ] Botão "Pagar fatura" → abre `TransferModal` pré-preenchido
 
 ### Navegação
-- [ ] Adicionar "Cartões" no Header desktop
+- [x] Adicionar "Cartões" no Header desktop
 
 ---
 
 ## 📅 5. Calendário Financeiro (`src/routes/calendar/`)
 
 ### Nova página `/calendar`
-- [ ] Criar `src/routes/calendar.tsx` e `src/routes/calendar/index.tsx`
-- [ ] Visualização de grade mensal (calendário) com indicadores por dia
-- [ ] Dias com transações PENDING destacados em amarelo/âmbar
-- [ ] Dias com INCOME destacados em verde, EXPENSE em vermelho
-- [ ] Clicar em um dia expande as transações daquele dia
-- [ ] Seletor de mês para navegar
+- [x] Criar `src/routes/calendar.tsx` e `src/routes/calendar/index.tsx`
+- [x] Visualização de grade mensal (calendário) com indicadores por dia
+- [x] Dias com transações PENDING destacados em amarelo/âmbar
+- [x] Dias com INCOME destacados em verde, EXPENSE em vermelho
+- [x] Clicar em um dia expande as transações daquele dia
+- [x] Seletor de mês para navegar
 
 ### Navegação
-- [ ] Adicionar link "Calendário" no Header ou no BottomNav
+- [x] Adicionar link "Calendário" no Header ou no BottomNav
 
 ---
 
 ## 🎯 6. Orçamentos (`src/routes/budgets/`)
 
 ### Nova página `/budgets`
-- [ ] Criar `src/routes/budgets.tsx` e `src/routes/budgets/index.tsx`
-- [ ] Seletor de mês no topo
-- [ ] Cards de orçamento com barra de progresso (`PercentUsed`)
+- [x] Criar `src/routes/budgets.tsx` e `src/routes/budgets/index.tsx`
+- [x] Seletor de mês no topo
+- [x] Cards de orçamento com barra de progresso (`PercentUsed`)
   - Verde se < 80%, âmbar se 80–99%, vermelho se > 100%
   - Texto "R$ X de R$ Y usado"
-- [ ] Card especial para orçamentos **estourados** com badge de alerta
-- [ ] Botão "Novo Orçamento" → abre `BudgetModal`
-- [ ] Ação de editar e excluir em cada card
+- [x] Card especial para orçamentos **estourados** com badge de alerta
+- [x] Botão "Novo Orçamento" → abre `BudgetModal`
+- [x] Ação de editar e excluir em cada card
 
 ### Novo componente `BudgetModal.tsx`
-- [ ] Campos: categoria (select com cores), valor limite, mês, ano, observações
-- [ ] Modo criação e edição
-- [ ] Ao salvar: `createBudget()` ou `updateBudget()` + invalidar queries
+- [x] Campos: categoria (select com cores), valor limite, mês, ano, observações
+- [x] Modo criação e edição
+- [x] Ao salvar: `createBudget()` ou `updateBudget()` + invalidar queries
 
 ### Integração no Dashboard
 - [ ] Adicionar seção resumida de orçamentos no dashboard (os 3 mais próximos do limite)
 - [ ] Link "Ver todos" para `/budgets`
 
 ### Navegação
-- [ ] Adicionar "Orçamentos" no `Header.tsx` (substituir o comentário `{/* Orçamentos/Metas removidos */}`)
+- [x] Adicionar "Orçamentos" no `Header.tsx` (substituir o comentário `{/* Orçamentos/Metas removidos */}`)
 - [ ] Adicionar no `BottomNav.tsx` (considerar substituir "Veículos" por "Orçamentos" ou usar ícone de menu)
 
 ---
 
 ## 📤 7. Exportação de Transações
 
-- [ ] Adicionar botão "Exportar CSV" na página de transações (`/transactions/`)
-- [ ] Abrir mini-modal com seletor de período (from/to)
-- [ ] Chamar `exportTransactions(from, to)` e disparar download automático do arquivo
-- [ ] Posicionar ao lado do botão "Importar" já existente
+- [x] Adicionar botão "Exportar CSV" na página de transações (`/transactions/`)
+- [x] Abrir mini-modal com seletor de período (from/to)
+- [x] Chamar `exportTransactions(from, to)` e disparar download automático do arquivo
+- [x] Posicionar ao lado do botão "Importar" já existente
 
 ---
 

@@ -168,7 +168,11 @@ export function useTransactionsList(opts: {
       opts.selectedAccount,
       opts.selectedStatus,
     ],
-    queryFn: () => api.get<Tx[]>(`/api/v1/transactions?${buildTxParams({ ...opts })}`),
+    queryFn: async () => {
+      const data = await api.get<Tx[]>(`/api/v1/transactions?${buildTxParams({ ...opts })}`);
+      // Remove transfers from the general transaction view
+      return data.filter((t) => t.classification !== 'TRANSFER');
+    },
     staleTime: 1000 * 30,
   });
 }
