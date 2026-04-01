@@ -8,7 +8,9 @@ import {
   Target,
   Wallet,
   CalendarDays,
+  Settings,
 } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 const NAV_ITEMS = [
   { id: 'panorama', to: '/' as const, icon: LayoutGrid, label: 'Panorama' },
@@ -18,6 +20,7 @@ const NAV_ITEMS = [
   { id: 'budgets', to: '/budgets' as const, icon: Target, label: 'Orçamentos' },
   { id: 'accounts', to: '/accounts' as const, icon: Wallet, label: 'Contas' },
   { id: 'calendar', to: '/calendar' as const, icon: CalendarDays, label: 'Calendário' },
+  { id: 'settings', to: '/settings' as const, icon: Settings, label: 'Ajustes' },
 ];
 
 // Triplicamos os itens para criar a ilusão de scroll infinito
@@ -75,6 +78,11 @@ export default function BottomNav() {
             <span className="truncate w-full text-center px-1">{label}</span>
           </Link>
         ))}
+        {/* Toggle de tema no final para mobile (como o header sumiu) */}
+        <div className="flex flex-col items-center justify-center min-w-[72px] min-h-[56px] snap-center">
+            <ThemeToggle />
+            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Tema</span>
+        </div>
       </div>
     </nav>
   );

@@ -24,10 +24,10 @@ const NAV_ITEMS = [
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/80 px-4 backdrop-blur-lg">
+    <header className="hidden sm:block sticky top-0 z-50 border-b border-border bg-background/80 px-4 backdrop-blur-lg">
       <nav className="max-w-7xl mx-auto flex items-center gap-1 py-3 sm:py-4">
         {/* Logo */}
-        <h2 className="m-0 flex-shrink-0 text-base font-semibold tracking-tight mr-6">
+        <h2 className="m-0 flex-shrink-0 text-base font-semibold tracking-tight mr-6 hidden min-[1100px]:flex">
           <Link
             to="/"
             className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity px-2 py-1"
@@ -42,7 +42,7 @@ export default function Header() {
         </h2>
 
         {/* Nav links — desktop only */}
-        <div className="hidden sm:flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto">
+        <div className="hidden sm:flex items-center gap-0.5 flex-1 min-w-0">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
             <Link
               key={to}
@@ -59,8 +59,6 @@ export default function Header() {
 
         {/* Right actions */}
         <div className="ml-auto flex items-center gap-2 shrink-0">
-          <ThemeToggle />
-          <div className="w-[1px] h-4 bg-border mx-1" />
           <Link
             to="/settings"
             className="hidden sm:flex p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-smooth"

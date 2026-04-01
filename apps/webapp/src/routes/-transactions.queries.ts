@@ -119,24 +119,7 @@ export function sumBillPayments(list: Tx[]): number {
     .reduce((acc, t) => acc + Math.abs(Number(t.amount)), 0);
 }
 
-export function currentMonthKey(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-export function monthKey(dateLike: string | Date): string {
-  const d = typeof dateLike === 'string' ? new Date(dateLike) : dateLike;
-  const y = d.getFullYear();
-  const m = d.getMonth() + 1;
-  return `${y}-${String(m).padStart(2, '0')}`;
-}
-
-export function formatMonthLabelPtBr(key: string): string {
-  const [y, m] = key.split('-').map((v) => Number(v));
-  const d = new Date(y, (m ?? 1) - 1, 1);
-  const label = d.toLocaleString('pt-BR', { month: 'long' });
-  return `${label} ${y}`;
-}
+export { currentMonthKey, monthKey, formatMonthLabelPtBr } from '../lib/formatters';
 
 export function splitByToday(list: Tx[]): { current: Tx[]; future: Tx[]; today: Date } {
   const today = startOfDayLocal();

@@ -30,6 +30,7 @@ import { Route as BudgetsIndexRouteImport } from './routes/budgets/index'
 import { Route as AccountsIndexRouteImport } from './routes/accounts/index'
 import { Route as VehiclesCrudVehiclesRouteImport } from './routes/vehicles/crud-vehicles'
 import { Route as TransactionsCrudTransactionsRouteImport } from './routes/transactions/crud-transactions'
+import { Route as TransactionsCrudFuelingRouteImport } from './routes/transactions/crud-fueling'
 import { Route as SettingsVehiclesRouteImport } from './routes/settings/vehicles'
 import { Route as SettingsPersonalInfoRouteImport } from './routes/settings/personal-info'
 import { Route as SettingsDataPrivacyRouteImport } from './routes/settings/data-privacy'
@@ -142,6 +143,11 @@ const TransactionsCrudTransactionsRoute =
     path: '/crud-transactions',
     getParentRoute: () => TransactionsRoute,
   } as any)
+const TransactionsCrudFuelingRoute = TransactionsCrudFuelingRouteImport.update({
+  id: '/crud-fueling',
+  path: '/crud-fueling',
+  getParentRoute: () => TransactionsRoute,
+} as any)
 const SettingsVehiclesRoute = SettingsVehiclesRouteImport.update({
   id: '/vehicles',
   path: '/vehicles',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/vehicles/crud-vehicles': typeof VehiclesCrudVehiclesRoute
   '/accounts/': typeof AccountsIndexRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/vehicles/crud-vehicles': typeof VehiclesCrudVehiclesRoute
   '/accounts': typeof AccountsIndexRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/vehicles/crud-vehicles': typeof VehiclesCrudVehiclesRoute
   '/accounts/': typeof AccountsIndexRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
+    | '/transactions/crud-fueling'
     | '/transactions/crud-transactions'
     | '/vehicles/crud-vehicles'
     | '/accounts/'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
+    | '/transactions/crud-fueling'
     | '/transactions/crud-transactions'
     | '/vehicles/crud-vehicles'
     | '/accounts'
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
+    | '/transactions/crud-fueling'
     | '/transactions/crud-transactions'
     | '/vehicles/crud-vehicles'
     | '/accounts/'
@@ -487,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TransactionsCrudTransactionsRouteImport
       parentRoute: typeof TransactionsRoute
     }
+    '/transactions/crud-fueling': {
+      id: '/transactions/crud-fueling'
+      path: '/crud-fueling'
+      fullPath: '/transactions/crud-fueling'
+      preLoaderRoute: typeof TransactionsCrudFuelingRouteImport
+      parentRoute: typeof TransactionsRoute
+    }
     '/settings/vehicles': {
       id: '/settings/vehicles'
       path: '/vehicles'
@@ -593,11 +612,13 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
 )
 
 interface TransactionsRouteChildren {
+  TransactionsCrudFuelingRoute: typeof TransactionsCrudFuelingRoute
   TransactionsCrudTransactionsRoute: typeof TransactionsCrudTransactionsRoute
   TransactionsIndexRoute: typeof TransactionsIndexRoute
 }
 
 const TransactionsRouteChildren: TransactionsRouteChildren = {
+  TransactionsCrudFuelingRoute: TransactionsCrudFuelingRoute,
   TransactionsCrudTransactionsRoute: TransactionsCrudTransactionsRoute,
   TransactionsIndexRoute: TransactionsIndexRoute,
 }

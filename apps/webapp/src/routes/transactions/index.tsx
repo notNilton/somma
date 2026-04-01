@@ -6,7 +6,6 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ImportModal } from '../../components/ImportModal';
 import { api } from '../../lib/api';
 import Fab from '../../components/Fab';
-import { FuelModal } from '../../components/FuelModal';
 import {
   Plus,
   FileUp,
@@ -59,7 +58,6 @@ function TransactionsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState<string>(() => currentMonthKey());
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isFuelOpen, setIsFuelOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [exportFrom, setExportFrom] = useState(() => {
     const d = new Date(); d.setDate(1);
@@ -127,8 +125,17 @@ function TransactionsPage() {
 
   const handleCreate = () =>
     void navigate({ to: '/transactions/crud-transactions', search: { transactionId: undefined } });
-  const handleEdit = (t: Tx) =>
-    void navigate({ to: '/transactions/crud-transactions', search: { transactionId: t.id } });
+
+  const handleFuelCreate = () =>
+    void navigate({ to: '/transactions/crud-fueling', search: { transactionId: undefined } });
+
+  const handleEdit = (t: Tx) => {
+    if (t.classification === 'FUEL') {
+      void navigate({ to: '/transactions/crud-fueling', search: { transactionId: t.id } });
+    } else {
+      void navigate({ to: '/transactions/crud-transactions', search: { transactionId: t.id } });
+    }
+  };
 
   const handleDelete = (t: Tx) => {
     if (t.isRecurring) {
@@ -328,7 +335,7 @@ function TransactionsPage() {
             <FileDown className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setIsFuelOpen(true)}
+            onClick={handleFuelCreate}
             className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-smooth"
           >
             <Fuel className="w-3.5 h-3.5" />
@@ -613,7 +620,7 @@ function TransactionsPage() {
                 {/* Separador de dia */}
                 <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 border-b border-border">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground capitalize">
-                    {dayLabel}
+                     {dayLabel}
                   </span>
                 </div>
 
@@ -692,7 +699,7 @@ function TransactionsPage() {
 
                       {/* Valor + ações */}
                       <div className="flex items-center gap-1 shrink-0">
-                        {/* Ações — visíveis no hover (desktop) ou sempre no mobile via long-press não implementado — ficam atrás do clique */}
+                        {/* Ações */}
                         <div className="hidden sm:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-smooth">
                           {t.status === 'PENDING' && (
                             <button
@@ -745,15 +752,6 @@ function TransactionsPage() {
 
       {/* FAB mobile */}
       <Fab label="Nova transação" onClick={handleCreate} />
-
-      <FuelModal
-        isOpen={isFuelOpen}
-        onClose={() => setIsFuelOpen(false)}
-        onSuccess={() => {
-          setIsFuelOpen(false);
-          invalidate();
-        }}
-      />
     </div>
   );
 }
