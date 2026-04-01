@@ -75,7 +75,8 @@ Outputs do job (usados pelos builds):
 
 1. Clona `main` via HTTPS
 2. Localiza Go no toolcache do runner
-3. Compila o binário: `go build -mod=vendor -ldflags "-X .../version.Version=X.Y.Z" -o main ./cmd/api`
+3. Compila o binário: `CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -ldflags "-X .../version.Version=X.Y.Z" -o main ./cmd/api`
+   - `CGO_ENABLED=0` é **obrigatório** — o runner é Ubuntu (glibc) mas a imagem final é Alpine (musl). Sem isso, o binário falha com `exec ./main: no such file or directory` em produção.
 4. Resolve o IP do container Gitea na rede `nilbyte-git` via `docker network inspect`
 5. Faz `docker login` no registry interno (`172.20.x.x:3000`)
 6. `docker build --network=host` — usa rede do host para puxar imagens base do Docker Hub
@@ -84,10 +85,11 @@ Outputs do job (usados pelos builds):
 ### Job `build-database`
 
 1. Clona `main`
-2. Compila o binário `migrate`: `go build -mod=vendor -o migrate ./cmd/migrate`
+2. Compila o binário `migrate`: `CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o migrate ./cmd/migrate`
+   - Mesma regra de `CGO_ENABLED=0` — binário roda em Alpine em produção.
 3. Login no registry (mesmo fluxo do backend)
 4. `docker build --network=host`
-5. Publica `database:latest` — imagem contém o binário `migrate` + todos os arquivos SQL de migration
+5. Publica `database:latest` — imagem contém o binário `migrate` + todos os arquivos SQL de migration e seed
 
 ### Job `build-webapp`
 
@@ -175,12 +177,29 @@ Runner container (rede nilbyte-git)
 1. PR mergeado em main
 2. onmain.yml dispara
 3. bump-versions: VERSION 1.0.5 → 1.0.6, commita, cria tag backend-v1.0.6
-4. build-backend: compila binary, gera backend:1.0.6 + backend:latest
-5. build-database: compila migrate, gera database:latest (com SQLs embutidos)
+4. build-backend: compila binary (CGO_ENABLED=0), gera backend:1.0.6 + backend:latest
+5. build-database: compila migrate (CGO_ENABLED=0), gera database:latest (com SQLs embutidos)
 6. build-webapp: npm build, gera webapp:1.0.6 + webapp:latest
-7. No servidor: ./scripts/manage-mirante.sh pull → puxa novas imagens
-8. ./scripts/manage-mirante.sh restart →
-   a. mirante-migrate roda (aplica migrations pendentes)
-   b. mirante-backend sobe (só após migrate concluir com sucesso)
-   c. mirante-webapp sobe
+7. No servidor: sh scripts/manage-mirante.sh update →
+   a. pull → puxa novas imagens do registry
+   b. stop → para todos os containers
+   c. start → sobe tudo com os 3 compose files juntos:
+      - mirante-db sobe e aguarda healthcheck (pg_isready)
+      - mirante-migrate roda ./migrate up → encerra com exit 0
+      - mirante-backend sobe (depends_on: mirante-migrate: service_completed_successfully)
+      - mirante-webapp sobe em paralelo
 ```
+
+### Comandos disponíveis no manage-mirante.sh
+
+| Comando | Ação |
+|---------|------|
+| `start` | Sobe toda a stack (db → migrate → backend + webapp) |
+| `stop` | Para e remove todos os containers da stack |
+| `restart` | stop + start |
+| `pull` | Puxa imagens mais recentes do registry |
+| `update` | pull + stop + start |
+| `logs` | Logs em tempo real de todos os serviços |
+| `status` | Estado atual dos containers |
+| `migrate` | Roda `./migrate up` manualmente (one-shot) |
+| `seed` | Roda `./migrate seed` manualmente (one-shot) |
