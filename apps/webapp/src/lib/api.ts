@@ -120,9 +120,20 @@ export const api = {
   },
 
   // --- Transactions Export ---
-  exportTransactions: async (from: string, to: string): Promise<Blob> => {
+  exportTransactions: async (params: {
+    from: string;
+    to: string;
+    search?: string;
+    type?: string;
+    categoryId?: string;
+    accountId?: string;
+  }): Promise<Blob> => {
     const token = auth.getToken();
-    const res = await fetch(`${BASE_URL}/api/v1/transactions/export?from=${from}&to=${to}`, {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v) qs.append(k, v);
+    });
+    const res = await fetch(`${BASE_URL}/api/v1/transactions/export?${qs.toString()}`, {
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     });
     if (!res.ok) throw new Error(`Export error: ${res.status}`);

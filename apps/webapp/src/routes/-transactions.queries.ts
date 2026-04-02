@@ -37,6 +37,7 @@ export interface Tx {
   categoryId?: string;
   accountId?: string;
   cardId?: string | null;
+  vehicleId?: string;
   category?: TxCategory;
   account?: TxAccount;
   card?: TxCard | null;
