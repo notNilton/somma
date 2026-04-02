@@ -124,16 +124,28 @@ function TransactionsPage() {
   });
 
   const handleCreate = () =>
-    void navigate({ to: '/transactions/crud-transactions', search: { transactionId: undefined } });
+    void navigate({
+      to: '/transactions/crud-transactions',
+      search: { transactionId: undefined },
+    });
 
   const handleFuelCreate = () =>
-    void navigate({ to: '/transactions/crud-fueling', search: { transactionId: undefined } });
+    void navigate({
+      to: '/transactions/crud-fueling',
+      search: { transactionId: undefined, vehicleId: undefined },
+    });
 
   const handleEdit = (t: Tx) => {
     if (t.classification === 'FUEL') {
-      void navigate({ to: '/transactions/crud-fueling', search: { transactionId: t.id } });
+      void navigate({
+        to: '/transactions/crud-fueling',
+        search: { transactionId: t.id, vehicleId: t.vehicleId ?? undefined },
+      });
     } else {
-      void navigate({ to: '/transactions/crud-transactions', search: { transactionId: t.id } });
+      void navigate({
+        to: '/transactions/crud-transactions',
+        search: { transactionId: t.id },
+      });
     }
   };
 
@@ -204,7 +216,14 @@ function TransactionsPage() {
     setIsExporting(true);
     setExportError(null);
     try {
-      const blob = await api.exportTransactions(exportFrom, exportTo);
+      const blob = await api.exportTransactions({
+        from: exportFrom,
+        to: exportTo,
+        search: search || undefined,
+        type: filterType !== 'all' ? filterType : undefined,
+        categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
+        accountId: selectedAccount !== 'all' ? selectedAccount : undefined,
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
