@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"encoding/csv"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -146,75 +144,3 @@ func (h *Handler) GetCategoryBreakdown(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) ExportTransactionsCSV(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
-	q := r.URL.Query()
-
-	from := q.Get("from")
-	to := q.Get("to")
-	if from == "" || to == "" {
-		writeError(w, http.StatusBadRequest, "from and to are required (YYYY-MM-DD)")
-		return
-	}
-
-	fromDate, err := time.Parse("2006-01-02", from)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid from date")
-		return
-	}
-	toDate, err := time.Parse("2006-01-02", to)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid to date")
-		return
-	}
-	if toDate.Sub(fromDate) > 366*24*time.Hour {
-		writeError(w, http.StatusBadRequest, "date range cannot exceed 1 year")
-		return
-	}
-
-	rows, err := h.db.Query(r.Context(), `
-		SELECT t.date, t.description, t.amount_cents, t.type, t.status,
-		       t.classification, t.payment_method, t.channel,
-		       COALESCE(c.name, '') AS category_name
-		FROM transactions t
-		LEFT JOIN categories c ON c.id = t.category_id
-		WHERE t.user_id = $1
-		  AND t.is_active = true
-		  AND t.date >= $2::date
-		  AND t.date <= $3::date
-		ORDER BY t.date DESC
-	`, claims.UserID, from, to)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal error")
-		return
-	}
-	defer rows.Close()
-
-	filename := fmt.Sprintf("transactions_%s_%s.csv", from, to)
-	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
-
-	writer := csv.NewWriter(w)
-	writer.Write([]string{"Date", "Description", "Amount", "Type", "Status", "Classification", "PaymentMethod", "Channel", "Category"})
-
-	for rows.Next() {
-		var date any
-		var description, txType, status, classification, paymentMethod, channel, categoryName string
-		var amountCents int64
-		if err := rows.Scan(&date, &description, &amountCents, &txType, &status, &classification, &paymentMethod, &channel, &categoryName); err != nil {
-			continue
-		}
-		writer.Write([]string{
-			fmt.Sprintf("%v", date),
-			description,
-			fmt.Sprintf("%.2f", money.ToReais(amountCents)),
-			txType,
-			status,
-			classification,
-			paymentMethod,
-			channel,
-			categoryName,
-		})
-	}
-	writer.Flush()
-}
