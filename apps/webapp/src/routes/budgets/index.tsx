@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { api } from '../../lib/api';
+import { api, unwrapData, type ApiDataResponse } from '../../lib/api';
 import { MonthSelector } from '../../components/MonthSelector';
 import {
   Plus,
@@ -42,6 +42,31 @@ interface Budget {
 interface BudgetStatus extends Budget {
   spent: number;
   percentUsed: number;
+  isOverBudget?: boolean;
+  remaining?: number;
+}
+
+interface BudgetStatusApiItem {
+  id: string;
+  categoryId?: string;
+  categoryName?: string | null;
+  categoryColor?: string | null;
+  category?: { id?: string; name?: string | null; color?: string | null };
+  amount?: number;
+  limitAmount?: number;
+  spent: number;
+  remaining?: number;
+  percentUsed: number;
+  isOverBudget?: boolean;
+  month: number;
+  year: number;
+  notes?: string;
+}
+
+interface BudgetStatusResponse {
+  month: string;
+  budgets?: BudgetStatusApiItem[];
+  data?: BudgetStatusApiItem[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -64,6 +89,40 @@ function progressTextColor(pct: number) {
   if (pct >= 100) return 'text-rose-500';
   if (pct >= 80) return 'text-amber-500';
   return 'text-emerald-500';
+}
+
+function normalizeBudgetStatus(
+  res:
+    | BudgetStatusResponse
+    | ApiDataResponse<BudgetStatusApiItem[]>
+    | BudgetStatusApiItem[]
+    | null
+    | undefined,
+): BudgetStatus[] {
+  const raw = unwrapData(res, [] as BudgetStatusApiItem[] | BudgetStatusResponse);
+  const items = Array.isArray(raw) ? raw : raw.data ?? raw.budgets ?? [];
+
+  return items.map((item) => ({
+    id: item.id,
+    categoryId: item.categoryId ?? item.category?.id ?? undefined,
+    category:
+      item.category ??
+      (item.categoryName || item.categoryColor
+        ? {
+            id: item.categoryId,
+            name: item.categoryName ?? 'Geral',
+            color: item.categoryColor ?? undefined,
+          }
+        : undefined),
+    limitAmount: item.limitAmount ?? item.amount ?? 0,
+    month: item.month,
+    year: item.year,
+    notes: item.notes,
+    spent: item.spent ?? 0,
+    percentUsed: item.percentUsed ?? 0,
+    isOverBudget: item.isOverBudget,
+    remaining: item.remaining,
+  }));
 }
 
 // ─── Budget Modal ────────────────────────────────────────────────────────────
@@ -152,7 +211,11 @@ function BudgetModal({
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+        <form
+          id="budget-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-5 flex flex-col gap-4"
+        >
           {error && (
             <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-sm">
               {error}
@@ -267,8 +330,8 @@ function BudgetModal({
             Cancelar
           </button>
           <button
-            type="button"
-            onClick={handleSubmit as any}
+            type="submit"
+            form="budget-form"
             disabled={isLoading || Number(limitCents) <= 0}
             className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all flex items-center justify-center gap-2"
           >
@@ -365,6 +428,7 @@ function BudgetCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function BudgetsPage() {
+  const navigate = useNavigate({ from: '/budgets/' });
   const queryClient = useQueryClient();
   const search = Route.useSearch();
 
@@ -379,8 +443,12 @@ function BudgetsPage() {
   const { data: statusList = [], isLoading } = useQuery({
     queryKey: ['budgets', 'status', currentMonthValue],
     queryFn: async () => {
-      const res = await api.getBudgetsStatus<any>(currentMonthValue);
-      return Array.isArray(res) ? res : (res as any)?.data ?? [];
+      const res = await api.getBudgetsStatus<
+        BudgetStatusResponse | ApiDataResponse<BudgetStatusApiItem[]> | BudgetStatusApiItem[]
+      >(
+        currentMonthValue,
+      );
+      return normalizeBudgetStatus(res);
     },
     staleTime: 1000 * 60,
   });
@@ -424,7 +492,7 @@ function BudgetsPage() {
             <MonthSelector
               value={currentMonthValue}
               onChange={(m) => {
-                window.history.pushState({}, '', `?month=${m}`);
+                void navigate({ to: '/budgets', search: { month: m } });
                 queryClient.invalidateQueries({ queryKey: ['budgets', 'status'] });
               }}
             />
