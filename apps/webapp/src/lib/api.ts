@@ -139,6 +139,7 @@ export const api = {
     type?: string;
     categoryId?: string;
     accountId?: string;
+    classification?: string;
   }): Promise<Blob> => {
     const token = auth.getToken();
     const qs = new URLSearchParams();

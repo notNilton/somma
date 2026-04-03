@@ -33,6 +33,7 @@ import {
   sumExpenses,
   sumDebitExpenses,
   sumCreditExpenses,
+  sumBillPayments,
   sumIncome,
   useTransactionsList,
 } from '../-transactions.queries';
@@ -40,6 +41,13 @@ import {
 export const Route = createFileRoute('/transactions/')({
   component: TransactionsPage,
 });
+
+const CLASSIFICATION_LABEL: Record<string, string> = {
+  COMMON: 'Comum',
+  FUEL: 'Abastecimento',
+  MAINTENANCE: 'ManutenÃ§Ã£o',
+  TRANSFER: 'Fatura paga',
+};
 
 const CHANNEL_LABEL: Record<string, string> = {
   PIX: 'Pix',
@@ -71,6 +79,7 @@ function TransactionsPage() {
   const [selectedIds, setSelectedIds] = useState<Record<string, true>>({});
   const [confirmBulkDeleteOpen, setConfirmBulkDeleteOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState('all');
+  const [selectedClassification, setSelectedClassification] = useState('all');
   const [cancelRecurringTarget, setCancelRecurringTarget] = useState<Tx | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -79,6 +88,7 @@ function TransactionsPage() {
     filterType,
     selectedCategory,
     selectedAccount,
+    selectedClassification,
   });
 
   const { data: categories = [] } = useQuery({
@@ -177,6 +187,7 @@ function TransactionsPage() {
   const summaryDebit = sumDebitExpenses(tableTransactions);
   const summaryCredit = sumCreditExpenses(tableTransactions);
   const summaryExpenses = sumExpenses(tableTransactions);
+  const summaryBillPayments = sumBillPayments(tableTransactions);
   const summaryIncome = sumIncome(tableTransactions);
 
   // Sort desc by date
@@ -203,13 +214,15 @@ function TransactionsPage() {
     search !== '' ||
     filterType !== 'all' ||
     selectedCategory !== 'all' ||
-    selectedAccount !== 'all';
+    selectedAccount !== 'all' ||
+    selectedClassification !== 'all';
 
   const clearFilters = () => {
     setSearch('');
     setFilterType('all');
     setSelectedCategory('all');
     setSelectedAccount('all');
+    setSelectedClassification('all');
   };
 
   const handleExport = async () => {
@@ -223,6 +236,8 @@ function TransactionsPage() {
         type: filterType !== 'all' ? filterType : undefined,
         categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
         accountId: selectedAccount !== 'all' ? selectedAccount : undefined,
+        classification:
+          selectedClassification !== 'all' ? selectedClassification : undefined,
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -445,7 +460,7 @@ function TransactionsPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border-t border-border pt-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 border-t border-border pt-3">
           <div className="text-center">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
               Déb / Pix
@@ -462,6 +477,15 @@ function TransactionsPage() {
             <PrivacyAmount
               value={-summaryCredit}
               className="text-sm sm:text-base font-bold font-display text-purple-500 block"
+            />
+          </div>
+          <div className="text-center">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+              Fatura paga
+            </p>
+            <PrivacyAmount
+              value={-summaryBillPayments}
+              className="text-sm sm:text-base font-bold font-display text-amber-500 block"
             />
           </div>
           <div className="text-center sm:border-l sm:border-border sm:pl-2">
@@ -534,18 +558,31 @@ function TransactionsPage() {
                 ))}
               </select>
             </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 bg-muted/40 border border-border rounded-lg text-xs font-medium outline-none cursor-pointer"
-            >
-              <option value="all">Todas as categorias</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.description ?? cat.name}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 bg-muted/40 border border-border rounded-lg text-xs font-medium outline-none cursor-pointer"
+              >
+                <option value="all">Todas as categorias</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.description ?? cat.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={selectedClassification}
+                onChange={(e) => setSelectedClassification(e.target.value)}
+                className="px-3 py-2 bg-muted/40 border border-border rounded-lg text-xs font-medium outline-none cursor-pointer"
+              >
+                <option value="all">Todas as classificações</option>
+                <option value="COMMON">Comuns</option>
+                <option value="FUEL">Abastecimentos</option>
+                <option value="MAINTENANCE">Manutenções</option>
+                <option value="TRANSFER">Faturas pagas</option>
+              </select>
+            </div>
             {isAnyFilterActive && (
               <button
                 type="button"
@@ -648,6 +685,7 @@ function TransactionsPage() {
                   const isIncome = t.type === 'INCOME';
                   const value = Math.abs(Number(t.amount));
                   const channelLabel = CHANNEL_LABEL[t.channel ?? ''] ?? t.channel ?? '';
+                  const classificationLabel = CLASSIFICATION_LABEL[t.classification ?? ''];
 
                   return (
                     <div
@@ -706,6 +744,11 @@ function TransactionsPage() {
                           {t.status === 'PENDING' && (
                             <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
                               pendente
+                            </span>
+                          )}
+                          {classificationLabel && t.classification !== 'COMMON' && (
+                            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
+                              {classificationLabel}
                             </span>
                           )}
                         </div>

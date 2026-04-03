@@ -68,6 +68,7 @@ export function buildTxParams(opts: {
   selectedCategory: string;
   selectedAccount?: string;
   selectedStatus?: string;
+  selectedClassification?: string;
   extra?: Record<string, string>;
 }): string {
   const params = new URLSearchParams();
@@ -78,6 +79,8 @@ export function buildTxParams(opts: {
     params.set('accountId', opts.selectedAccount);
   if (opts.selectedStatus && opts.selectedStatus !== 'all')
     params.set('status', opts.selectedStatus);
+  if (opts.selectedClassification && opts.selectedClassification !== 'all')
+    params.set('classification', opts.selectedClassification);
   params.set('page', '1');
   params.set('limit', '5000');
   if (opts.extra) {
@@ -142,6 +145,7 @@ export function useTransactionsList(opts: {
   selectedCategory: string;
   selectedAccount?: string;
   selectedStatus?: string;
+  selectedClassification?: string;
 }) {
   return useQuery({
     queryKey: [
@@ -151,10 +155,13 @@ export function useTransactionsList(opts: {
       opts.selectedCategory,
       opts.selectedAccount,
       opts.selectedStatus,
+      opts.selectedClassification,
     ],
     queryFn: async () => {
       const data = await api.get<Tx[]>(`/api/v1/transactions?${buildTxParams({ ...opts })}`);
-      // Remove transfers from the general transaction view
+      if (opts.selectedClassification === 'TRANSFER') {
+        return data.filter((t) => t.classification === 'TRANSFER');
+      }
       return data.filter((t) => t.classification !== 'TRANSFER');
     },
     staleTime: 1000 * 30,
