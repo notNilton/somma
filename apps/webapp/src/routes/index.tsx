@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import PrivacyAmount from '../components/PrivacyAmount';
 import Fab from '../components/Fab';
-import { api } from '../lib/api';
+import { api, unwrapData, type ApiDataResponse } from '../lib/api';
 import { MonthSelector } from '../components/MonthSelector';
 import {
   Bar,
@@ -64,6 +64,29 @@ interface DashboardData {
   }>;
 }
 
+interface MonthlyEvolutionItem {
+  month: string;
+  income: number;
+  expenses: number;
+  net: number;
+}
+
+interface CategoryBreakdownItem {
+  categoryId?: string | null;
+  categoryName?: string | null;
+  categoryColor?: string | null;
+  type: string;
+  total: number;
+  totalCents: number;
+  count: number;
+}
+
+interface CategoryBreakdownResponse {
+  month: string;
+  type: string;
+  items: CategoryBreakdownItem[];
+}
+
 function MetricCard({
   title,
   value,
@@ -102,6 +125,35 @@ function MetricCard({
 const formatBrl = (val: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
+function normalizeMonthlyEvolution(
+  res: MonthlyEvolutionItem[] | ApiDataResponse<MonthlyEvolutionItem[]> | null | undefined,
+) {
+  return unwrapData(res, []).map((item) => ({
+    ...item,
+    expense: item.expenses,
+  }));
+}
+
+function normalizeBreakdown(
+  res:
+    | CategoryBreakdownResponse
+    | ApiDataResponse<CategoryBreakdownResponse>
+    | CategoryBreakdownItem[]
+    | ApiDataResponse<CategoryBreakdownItem[]>
+    | null
+    | undefined,
+) {
+  const raw = unwrapData(res, [] as CategoryBreakdownItem[] | CategoryBreakdownResponse);
+  const items = Array.isArray(raw) ? raw : raw.items ?? [];
+
+  return items.map((item) => ({
+    category: item.categoryName ?? 'Sem categoria',
+    amount: item.total,
+    color: item.categoryColor ?? undefined,
+    count: item.count,
+  }));
+}
+
 function UserDashboard() {
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -121,8 +173,10 @@ function UserDashboard() {
   const { data: evolutionData = [] } = useQuery({
     queryKey: ['dashboard', 'monthly-evolution'],
     queryFn: async () => {
-      const res = await api.getMonthlyEvolution<any>();
-      return Array.isArray(res) ? res : (res as any)?.data ?? [];
+      const res = await api.getMonthlyEvolution<
+        MonthlyEvolutionItem[] | ApiDataResponse<MonthlyEvolutionItem[]>
+      >();
+      return normalizeMonthlyEvolution(res);
     },
     staleTime: 1000 * 60,
   });
@@ -130,8 +184,13 @@ function UserDashboard() {
   const { data: breakdownData = [] } = useQuery({
     queryKey: ['dashboard', 'category-breakdown', currentMonthValue, breakdownType],
     queryFn: async () => {
-      const res = await api.getCategoryBreakdown<any>(currentMonthValue, breakdownType);
-      return Array.isArray(res) ? res : (res as any)?.data ?? [];
+      const res = await api.getCategoryBreakdown<
+        | CategoryBreakdownResponse
+        | ApiDataResponse<CategoryBreakdownResponse>
+        | CategoryBreakdownItem[]
+        | ApiDataResponse<CategoryBreakdownItem[]>
+      >(currentMonthValue, breakdownType);
+      return normalizeBreakdown(res);
     },
     staleTime: 1000 * 60,
   });
