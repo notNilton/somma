@@ -28,6 +28,7 @@ import {
   Loader2,
   BarChart3,
   PieChart as PieChartIcon,
+  Target,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -85,6 +86,22 @@ interface CategoryBreakdownResponse {
   month: string;
   type: string;
   items: CategoryBreakdownItem[];
+}
+
+interface BudgetSummaryItem {
+  id: string;
+  limitAmount?: number;
+  amount?: number;
+  spent: number;
+  remaining?: number;
+  percentUsed: number;
+  isOverBudget?: boolean;
+}
+
+interface BudgetSummaryResponse {
+  month: string;
+  budgets?: BudgetSummaryItem[];
+  data?: BudgetSummaryItem[];
 }
 
 function MetricCard({
@@ -154,6 +171,18 @@ function normalizeBreakdown(
   }));
 }
 
+function normalizeBudgetSummary(
+  res:
+    | BudgetSummaryResponse
+    | ApiDataResponse<BudgetSummaryItem[]>
+    | BudgetSummaryItem[]
+    | null
+    | undefined,
+) {
+  const raw = unwrapData(res, [] as BudgetSummaryItem[] | BudgetSummaryResponse);
+  return Array.isArray(raw) ? raw : raw.data ?? raw.budgets ?? [];
+}
+
 function UserDashboard() {
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -195,6 +224,17 @@ function UserDashboard() {
     staleTime: 1000 * 60,
   });
 
+  const { data: budgetSummary = [] } = useQuery({
+    queryKey: ['budgets', 'status', currentMonthValue, 'dashboard-summary'],
+    queryFn: async () => {
+      const res = await api.getBudgetsStatus<
+        BudgetSummaryResponse | ApiDataResponse<BudgetSummaryItem[]> | BudgetSummaryItem[]
+      >(currentMonthValue);
+      return normalizeBudgetSummary(res);
+    },
+    staleTime: 1000 * 60,
+  });
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
@@ -209,6 +249,21 @@ function UserDashboard() {
   const [yearStr, monthStr] = currentMonthValue.split('-');
   const currentMonth = new Date(parseInt(yearStr), parseInt(monthStr) - 1).toLocaleString('pt-BR', { month: 'long' });
   const maxFlow = Math.max(...data.cashFlow.map((d) => d.value), 1);
+  const totalBudgetLimit = budgetSummary.reduce(
+    (sum, item) => sum + Number(item.limitAmount ?? item.amount ?? 0),
+    0,
+  );
+  const totalBudgetSpent = budgetSummary.reduce((sum, item) => sum + Number(item.spent ?? 0), 0);
+  const totalBudgetRemaining = budgetSummary.reduce(
+    (sum, item) =>
+      sum +
+      Number(
+        item.remaining ??
+          (Number(item.limitAmount ?? item.amount ?? 0) - Number(item.spent ?? 0)),
+      ),
+    0,
+  );
+  const overBudgetCount = budgetSummary.filter((item) => item.isOverBudget).length;
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
@@ -418,38 +473,103 @@ function UserDashboard() {
           </div>
         </div>
 
-        {/* Direita: Contas */}
-        <div className="card-premium overflow-hidden h-fit">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-              <Wallet className="w-3.5 h-3.5" />
-              Suas Contas
-            </h2>
-            <button
-              onClick={() => void navigate({ to: '/accounts' })}
-              className="text-[10px] font-bold text-primary hover:underline"
-            >
-              Gerenciar →
-            </button>
-          </div>
-          <div className="divide-y divide-border">
-            {data.accounts.map((acc, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
+        {/* Direita: Contas + Orçamentos */}
+        <div className="flex flex-col gap-4 h-fit">
+          <div className="card-premium overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5" />
+                Suas Contas
+              </h2>
+              <button
+                onClick={() => void navigate({ to: '/accounts' })}
+                className="text-[10px] font-bold text-primary hover:underline"
               >
-                <p className="text-sm font-medium">{acc.name}</p>
-                <PrivacyAmount value={acc.balance} className="text-sm font-bold" />
-              </div>
-            ))}
-          </div>
-          <div className="px-4 py-3 border-t border-border bg-muted/20">
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Total
-              </p>
-              <PrivacyAmount value={data.totalBalance} className="text-sm font-bold" />
+                Gerenciar →
+              </button>
             </div>
+            <div className="divide-y divide-border">
+              {data.accounts.map((acc, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
+                >
+                  <p className="text-sm font-medium">{acc.name}</p>
+                  <PrivacyAmount value={acc.balance} className="text-sm font-bold" />
+                </div>
+              ))}
+            </div>
+            <div className="px-4 py-3 border-t border-border bg-muted/20">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Total
+                </p>
+                <PrivacyAmount value={data.totalBalance} className="text-sm font-bold" />
+              </div>
+            </div>
+          </div>
+
+          <div className="card-premium overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5" />
+                Orçamentos
+              </h2>
+              <button
+                onClick={() => void navigate({ to: '/budgets', search: { month: currentMonthValue } })}
+                className="text-[10px] font-bold text-primary hover:underline"
+              >
+                Abrir →
+              </button>
+            </div>
+            {budgetSummary.length === 0 ? (
+              <div className="px-4 py-5 text-sm text-muted-foreground">
+                Nenhum orçamento ativo em {currentMonth}.
+              </div>
+            ) : (
+              <>
+                <div className="divide-y divide-border">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Planejado
+                    </p>
+                    <PrivacyAmount value={totalBudgetLimit} className="text-sm font-bold" />
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Gasto
+                    </p>
+                    <PrivacyAmount
+                      value={totalBudgetSpent}
+                      className="text-sm font-bold text-rose-500"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Restante
+                    </p>
+                    <PrivacyAmount
+                      value={totalBudgetRemaining}
+                      className={`text-sm font-bold ${
+                        totalBudgetRemaining >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                      }`}
+                    />
+                  </div>
+                </div>
+                <div className="px-4 py-3 border-t border-border bg-muted/20 flex items-center justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Estourados
+                  </p>
+                  <span
+                    className={`text-sm font-bold ${
+                      overBudgetCount > 0 ? 'text-rose-500' : 'text-emerald-500'
+                    }`}
+                  >
+                    {overBudgetCount}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
