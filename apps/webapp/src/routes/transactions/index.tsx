@@ -225,7 +225,7 @@ function TransactionsPage() {
     setSelectedClassification('all');
   };
 
-  const handleExport = async () => {
+  const handleExport = async (mode: 'download' | 'share' = 'download') => {
     setIsExporting(true);
     setExportError(null);
     try {
@@ -239,12 +239,33 @@ function TransactionsPage() {
         classification:
           selectedClassification !== 'all' ? selectedClassification : undefined,
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `transacoes_${exportFrom}_${exportTo}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const filename = `transacoes_${exportFrom}_${exportTo}.csv`;
+      const shareCapable =
+        mode === 'share' &&
+        typeof navigator !== 'undefined' &&
+        'share' in navigator &&
+        'canShare' in navigator;
+
+      if (shareCapable) {
+        const file = new File([blob], filename, { type: 'text/csv;charset=utf-8' });
+        const canShareFile = navigator.canShare?.({ files: [file] });
+        if (canShareFile) {
+          await navigator.share({
+            title: 'Exportação de transações',
+            text: `CSV gerado para o período de ${exportFrom} até ${exportTo}.`,
+            files: [file],
+          });
+        } else {
+          throw new Error('Compartilhamento de arquivos não suportado neste navegador.');
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
       setIsExportOpen(false);
     } catch (err) {
       setExportError(err instanceof Error ? err.message : 'Erro ao exportar.');
@@ -424,6 +445,15 @@ function TransactionsPage() {
                 Exportar
               </button>
             </div>
+            {'share' in navigator && (
+              <button
+                onClick={() => void handleExport('share')}
+                disabled={isExporting}
+                className="w-full py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted disabled:opacity-50 transition-all"
+              >
+                Compartilhar CSV
+              </button>
+            )}
           </div>
         </div>
       )}
