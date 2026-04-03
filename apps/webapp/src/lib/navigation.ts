@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Fuel,
   LayoutGrid,
+  LineChart,
   Settings,
   Target,
   Wallet,
@@ -19,6 +20,7 @@ export interface NavigationItem {
     | '/vehicles'
     | '/budgets'
     | '/accounts'
+    | '/reports'
     | '/calendar'
     | '/settings';
   icon: LucideIcon;
@@ -35,6 +37,7 @@ export const navigationItems: NavigationItem[] = [
   { id: 'vehicles', to: '/vehicles', icon: Fuel, label: 'Veículos' },
   { id: 'budgets', to: '/budgets', icon: Target, label: 'Orçamentos' },
   { id: 'accounts', to: '/accounts', icon: Wallet, label: 'Contas & Cartões', shortLabel: 'Contas' },
+  { id: 'reports', to: '/reports', icon: LineChart, label: 'Relatórios', shortLabel: 'Reports' },
   { id: 'calendar', to: '/calendar', icon: CalendarDays, label: 'Calendário' },
   { id: 'settings', to: '/settings', icon: Settings, label: 'Ajustes', mobileOnly: true },
 ];

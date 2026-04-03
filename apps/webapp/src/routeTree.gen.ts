@@ -13,6 +13,7 @@ import { Route as VehiclesRouteImport } from './routes/vehicles'
 import { Route as TransfersRouteImport } from './routes/transfers'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CardsRouteImport } from './routes/cards'
@@ -24,6 +25,7 @@ import { Route as VehiclesIndexRouteImport } from './routes/vehicles/index'
 import { Route as TransfersIndexRouteImport } from './routes/transfers/index'
 import { Route as TransactionsIndexRouteImport } from './routes/transactions/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as ReportsIndexRouteImport } from './routes/reports/index'
 import { Route as CardsIndexRouteImport } from './routes/cards/index'
 import { Route as CalendarIndexRouteImport } from './routes/calendar/index'
 import { Route as BudgetsIndexRouteImport } from './routes/budgets/index'
@@ -55,6 +57,11 @@ const TransactionsRoute = TransactionsRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -111,6 +118,11 @@ const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SettingsRoute,
+} as any)
+const ReportsIndexRoute = ReportsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ReportsRoute,
 } as any)
 const CardsIndexRoute = CardsIndexRouteImport.update({
   id: '/',
@@ -182,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/cards': typeof CardsRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reports': typeof ReportsRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
   '/transactions': typeof TransactionsRouteWithChildren
   '/transfers': typeof TransfersRouteWithChildren
@@ -198,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/budgets/': typeof BudgetsIndexRoute
   '/calendar/': typeof CalendarIndexRoute
   '/cards/': typeof CardsIndexRoute
+  '/reports/': typeof ReportsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/transactions/': typeof TransactionsIndexRoute
   '/transfers/': typeof TransfersIndexRoute
@@ -219,6 +233,7 @@ export interface FileRoutesByTo {
   '/budgets': typeof BudgetsIndexRoute
   '/calendar': typeof CalendarIndexRoute
   '/cards': typeof CardsIndexRoute
+  '/reports': typeof ReportsIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/transactions': typeof TransactionsIndexRoute
   '/transfers': typeof TransfersIndexRoute
@@ -233,6 +248,7 @@ export interface FileRoutesById {
   '/cards': typeof CardsRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reports': typeof ReportsRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
   '/transactions': typeof TransactionsRouteWithChildren
   '/transfers': typeof TransfersRouteWithChildren
@@ -249,6 +265,7 @@ export interface FileRoutesById {
   '/budgets/': typeof BudgetsIndexRoute
   '/calendar/': typeof CalendarIndexRoute
   '/cards/': typeof CardsIndexRoute
+  '/reports/': typeof ReportsIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/transactions/': typeof TransactionsIndexRoute
   '/transfers/': typeof TransfersIndexRoute
@@ -264,6 +281,7 @@ export interface FileRouteTypes {
     | '/cards'
     | '/login'
     | '/register'
+    | '/reports'
     | '/settings'
     | '/transactions'
     | '/transfers'
@@ -280,6 +298,7 @@ export interface FileRouteTypes {
     | '/budgets/'
     | '/calendar/'
     | '/cards/'
+    | '/reports/'
     | '/settings/'
     | '/transactions/'
     | '/transfers/'
@@ -301,6 +320,7 @@ export interface FileRouteTypes {
     | '/budgets'
     | '/calendar'
     | '/cards'
+    | '/reports'
     | '/settings'
     | '/transactions'
     | '/transfers'
@@ -314,6 +334,7 @@ export interface FileRouteTypes {
     | '/cards'
     | '/login'
     | '/register'
+    | '/reports'
     | '/settings'
     | '/transactions'
     | '/transfers'
@@ -330,6 +351,7 @@ export interface FileRouteTypes {
     | '/budgets/'
     | '/calendar/'
     | '/cards/'
+    | '/reports/'
     | '/settings/'
     | '/transactions/'
     | '/transfers/'
@@ -344,6 +366,7 @@ export interface RootRouteChildren {
   CardsRoute: typeof CardsRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ReportsRoute: typeof ReportsRouteWithChildren
   SettingsRoute: typeof SettingsRouteWithChildren
   TransactionsRoute: typeof TransactionsRouteWithChildren
   TransfersRoute: typeof TransfersRouteWithChildren
@@ -378,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -456,6 +486,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof SettingsIndexRouteImport
       parentRoute: typeof SettingsRoute
+    }
+    '/reports/': {
+      id: '/reports/'
+      path: '/'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof ReportsIndexRouteImport
+      parentRoute: typeof ReportsRoute
     }
     '/cards/': {
       id: '/cards/'
@@ -591,6 +628,17 @@ const CardsRouteChildren: CardsRouteChildren = {
 
 const CardsRouteWithChildren = CardsRoute._addFileChildren(CardsRouteChildren)
 
+interface ReportsRouteChildren {
+  ReportsIndexRoute: typeof ReportsIndexRoute
+}
+
+const ReportsRouteChildren: ReportsRouteChildren = {
+  ReportsIndexRoute: ReportsIndexRoute,
+}
+
+const ReportsRouteWithChildren =
+  ReportsRoute._addFileChildren(ReportsRouteChildren)
+
 interface SettingsRouteChildren {
   SettingsCategoriesRoute: typeof SettingsCategoriesRoute
   SettingsDataPrivacyRoute: typeof SettingsDataPrivacyRoute
@@ -661,6 +709,7 @@ const rootRouteChildren: RootRouteChildren = {
   CardsRoute: CardsRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ReportsRoute: ReportsRouteWithChildren,
   SettingsRoute: SettingsRouteWithChildren,
   TransactionsRoute: TransactionsRouteWithChildren,
   TransfersRoute: TransfersRouteWithChildren,
