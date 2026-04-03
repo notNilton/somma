@@ -10,7 +10,6 @@ import {
   CalendarDays,
   User,
 } from 'lucide-react';
-import ThemeToggle from './ThemeToggle';
 
 const NAV_ITEMS = [
   { to: '/' as const, icon: LayoutGrid, label: 'Panorama' },

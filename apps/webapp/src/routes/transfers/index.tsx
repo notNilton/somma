@@ -174,7 +174,11 @@ function TransferModal({
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+        <form
+          id="transfer-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-6 flex flex-col gap-4"
+        >
           {error && (
             <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold">
               {error}
@@ -254,8 +258,8 @@ function TransferModal({
           </button>
           <button
             type="submit"
+            form="transfer-form"
             disabled={isLoading || isDisabled}
-            onClick={handleSubmit as any}
             className="flex-[2] py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-smooth flex items-center justify-center gap-2"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowLeftRight className="w-4 h-4" />}

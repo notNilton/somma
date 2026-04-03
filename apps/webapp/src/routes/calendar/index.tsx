@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../lib/api';
+import { api, unwrapData, type ApiDataResponse } from '../../lib/api';
 import PrivacyAmount from '../../components/PrivacyAmount';
 import { CalendarDays, ChevronLeft, ChevronRight, Loader2, X, ArrowUpRight, ArrowDownLeft, AlertCircle } from 'lucide-react';
 
@@ -126,8 +126,10 @@ function CalendarPage() {
   const { data: calendarData, isLoading } = useQuery({
     queryKey: ['calendar', from, to],
     queryFn: async () => {
-      const res = await api.getFinancialCalendar<any>(from, to);
-      return (Array.isArray(res) ? res : (res as any)?.data ?? []) as CalendarDay[];
+      const res = await api.getFinancialCalendar<
+        CalendarDay[] | ApiDataResponse<CalendarDay[]>
+      >(from, to);
+      return unwrapData(res, []);
     },
     staleTime: 1000 * 60,
   });

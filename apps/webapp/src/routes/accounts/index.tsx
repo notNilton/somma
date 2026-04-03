@@ -19,7 +19,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { api } from '../../lib/api';
+import { api, unwrapData, type ApiDataResponse } from '../../lib/api';
 
 export const Route = createFileRoute('/accounts/')({
   component: AccountsPage,
@@ -88,10 +88,7 @@ function StatementDrawer({ card, onClose }: { card: Card; onClose: () => void })
 
   const { data: statement, isLoading } = useQuery({
     queryKey: ['card-statement', card.id, from, to],
-    queryFn: async () => {
-      const res = await api.getCardStatement<any>(card.id, from, to);
-      return res as Statement;
-    },
+    queryFn: () => api.getCardStatement<Statement>(card.id, from, to),
     staleTime: 1000 * 60,
   });
 
@@ -394,8 +391,8 @@ function AccountsPage() {
   const { data: cards = [] } = useQuery({
     queryKey: ['cards'],
     queryFn: async () => {
-      const res = await api.listCards<any>();
-      return (Array.isArray(res) ? res : (res as any)?.data ?? []) as Card[];
+      const res = await api.listCards<Card[] | ApiDataResponse<Card[]>>();
+      return unwrapData(res, []);
     },
     staleTime: 1000 * 60 * 5,
   });
