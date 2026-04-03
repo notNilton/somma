@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { api, unwrapData, type ApiDataResponse } from '../../lib/api';
+import Fab from '../../components/Fab';
 import { MonthSelector } from '../../components/MonthSelector';
 import {
   Plus,
@@ -498,11 +499,10 @@ function BudgetsPage() {
             />
             <button
               onClick={() => { setEditTarget(undefined); setShowModal(true); }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+              className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Novo Orçamento</span>
-              <span className="sm:hidden">Novo</span>
+              <span>Novo Orçamento</span>
             </button>
           </div>
         </div>
@@ -570,6 +570,14 @@ function BudgetsPage() {
           onSaved={handleSaved}
         />
       )}
+
+      <Fab
+        label="Novo orçamento"
+        onClick={() => {
+          setEditTarget(undefined);
+          setShowModal(true);
+        }}
+      />
     </>
   );
 }

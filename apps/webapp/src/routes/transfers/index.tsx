@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
+import Fab from '../../components/Fab';
 import PrivacyAmount from '../../components/PrivacyAmount';
 import {
   ArrowRight,
@@ -371,7 +372,7 @@ function TransfersPage() {
         <h1 className="text-xl sm:text-2xl font-display font-bold">Transferências</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+          className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
         >
           <Plus className="w-3.5 h-3.5" />
           Nova Transferência
@@ -435,6 +436,8 @@ function TransfersPage() {
           onSuccess={handleSuccess}
         />
       )}
+
+      <Fab label="Nova transferência" onClick={() => setShowModal(true)} />
     </div>
   );
 }
