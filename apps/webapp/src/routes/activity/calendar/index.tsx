@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { api, unwrapData, type ApiDataResponse } from '../../lib/api';
-import PrivacyAmount from '../../components/PrivacyAmount';
+import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
+import PrivacyAmount from '../../../components/PrivacyAmount';
 import { CalendarDays, ChevronLeft, ChevronRight, Loader2, X, ArrowUpRight, ArrowDownLeft, AlertCircle } from 'lucide-react';
 
-export const Route = createFileRoute('/calendar/')({
+export const Route = createFileRoute('/activity/calendar/')({
   component: CalendarPage,
 });
 
