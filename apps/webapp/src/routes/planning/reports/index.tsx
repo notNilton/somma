@@ -13,6 +13,8 @@ import PlanningShell from '../../../components/PlanningShell';
 import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
 import PrivacyAmount from '../../../components/PrivacyAmount';
 import { MonthSelector } from '../../../components/MonthSelector';
+import { SectionLoadingState } from '../../../components/SectionFeedback';
+import SectionPageHeader from '../../../components/SectionPageHeader';
 import { currentMonthKey, formatMonthLabelPtBr } from '../../../lib/formatters';
 
 export const Route = createFileRoute('/planning/reports/')({
@@ -78,21 +80,14 @@ function ReportsPage() {
 
   return (
     <PlanningShell>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-display font-bold">Relatórios</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Análise por categoria e evolução recente do saldo.
-          </p>
-        </div>
-        <MonthSelector value={month} onChange={setMonth} />
-      </div>
+      <SectionPageHeader
+        title="Relatorios"
+        description="Analise por categoria e evolucao recente do saldo."
+        actions={<MonthSelector value={month} onChange={setMonth} />}
+      />
 
       {loading ? (
-        <div className="flex items-center justify-center py-24 gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando indicadores...</p>
-        </div>
+        <SectionLoadingState message="Carregando indicadores..." />
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

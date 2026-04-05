@@ -5,6 +5,8 @@ import ActivityShell from '../../../components/ActivityShell';
 import { api } from '../../../lib/api';
 import Fab from '../../../components/Fab';
 import PrivacyAmount from '../../../components/PrivacyAmount';
+import { SectionEmptyState, SectionLoadingState } from '../../../components/SectionFeedback';
+import SectionPageHeader from '../../../components/SectionPageHeader';
 import {
   ArrowRight,
   Plus,
@@ -368,37 +370,37 @@ function TransfersPage() {
 
   return (
     <ActivityShell>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-display font-bold">Transferências</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Nova Transferência
-        </button>
-      </div>
+      <SectionPageHeader
+        title="Transferencias"
+        description="Movimente saldo entre contas com historico organizado."
+        actions={
+          <button
+            onClick={() => setShowModal(true)}
+            className="hidden sm:flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Nova transferencia
+          </button>
+        }
+      />
 
       {/* Content */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-2 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          <p className="text-xs">Carregando transferências...</p>
-        </div>
+        <SectionLoadingState message="Carregando transferencias..." />
       ) : transfers.length === 0 ? (
-        <div className="card-premium flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <div className="p-4 rounded-2xl bg-muted/50 text-muted-foreground">
-            <ArrowLeftRight className="w-8 h-8" />
-          </div>
-          <p className="text-sm font-bold text-muted-foreground">Nenhuma transferência ainda</p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="text-xs font-bold text-primary hover:underline"
-          >
-            + Criar primeira
-          </button>
-        </div>
+        <SectionEmptyState
+          icon={ArrowLeftRight}
+          title="Nenhuma transferencia ainda"
+          description="Crie a primeira movimentacao entre contas para começar."
+          action={
+            <button
+              onClick={() => setShowModal(true)}
+              className="text-xs font-bold text-primary hover:underline"
+            >
+              Criar primeira
+            </button>
+          }
+        />
       ) : (
         <div className="flex flex-col gap-4">
           {sortedMonths.map((month) => {
