@@ -13,13 +13,13 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import PrivacyAmount from '../../components/PrivacyAmount';
-import Fab from '../../components/Fab';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { api } from '../../lib/api';
-import type { Vehicle, RefuelingLog, VehicleExpenseStats, VehicleMaintenanceLog } from '../-_types';
+import PrivacyAmount from '../../../components/PrivacyAmount';
+import Fab from '../../../components/Fab';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { api } from '../../../lib/api';
+import type { Vehicle, RefuelingLog, VehicleExpenseStats, VehicleMaintenanceLog } from './-types';
 
-export const Route = createFileRoute('/vehicles/')({
+export const Route = createFileRoute('/wallet/vehicles/')({
   component: VehiclesPage,
 });
 
@@ -117,7 +117,7 @@ function FuelCharts({ data }: { data: RefuelingLog[] }) {
 
 function VehiclesPage() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate({ from: '/vehicles/' });
+  const navigate = useNavigate({ from: '/wallet/vehicles/' });
   const [subTab, setSubTab] = useState<'fuelHistory' | 'maintenanceHistory' | 'charts'>(
     'fuelHistory',
   );
@@ -163,10 +163,10 @@ function VehiclesPage() {
     },
   });
 
-  const handleCreate = () => void navigate({ to: '/vehicles/crud-vehicles' });
+  const handleCreate = () => void navigate({ to: '/wallet/vehicles/crud-vehicles' });
   const handleEdit = () =>
     activeVehicleId &&
-    void navigate({ to: '/vehicles/crud-vehicles', search: { vehicleId: activeVehicleId } });
+    void navigate({ to: '/wallet/vehicles/crud-vehicles', search: { vehicleId: activeVehicleId } });
 
   const filteredMaintenances = maintenances;
 

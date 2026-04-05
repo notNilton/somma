@@ -2,10 +2,10 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, CarFront, Hash, Calendar, Fuel } from 'lucide-react';
-import { api } from '../../lib/api';
-import { SUPPORTED_BRANDS, getBrandIcon } from '../../lib/vehicle-brands';
+import { api } from '../../../lib/api';
+import { SUPPORTED_BRANDS, getBrandIcon } from '../../../lib/vehicle-brands';
 
-export const Route = createFileRoute('/vehicles/crud-vehicles')({
+export const Route = createFileRoute('/wallet/vehicles/crud-vehicles')({
   validateSearch: (search: Record<string, unknown>) => ({
     vehicleId: typeof search.vehicleId === 'string' ? search.vehicleId : undefined,
   }),
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/vehicles/crud-vehicles')({
 });
 
 function CrudVehiclesPage() {
-  const navigate = useNavigate({ from: '/vehicles/crud-vehicles' });
+  const navigate = useNavigate({ from: '/wallet/vehicles/crud-vehicles' });
   const { vehicleId } = Route.useSearch();
   const isEditing = !!vehicleId;
 
@@ -54,7 +54,7 @@ function CrudVehiclesPage() {
     }
   }, [initialData]);
 
-  const handleCancel = () => void navigate({ to: '/vehicles/' });
+  const handleCancel = () => void navigate({ to: '/wallet/vehicles/' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +77,7 @@ function CrudVehiclesPage() {
         await api.post('/api/v1/vehicles', payload);
       }
 
-      void navigate({ to: '/vehicles/' });
+      void navigate({ to: '/wallet/vehicles/' });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao salvar veículo.';
       setError(message);

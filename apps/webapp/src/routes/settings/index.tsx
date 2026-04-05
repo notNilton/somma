@@ -141,7 +141,7 @@ function SettingsPage() {
         />
         <SettingItem
           icon={Fuel}
-          to="/vehicles"
+          to="/wallet/vehicles"
           title="Resumos de Veículos"
           description="Abastecimentos e manutenções."
         />
