@@ -9,12 +9,12 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react';
-import { api, unwrapData, type ApiDataResponse } from '../../lib/api';
-import PrivacyAmount from '../../components/PrivacyAmount';
-import { MonthSelector } from '../../components/MonthSelector';
-import { currentMonthKey, formatMonthLabelPtBr } from '../../lib/formatters';
+import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
+import PrivacyAmount from '../../../components/PrivacyAmount';
+import { MonthSelector } from '../../../components/MonthSelector';
+import { currentMonthKey, formatMonthLabelPtBr } from '../../../lib/formatters';
 
-export const Route = createFileRoute('/reports/')({
+export const Route = createFileRoute('/planning/reports/')({
   component: ReportsPage,
 });
 
@@ -196,7 +196,7 @@ function ReportsPage() {
                       </p>
                       <PrivacyAmount
                         value={Number(point.net ?? 0)}
-                        className={`text-sm font-bold ${Number(point.net ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
+                        className={`text-sm font-bold ${Number(point.net ?? 0) >= 0 ? `text-emerald-500` : `text-rose-500`}`}
                       />
                     </div>
                   </div>

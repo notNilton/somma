@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { api, unwrapData, type ApiDataResponse } from '../../lib/api';
-import Fab from '../../components/Fab';
-import { MonthSelector } from '../../components/MonthSelector';
+import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
+import Fab from '../../../components/Fab';
+import { MonthSelector } from '../../../components/MonthSelector';
 import {
   Plus,
   Target,
@@ -16,7 +16,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/budgets/')({
+export const Route = createFileRoute('/planning/budgets/')({
   component: BudgetsPage,
   validateSearch: z.object({ month: z.string().optional() }),
 });
@@ -342,7 +342,7 @@ function BudgetModal({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // ─── Budget Card ──────────────────────────────────────────────────────────────
@@ -429,7 +429,7 @@ function BudgetCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function BudgetsPage() {
-  const navigate = useNavigate({ from: '/budgets/' });
+  const navigate = useNavigate({ from: '/planning/budgets/' });
   const queryClient = useQueryClient();
   const search = Route.useSearch();
 
@@ -493,7 +493,7 @@ function BudgetsPage() {
             <MonthSelector
               value={currentMonthValue}
               onChange={(m) => {
-                void navigate({ to: '/budgets', search: { month: m } });
+                void navigate({ to: '/planning/budgets', search: { month: m } });
                 queryClient.invalidateQueries({ queryKey: ['budgets', 'status'] });
               }}
             />
