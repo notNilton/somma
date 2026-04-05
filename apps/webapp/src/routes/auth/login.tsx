@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ShieldCheck, ArrowRight, Mail, Lock, Loader2 } from 'lucide-react';
-import { auth } from '../lib/auth';
-import { api } from '../lib/api';
+import { auth } from '../../lib/auth';
+import { api } from '../../lib/api';
 
-export const Route = createFileRoute('/login')({
+export const Route = createFileRoute('/auth/login')({
   component: LoginPage,
 });
 
@@ -114,7 +114,7 @@ function LoginPage() {
 
           <p className="text-center text-xs text-muted-foreground">
             Ainda não tem uma conta?{' '}
-            <Link to="/register" className="text-primary font-bold hover:underline">
+            <Link to="/auth/register" className="text-primary font-bold hover:underline">
               Crie uma agora
             </Link>
           </p>
