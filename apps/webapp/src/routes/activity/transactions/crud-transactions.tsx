@@ -9,11 +9,11 @@ import {
   Receipt,
   Save,
 } from 'lucide-react';
-import { api } from '../../lib/api';
-import { formatCurrency, cleanNumeric, formatKm } from '../../lib/formatters';
-import CustomSelect from '../../components/ui/CustomSelect';
+import { api } from '../../../lib/api';
+import { formatCurrency, cleanNumeric, formatKm } from '../../../lib/formatters';
+import CustomSelect from '../../../components/ui/CustomSelect';
 
-export const Route = createFileRoute('/transactions/crud-transactions')({
+export const Route = createFileRoute('/activity/transactions/crud-transactions')({
   validateSearch: (search: Record<string, unknown>) => ({
     transactionId: typeof search.transactionId === 'string' ? search.transactionId : undefined,
   }),
@@ -182,7 +182,7 @@ function CrudTransactionsPage() {
 
   // ─── Navigation & submit ───────────────────────────────────────────────────
 
-  const goBack = () => void navigate({ to: '/transactions' });
+  const goBack = () => void navigate({ to: '/activity/transactions' });
 
   const isSubmitDisabled = Number(amount) <= 0 || !date || !accountId;
 

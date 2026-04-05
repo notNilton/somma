@@ -13,11 +13,11 @@ import {
   Gauge,
   CircleDollarSign,
 } from 'lucide-react';
-import { api } from '../../lib/api';
-import { formatCurrency, cleanNumeric, formatValue, formatKm } from '../../lib/formatters';
-import CustomSelect from '../../components/ui/CustomSelect';
+import { api } from '../../../lib/api';
+import { formatCurrency, cleanNumeric, formatValue, formatKm } from '../../../lib/formatters';
+import CustomSelect from '../../../components/ui/CustomSelect';
 
-export const Route = createFileRoute('/transactions/crud-fueling')({
+export const Route = createFileRoute('/activity/transactions/crud-fueling')({
   validateSearch: (search: Record<string, unknown>) => ({
     transactionId: typeof search.transactionId === 'string' ? search.transactionId : undefined,
     vehicleId: typeof search.vehicleId === 'string' ? search.vehicleId : undefined,
@@ -145,7 +145,7 @@ function CrudFuelingPage() {
   const litersDecimal = Number(litersNum) / 1000;
   const pricePerLiter = litersDecimal > 0 ? (Number(amountCents) / 100) / litersDecimal : 0;
 
-  const goBack = () => void navigate({ to: '/transactions' });
+  const goBack = () => void navigate({ to: '/activity/transactions' });
 
   const isSubmitDisabled = !vehicleId || !accountId || Number(amountCents) <= 0 || !date;
 

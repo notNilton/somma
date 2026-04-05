@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import PrivacyAmount from '../../components/PrivacyAmount';
-import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { ImportModal } from '../../components/ImportModal';
-import { api } from '../../lib/api';
-import Fab from '../../components/Fab';
+import PrivacyAmount from '../../../components/PrivacyAmount';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import { ImportModal } from '../../../components/ImportModal';
+import { api } from '../../../lib/api';
+import Fab from '../../../components/Fab';
 import {
   Plus,
   FileUp,
@@ -36,9 +36,9 @@ import {
   sumBillPayments,
   sumIncome,
   useTransactionsList,
-} from '../-transactions.queries';
+} from './-queries';
 
-export const Route = createFileRoute('/transactions/')({
+export const Route = createFileRoute('/activity/transactions/')({
   component: TransactionsPage,
 });
 
@@ -59,7 +59,7 @@ const CHANNEL_LABEL: Record<string, string> = {
 
 function TransactionsPage() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate({ from: '/transactions/' });
+  const navigate = useNavigate({ from: '/activity/transactions/' });
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'INCOME' | 'EXPENSE'>('all');
@@ -135,25 +135,25 @@ function TransactionsPage() {
 
   const handleCreate = () =>
     void navigate({
-      to: '/transactions/crud-transactions',
+      to: '/activity/transactions/crud-transactions',
       search: { transactionId: undefined },
     });
 
   const handleFuelCreate = () =>
     void navigate({
-      to: '/transactions/crud-fueling',
+      to: '/activity/transactions/crud-fueling',
       search: { transactionId: undefined, vehicleId: undefined },
     });
 
   const handleEdit = (t: Tx) => {
     if (t.classification === 'FUEL') {
       void navigate({
-        to: '/transactions/crud-fueling',
+        to: '/activity/transactions/crud-fueling',
         search: { transactionId: t.id, vehicleId: t.vehicleId ?? undefined },
       });
     } else {
       void navigate({
-        to: '/transactions/crud-transactions',
+        to: '/activity/transactions/crud-transactions',
         search: { transactionId: t.id },
       });
     }

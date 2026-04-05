@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { api } from '../../../lib/api';
 
 export interface TxCategory {
   id: string;
@@ -123,7 +123,7 @@ export function sumBillPayments(list: Tx[]): number {
     .reduce((acc, t) => acc + Math.abs(Number(t.amount)), 0);
 }
 
-export { currentMonthKey, monthKey, formatMonthLabelPtBr } from '../lib/formatters';
+export { currentMonthKey, monthKey, formatMonthLabelPtBr } from '../../../lib/formatters';
 
 export function splitByToday(list: Tx[]): { current: Tx[]; future: Tx[]; today: Date } {
   const today = startOfDayLocal();
