@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../lib/api';
-import Fab from '../../components/Fab';
-import PrivacyAmount from '../../components/PrivacyAmount';
+import { api } from '../../../lib/api';
+import Fab from '../../../components/Fab';
+import PrivacyAmount from '../../../components/PrivacyAmount';
 import {
   ArrowRight,
   Plus,
@@ -14,7 +14,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/transfers/')({
+export const Route = createFileRoute('/activity/transfers/')({
   component: TransfersPage,
 });
 
@@ -269,7 +269,7 @@ function TransferModal({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // ─── Transfer Row ─────────────────────────────────────────────────────────────
