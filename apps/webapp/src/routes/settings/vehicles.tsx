@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CarFront, Plus, History, Edit2, Trash2, Loader2 } from 'lucide-react';
+import SettingsShell from '../../components/SettingsShell';
 import PrivacyAmount from '../../components/PrivacyAmount';
 import { api } from '../../lib/api';
 import { VehicleModal } from '../../components/VehicleModal';
@@ -179,7 +180,8 @@ function VehiclesPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto flex flex-col gap-10">
+    <SettingsShell>
+      <div className="flex flex-col gap-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-display font-bold whitespace-nowrap">Frota & Combustível</h1>
@@ -350,6 +352,7 @@ function VehiclesPage() {
         mode={modalMode}
         initialData={selectedVehicle}
       />
-    </div>
+      </div>
+    </SettingsShell>
   );
 }
