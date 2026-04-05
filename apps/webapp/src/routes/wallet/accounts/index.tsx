@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import PrivacyAmount from '../../components/PrivacyAmount';
-import Fab from '../../components/Fab';
+import PrivacyAmount from '../../../components/PrivacyAmount';
+import Fab from '../../../components/Fab';
 import {
   Plus,
   Wallet,
@@ -19,9 +19,9 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { api, unwrapData, type ApiDataResponse } from '../../lib/api';
+import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
 
-export const Route = createFileRoute('/accounts/')({
+export const Route = createFileRoute('/wallet/accounts/')({
   component: AccountsPage,
 });
 
@@ -372,7 +372,7 @@ function AccountCard({
 
 function AccountsPage() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate({ from: '/accounts/' });
+  const navigate = useNavigate({ from: '/wallet/accounts/' });
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   const { data: accounts = [], isLoading } = useQuery({
@@ -406,7 +406,7 @@ function AccountsPage() {
   const hasCreditSummary = (creditSummary?.totalCreditLimit ?? 0) > 0;
 
   const handleCreate = () =>
-    void navigate({ to: '/accounts/crud-accounts', search: { accountId: undefined } });
+    void navigate({ to: '/wallet/accounts/crud-accounts', search: { accountId: undefined } });
 
   const handleDelete = (id: string) => {
     if (confirm('Excluir esta conta? As transações vinculadas serão mantidas.')) {
@@ -485,7 +485,7 @@ function AccountsPage() {
                 key={account.id}
                 account={account}
                 onEdit={(a) =>
-                  void navigate({ to: '/accounts/crud-accounts', search: { accountId: a.id } })
+                  void navigate({ to: '/wallet/accounts/crud-accounts', search: { accountId: a.id } })
                 }
                 onDelete={handleDelete}
               />

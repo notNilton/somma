@@ -14,10 +14,10 @@ import {
   Save,
 } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
-import { api } from '../../lib/api';
+import { api } from '../../../lib/api';
 import type { Account } from './index';
 
-export const Route = createFileRoute('/accounts/crud-accounts')({
+export const Route = createFileRoute('/wallet/accounts/crud-accounts')({
   validateSearch: (search: Record<string, unknown>) => ({
     accountId: typeof search.accountId === 'string' ? search.accountId : undefined,
   }),
@@ -175,7 +175,7 @@ function CrudAccountsPage() {
     setDueDay(initialAccount.dueDay ? String(initialAccount.dueDay) : '');
   }, [initialAccount]);
 
-  const goBack = () => void navigate({ to: '/accounts' });
+  const goBack = () => void navigate({ to: '/wallet/accounts' });
 
   const fmt = (cents: string) =>
     (Number(cents) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -469,5 +469,5 @@ function CrudAccountsPage() {
         )}
       </div>
     </form>
-  );
+  )
 }
