@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, CarFront, Hash, Calendar, Fuel } from 'lucide-react';
+import WalletShell from '../../../components/WalletShell';
 import { api } from '../../../lib/api';
 import { SUPPORTED_BRANDS, getBrandIcon } from '../../../lib/vehicle-brands';
 
@@ -88,15 +89,17 @@ function CrudVehiclesPage() {
 
   if (isEditing && loadingInitial) {
     return (
-      <div className="flex items-center justify-center py-24 gap-2">
-        <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        <p className="text-xs text-muted-foreground">Carregando...</p>
-      </div>
+      <WalletShell contentClassName="flex-1 justify-center">
+        <div className="flex items-center justify-center py-24 gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          <p className="text-xs text-muted-foreground">Carregando...</p>
+        </div>
+      </WalletShell>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <WalletShell>
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -257,6 +260,6 @@ function CrudVehiclesPage() {
           </div>
         )}
       </form>
-    </div>
+    </WalletShell>
   );
 }

@@ -14,6 +14,7 @@ import {
   Save,
 } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
+import WalletShell from '../../../components/WalletShell';
 import { api } from '../../../lib/api';
 import type { Account } from './index';
 
@@ -220,16 +221,18 @@ function CrudAccountsPage() {
 
   if (isEditing && isLoadingAccount) {
     return (
-      <div className="flex items-center justify-center py-24 gap-3">
-        <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Carregando...</p>
-      </div>
+      <WalletShell contentClassName="flex-1 justify-center">
+        <div className="flex items-center justify-center py-24 gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Carregando...</p>
+        </div>
+      </WalletShell>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <WalletShell>
+      <form onSubmit={handleSubmit}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -467,7 +470,7 @@ function CrudAccountsPage() {
             </div>
           </div>
         )}
-      </div>
-    </form>
+      </form>
+    </WalletShell>
   )
 }

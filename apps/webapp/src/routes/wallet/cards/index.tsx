@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
 import PrivacyAmount from '../../../components/PrivacyAmount';
 import Fab from '../../../components/Fab';
+import WalletShell from '../../../components/WalletShell';
 import {
   ArrowDownLeft,
   ChevronLeft,
@@ -724,7 +725,7 @@ function CardChip({
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
+        </div>
 
       <div className="flex items-end justify-between">
         <div>
@@ -844,7 +845,7 @@ function CardsPage() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 max-w-5xl mx-auto flex flex-col gap-4 sm:gap-6">
+      <WalletShell>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl font-display font-bold">Cartões</h1>
@@ -898,7 +899,7 @@ function CardsPage() {
             ))}
           </div>
         )}
-      </div>
+      </WalletShell>
 
       <Fab label="Novo cartão" onClick={openCreate} />
 

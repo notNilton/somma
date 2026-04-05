@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import PrivacyAmount from '../../../components/PrivacyAmount';
 import Fab from '../../../components/Fab';
+import WalletShell from '../../../components/WalletShell';
 import {
   Plus,
   Wallet,
@@ -415,7 +416,7 @@ function AccountsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <WalletShell>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl sm:text-2xl font-display font-bold">Contas</h1>
@@ -516,6 +517,6 @@ function AccountsPage() {
       {selectedCard && (
         <StatementDrawer card={selectedCard} onClose={() => setSelectedCard(null)} />
       )}
-    </div>
+    </WalletShell>
   );
 }

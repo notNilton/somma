@@ -16,6 +16,7 @@ import {
 import PrivacyAmount from '../../../components/PrivacyAmount';
 import Fab from '../../../components/Fab';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
+import WalletShell from '../../../components/WalletShell';
 import { api } from '../../../lib/api';
 import type { Vehicle, RefuelingLog, VehicleExpenseStats, VehicleMaintenanceLog } from './-types';
 
@@ -176,18 +177,20 @@ function VehiclesPage() {
 
   if (vehiclesLoading) {
     return (
-      <div className="flex items-center justify-center py-24">
+      <WalletShell contentClassName="flex-1 justify-center">
+        <div className="flex items-center justify-center py-24">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="w-5 h-5 animate-spin text-primary" />
           <p className="text-xs text-muted-foreground">Carregando veículos...</p>
         </div>
-      </div>
+        </div>
+      </WalletShell>
     );
   }
 
   if (vehicles.length === 0) {
     return (
-      <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+      <WalletShell>
         <div className="flex items-center justify-between">
           <h1 className="text-xl sm:text-2xl font-display font-bold">Veículos</h1>
           <button
@@ -215,12 +218,12 @@ function VehiclesPage() {
           </button>
         </div>
         <Fab label="Novo veículo" onClick={handleCreate} />
-      </div>
+      </WalletShell>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <WalletShell>
       <ConfirmDialog
         isOpen={confirmDeleteOpen}
         onCancel={() => setConfirmDeleteOpen(false)}
@@ -480,6 +483,6 @@ function VehiclesPage() {
       )}
 
       <Fab label="Novo veículo" onClick={handleCreate} />
-    </div>
+    </WalletShell>
   );
 }
