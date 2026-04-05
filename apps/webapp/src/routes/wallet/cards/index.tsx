@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, unwrapData, type ApiDataResponse } from '../../lib/api';
-import PrivacyAmount from '../../components/PrivacyAmount';
-import Fab from '../../components/Fab';
+import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
+import PrivacyAmount from '../../../components/PrivacyAmount';
+import Fab from '../../../components/Fab';
 import {
   ArrowDownLeft,
   ChevronLeft,
@@ -19,7 +19,7 @@ import {
   X,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/cards/')({
+export const Route = createFileRoute('/wallet/cards/')({
   component: CardsPage,
 });
 
@@ -311,7 +311,7 @@ function CardFormModal({
         </form>
       </div>
     </div>
-  );
+  )
 }
 
 function PayInvoiceModal({
@@ -450,7 +450,7 @@ function PayInvoiceModal({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 function StatementDrawer({
@@ -535,7 +535,7 @@ function StatementDrawer({
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="rounded-lg p-2" style={{ backgroundColor: `${color}20`, color }}>
+                <div className="rounded-lg p-2" style={{ backgroundColor: "${color}20", color }}>
                   <CreditCard className="w-4 h-4" />
                 </div>
                 <div>
@@ -619,11 +619,11 @@ function StatementDrawer({
                           : 'bg-rose-500/10 text-rose-500'
                       }`}
                     >
-                      <ArrowDownLeft className={`w-3.5 h-3.5 ${isPayment ? 'rotate-180' : ''}`} />
+                      <ArrowDownLeft className={`w-3.5 h-3.5 ${isPayment ? `rotate-180` : ``}`} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="truncate text-sm font-medium">{tx.description ?? '—'}</p>
+                        <p className="truncate text-sm font-medium">{tx.description ?? "—"}</p>
                         {isPayment && (
                           <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-500">
                             pagamento
@@ -631,13 +631,13 @@ function StatementDrawer({
                         )}
                       </div>
                       <p className="text-[10px] text-muted-foreground">
-                        {tx.category?.name ? `${tx.category.name} · ` : ''}
+                        {tx.category?.name ? `${tx.category.name} · ` : ``}
                         {fmtDate(tx.date)}
                       </p>
                     </div>
                     <PrivacyAmount
                       value={Number(tx.amount)}
-                      className={`shrink-0 text-sm font-bold ${isPayment ? 'text-emerald-500' : 'text-rose-500'}`}
+                      className={`shrink-0 text-sm font-bold ${isPayment ? `text-emerald-500` : `text-rose-500`}`}
                     />
                   </div>
                 );
@@ -684,13 +684,13 @@ function CardChip({
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl p-2.5" style={{ backgroundColor: `${color}20`, color }}>
+          <div className="rounded-xl p-2.5" style={{ backgroundColor: "${color}20", color }}>
             <CreditCard className="w-5 h-5" />
           </div>
           <div>
             <p className="text-base font-bold font-display">{card.name}</p>
             <p className="text-xs text-muted-foreground">
-              {card.last4 ? `•••• ${card.last4}` : 'Sem final informado'}
+              {card.last4 ? `•••• ${card.last4}` : `Sem final informado`}
             </p>
           </div>
         </div>
@@ -731,7 +731,7 @@ function CardChip({
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             Tipo
           </p>
-          <p className="text-sm font-semibold">{card.type === 'CREDIT' ? 'Crédito' : 'Débito'}</p>
+          <p className="text-sm font-semibold">{card.type === "CREDIT" ? "Crédito" : "Débito"}</p>
         </div>
         {limit > 0 && (
           <div className="text-right">
@@ -890,7 +890,7 @@ function CardsPage() {
                   setEditingCard(card);
                 }}
                 onDelete={() => {
-                  if (confirm(`Excluir o cartão "${card.name}"?`)) {
+                  if (confirm(`Excluir o cartao "${card.name}"?`)) {
                     deleteCardMutation.mutate(card.id);
                   }
                 }}
