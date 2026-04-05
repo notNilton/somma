@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
+import PlanningShell from '../../../components/PlanningShell';
 import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
 import Fab from '../../../components/Fab';
 import { MonthSelector } from '../../../components/MonthSelector';
@@ -480,7 +481,7 @@ function BudgetsPage() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 max-w-4xl mx-auto flex flex-col gap-4 sm:gap-6">
+      <PlanningShell>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -559,7 +560,7 @@ function BudgetsPage() {
             )}
           </>
         )}
-      </div>
+      </PlanningShell>
 
       {showModal && (
         <BudgetModal

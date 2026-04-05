@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react';
+import PlanningShell from '../../../components/PlanningShell';
 import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
 import PrivacyAmount from '../../../components/PrivacyAmount';
 import { MonthSelector } from '../../../components/MonthSelector';
@@ -76,7 +77,7 @@ function ReportsPage() {
   const topCategoryTotal = Math.max(...breakdown.map((item) => Number(item.total ?? 0)), 1);
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <PlanningShell>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-display font-bold">Relatórios</h1>
@@ -206,6 +207,6 @@ function ReportsPage() {
           </div>
         </>
       )}
-    </div>
+    </PlanningShell>
   );
 }
