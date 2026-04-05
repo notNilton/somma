@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import ActivityShell from '../../../components/ActivityShell';
 import { api } from '../../../lib/api';
 import Fab from '../../../components/Fab';
 import PrivacyAmount from '../../../components/PrivacyAmount';
@@ -366,7 +367,7 @@ function TransfersPage() {
   const sortedMonths = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <ActivityShell>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl sm:text-2xl font-display font-bold">Transferências</h1>
@@ -438,6 +439,6 @@ function TransfersPage() {
       )}
 
       <Fab label="Nova transferência" onClick={() => setShowModal(true)} />
-    </div>
+    </ActivityShell>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import ActivityShell from '../../../components/ActivityShell';
 import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
 import PrivacyAmount from '../../../components/PrivacyAmount';
 import { CalendarDays, ChevronLeft, ChevronRight, Loader2, X, ArrowUpRight, ArrowDownLeft, AlertCircle } from 'lucide-react';
@@ -163,7 +164,7 @@ function CalendarPage() {
 
   return (
     <>
-      <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+      <ActivityShell>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -335,7 +336,7 @@ function CalendarPage() {
              Clique em um dia para ver os detalhes
            </p>
         </div>
-      </div>
+      </ActivityShell>
 
       {/* Day detail panel */}
       {selectedDay && (

@@ -9,6 +9,7 @@ import {
   Receipt,
   Save,
 } from 'lucide-react';
+import ActivityShell from '../../../components/ActivityShell';
 import { api } from '../../../lib/api';
 import { formatCurrency, cleanNumeric, formatKm } from '../../../lib/formatters';
 import CustomSelect from '../../../components/ui/CustomSelect';
@@ -235,10 +236,12 @@ function CrudTransactionsPage() {
 
   if (isEditing && isLoadingTx) {
     return (
-      <div className="flex items-center justify-center py-24 gap-3">
-        <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground font-bold tracking-tight">Carregando detalhes...</p>
-      </div>
+      <ActivityShell contentClassName="flex-1 justify-center">
+        <div className="flex items-center justify-center py-24 gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground font-bold tracking-tight">Carregando detalhes...</p>
+        </div>
+      </ActivityShell>
     );
   }
 
@@ -252,8 +255,8 @@ function CrudTransactionsPage() {
         : 'bg-emerald-500 shadow-emerald-500/20';
 
   return (
-    <form onSubmit={handleSubmit} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <ActivityShell>
+      <form onSubmit={handleSubmit} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -405,7 +408,7 @@ function CrudTransactionsPage() {
              </div>
           </div>
         )}
-      </div>
-    </form>
+      </form>
+    </ActivityShell>
   );
 }

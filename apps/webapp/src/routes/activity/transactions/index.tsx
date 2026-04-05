@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import PrivacyAmount from '../../../components/PrivacyAmount';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { ImportModal } from '../../../components/ImportModal';
+import ActivityShell from '../../../components/ActivityShell';
 import { api } from '../../../lib/api';
 import Fab from '../../../components/Fab';
 import {
@@ -275,7 +276,7 @@ function TransactionsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <ActivityShell>
       {/* Dialogs */}
       <ConfirmDialog
         isOpen={confirmDeleteOpen}
@@ -844,6 +845,6 @@ function TransactionsPage() {
 
       {/* FAB mobile */}
       <Fab label="Nova transação" onClick={handleCreate} />
-    </div>
+    </ActivityShell>
   );
 }

@@ -13,6 +13,7 @@ import {
   Gauge,
   CircleDollarSign,
 } from 'lucide-react';
+import ActivityShell from '../../../components/ActivityShell';
 import { api } from '../../../lib/api';
 import { formatCurrency, cleanNumeric, formatValue, formatKm } from '../../../lib/formatters';
 import CustomSelect from '../../../components/ui/CustomSelect';
@@ -193,16 +194,18 @@ function CrudFuelingPage() {
 
   if (isEditing && isLoadingTx) {
     return (
-      <div className="flex items-center justify-center py-24 gap-3">
-        <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground font-bold font-display">Carregando abastecimento...</p>
-      </div>
+      <ActivityShell contentClassName="flex-1 justify-center">
+        <div className="flex items-center justify-center py-24 gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground font-bold font-display">Carregando abastecimento...</p>
+        </div>
+      </ActivityShell>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <ActivityShell>
+      <form onSubmit={handleSubmit} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -376,7 +379,7 @@ function CrudFuelingPage() {
           </div>
 
         </div>
-      </div>
-    </form>
+      </form>
+    </ActivityShell>
   );
 }
