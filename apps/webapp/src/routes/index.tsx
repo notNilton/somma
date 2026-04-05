@@ -29,6 +29,9 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Target,
+  Banknote,
+  CreditCard,
+  Landmark,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -266,7 +269,27 @@ function UserDashboard() {
   const overBudgetCount = budgetSummary.filter((item) => item.isOverBudget).length;
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <div className="relative flex-1 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.15),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.10),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(59,130,246,0.04))]" />
+        <div className="absolute -left-8 top-14 rotate-[-10deg] text-sky-500/[0.07]">
+          <Wallet className="h-28 w-28 sm:h-36 sm:w-36 lg:h-44 lg:w-44" />
+        </div>
+        <div className="absolute right-[8%] top-10 rotate-[12deg] text-emerald-500/[0.06]">
+          <TrendingUp className="h-32 w-32 sm:h-40 sm:w-40 lg:h-52 lg:w-52" />
+        </div>
+        <div className="absolute left-[30%] top-28 rotate-[7deg] text-sky-500/[0.04]">
+          <Landmark className="h-20 w-20 sm:h-28 sm:w-28 lg:h-36 lg:w-36" />
+        </div>
+        <div className="absolute bottom-24 right-[14%] rotate-[-9deg] text-emerald-500/[0.05]">
+          <Banknote className="h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40" />
+        </div>
+        <div className="absolute bottom-6 left-[10%] rotate-[8deg] text-sky-500/[0.04]">
+          <CreditCard className="h-28 w-28 sm:h-40 sm:w-40 lg:h-52 lg:w-52" />
+        </div>
+      </div>
+
+      <div className="relative p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -282,7 +305,7 @@ function UserDashboard() {
           />
           {/* Botão visível apenas no desktop — mobile usa FAB */}
           <button
-            onClick={() => void navigate({ to: '/transactions/crud-transactions', search: { transactionId: undefined } })}
+            onClick={() => void navigate({ to: '/activity/transactions/crud-transactions', search: { transactionId: undefined } })}
             className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -438,7 +461,7 @@ function UserDashboard() {
                 Atividade Recente
               </h2>
               <button
-                onClick={() => void navigate({ to: '/transactions' })}
+                onClick={() => void navigate({ to: '/activity/transactions' })}
                 className="text-[10px] font-bold text-primary hover:underline"
               >
                 Ver tudo →
@@ -482,7 +505,7 @@ function UserDashboard() {
                 Suas Contas
               </h2>
               <button
-                onClick={() => void navigate({ to: '/accounts' })}
+                onClick={() => void navigate({ to: '/wallet/accounts' })}
                 className="text-[10px] font-bold text-primary hover:underline"
               >
                 Gerenciar →
@@ -516,7 +539,7 @@ function UserDashboard() {
                 Orçamentos
               </h2>
               <button
-                onClick={() => void navigate({ to: '/budgets', search: { month: currentMonthValue } })}
+                onClick={() => void navigate({ to: '/planning/budgets', search: { month: currentMonthValue } })}
                 className="text-[10px] font-bold text-primary hover:underline"
               >
                 Abrir →
@@ -573,11 +596,12 @@ function UserDashboard() {
           </div>
         </div>
       </div>
+      </div>
 
       {/* FAB mobile — Nova Transação */}
       <Fab
         label="Nova transação"
-        onClick={() => void navigate({ to: '/transactions/crud-transactions', search: { transactionId: undefined } })}
+        onClick={() => void navigate({ to: '/activity/transactions/crud-transactions', search: { transactionId: undefined } })}
       />
     </div>
   );
