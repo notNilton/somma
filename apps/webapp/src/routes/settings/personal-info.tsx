@@ -1,7 +1,9 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, User, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { SectionLoadingState } from '../../components/SectionFeedback';
+import SectionPageHeader from '../../components/SectionPageHeader';
 import SettingsShell from '../../components/SettingsShell';
 import { api } from '../../lib/api';
 
@@ -68,24 +70,15 @@ function PersonalInfoPage() {
 
   return (
     <SettingsShell>
-      <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex items-center gap-4">
-        <Link
-          to="/settings"
-          className="p-2 rounded-xl bg-muted hover:bg-muted/80 transition-smooth"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-3xl font-display font-bold tracking-tight">Informações Pessoais</h1>
-          <p className="text-muted-foreground text-sm">Gerencie como você é identificado no app.</p>
-        </div>
-      </div>
+      <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 sm:gap-8">
+      <SectionPageHeader
+        title="Informacoes Pessoais"
+        description="Gerencie como voce e identificado no app."
+        backTo="/settings"
+      />
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="w-7 h-7 animate-spin text-primary" />
-        </div>
+        <SectionLoadingState message="Carregando perfil..." />
       ) : (
         <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
           {/* Avatar */}
