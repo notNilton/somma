@@ -12,15 +12,23 @@ import (
 )
 
 type createBudgetDto struct {
-	CategoryID *string `json:"categoryId"`
-	Amount     float64 `json:"amount"`
-	Month      int     `json:"month"`
-	Year       int     `json:"year"`
-	Notes      *string `json:"notes"`
+	CategoryID  *string `json:"categoryId"`
+	Amount      float64 `json:"amount"`
+	LimitAmount float64 `json:"limitAmount"`
+	Month       int     `json:"month"`
+	Year        int     `json:"year"`
+	Notes       *string `json:"notes"`
+}
+
+func (d *createBudgetDto) amount() float64 {
+	if d.Amount > 0 {
+		return d.Amount
+	}
+	return d.LimitAmount
 }
 
 func (d *createBudgetDto) validate() error {
-	if d.Amount <= 0 {
+	if d.amount() <= 0 {
 		return errors.New("amount must be > 0")
 	}
 	if d.Month < 1 || d.Month > 12 {
@@ -38,6 +46,7 @@ func budgetResponse(b models.Budget) map[string]any {
 		"userId":     b.UserID,
 		"categoryId": b.CategoryID,
 		"amount":     money.ToReais(b.AmountCents),
+		"limitAmount": money.ToReais(b.AmountCents),
 		"month":      b.Month,
 		"year":       b.Year,
 		"notes":      b.Notes,
@@ -122,7 +131,7 @@ func (h *Handler) CreateBudget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	amountCents := money.ToCents(dto.Amount)
+	amountCents := money.ToCents(dto.amount())
 
 	var b models.Budget
 	if err := h.db.QueryRow(r.Context(), `
@@ -155,8 +164,8 @@ func (h *Handler) UpdateBudget(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var amountCents *int64
-	if dto.Amount > 0 {
-		c := money.ToCents(dto.Amount)
+	if dto.amount() > 0 {
+		c := money.ToCents(dto.amount())
 		amountCents = &c
 	}
 
@@ -260,12 +269,19 @@ func (h *Handler) GetBudgetsStatus(w http.ResponseWriter, r *http.Request) {
 			"categoryName":   bs.CategoryName,
 			"categoryColor":  bs.CategoryColor,
 			"amount":         money.ToReais(bs.AmountCents),
+			"limitAmount":    money.ToReais(bs.AmountCents),
 			"spent":          money.ToReais(bs.SpentCents),
 			"remaining":      money.ToReais(bs.RemainingCents),
 			"percentUsed":    bs.PercentUsed,
 			"isOverBudget":   bs.IsOverBudget,
 			"month":          bs.Month,
 			"year":           bs.Year,
+			"notes":          bs.Notes,
+			"category": map[string]any{
+				"id":    bs.CategoryID,
+				"name":  bs.CategoryName,
+				"color": bs.CategoryColor,
+			},
 		})
 	}
 
@@ -274,6 +290,7 @@ func (h *Handler) GetBudgetsStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"month":   month,
+		"data":    statuses,
 		"budgets": statuses,
 	})
 }

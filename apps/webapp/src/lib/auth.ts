@@ -23,7 +23,7 @@ export const auth = {
     } catch {
       // ignore
     }
-    window.location.href = '/login';
+    window.location.href = '/auth/login';
   },
 
   isAuthenticated: (): boolean => {

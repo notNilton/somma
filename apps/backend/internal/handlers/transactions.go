@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -71,22 +72,9 @@ func (d *createTransactionDto) validate() error {
 	return nil
 }
 
-func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
-	q := r.URL.Query()
-
-	page, _ := strconv.Atoi(q.Get("page"))
-	if page < 1 {
-		page = 1
-	}
-	limit, _ := strconv.Atoi(q.Get("limit"))
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
-	offset := (page - 1) * limit
-
+func (h *Handler) buildTransactionsFilter(q url.Values, userID string) (string, []any, int) {
 	filters := []string{"t.user_id = $1", "t.is_active = true"}
-	args := []any{claims.UserID}
+	args := []any{userID}
 	i := 2
 
 	if v := q.Get("accountId"); v != "" {
@@ -130,7 +118,24 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 		i++
 	}
 
-	where := strings.Join(filters, " AND ")
+	return strings.Join(filters, " AND "), args, i
+}
+
+func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.ClaimsFromContext(r.Context())
+	q := r.URL.Query()
+
+	page, _ := strconv.Atoi(q.Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	limit, _ := strconv.Atoi(q.Get("limit"))
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
+
+	where, args, i := h.buildTransactionsFilter(q, claims.UserID)
 	query := fmt.Sprintf(`
 		SELECT t.id, t.account_id, t.user_id, t.category_id, t.card_id,
 		       t.type, t.classification, t.payment_method, t.channel, t.status,
@@ -520,6 +525,80 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 		txs = []any{}
 	}
 	writeJSON(w, http.StatusOK, txs)
+}
+
+func (h *Handler) ExportTransactionsCSV(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.ClaimsFromContext(r.Context())
+	q := r.URL.Query()
+
+	from := q.Get("from")
+	to := q.Get("to")
+	if from == "" || to == "" {
+		writeError(w, http.StatusBadRequest, "from and to are required (YYYY-MM-DD)")
+		return
+	}
+
+	fromDate, err := time.Parse("2006-01-02", from)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid from date")
+		return
+	}
+	toDate, err := time.Parse("2006-01-02", to)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid to date")
+		return
+	}
+	if toDate.Sub(fromDate) > 366*24*time.Hour {
+		writeError(w, http.StatusBadRequest, "date range cannot exceed 1 year")
+		return
+	}
+
+	where, args, _ := h.buildTransactionsFilter(q, claims.UserID)
+
+	query := fmt.Sprintf(`
+		SELECT t.date, t.description, t.amount_cents, t.type, t.status,
+		       t.classification, t.payment_method, t.channel,
+		       COALESCE(c.name, '') AS category_name
+		FROM transactions t
+		LEFT JOIN categories c ON c.id = t.category_id
+		WHERE %s
+		ORDER BY t.date DESC
+	`, where)
+
+	rows, err := h.db.Query(r.Context(), query, args...)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	defer rows.Close()
+
+	filename := fmt.Sprintf("transactions_%s_%s.csv", from, to)
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+
+	writer := csv.NewWriter(w)
+	writer.Write([]string{"Date", "Description", "Amount", "Type", "Status", "Classification", "PaymentMethod", "Channel", "Category"})
+
+	for rows.Next() {
+		var date any
+		var description, txType, status, classification, paymentMethod, channel, categoryName string
+		var amountCents int64
+		if err := rows.Scan(&date, &description, &amountCents, &txType, &status, &classification, &paymentMethod, &channel, &categoryName); err != nil {
+			continue
+		}
+		writer.Write([]string{
+			fmt.Sprintf("%v", date),
+			description,
+			fmt.Sprintf("%.2f", money.ToReais(amountCents)),
+			txType,
+			status,
+			classification,
+			paymentMethod,
+			channel,
+			categoryName,
+		})
+	}
+	writer.Flush()
 }
 
 func transactionResponse(t models.TransactionWithCategory) map[string]any {

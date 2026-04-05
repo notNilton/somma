@@ -20,18 +20,16 @@ Dado um problema descrito pelo usuário, retorne **apenas** o comando bash `tea 
 
 **3. Descrição (`--description`):**
 - **Obrigatório:** Utilize sintaxe heredoc (`$(cat <<'EOF' ... EOF)`) para preservar as quebras de linha nativas. NUNCA use escape de nova linha (`\n`).
-- Aplique Markdown para formatar o texto internamente, utilizando obrigatoriamente a estrutura com as três seções abaixo:
+- Aplique Markdown para formatar o texto internamente. A descrição deve ser textual, utilizando parágrafos e tópicos simples (`-`) quando necessário, sem o uso de checkboxes. Siga obrigatoriamente a estrutura abaixo:
 
 ### 🎯 Problema / Contexto
 <Por que isso é necessário ou qual bug está ocorrendo>
 
 ### 🛠️ Como Resolver
-- [ ] <Ação técnica 1>
-- [ ] <Ação técnica 2>
+<Explicação textual da abordagem técnica, arquitetura ou passos necessários para resolver o problema>
 
-### ✅ Critérios de Aceite (Como Testar)
-- [ ] <Condição verificável 1>
-- [ ] <Condição verificável 2>
+### ✅ Como Testar
+<Descrição em formato de texto sobre como reproduzir e validar se o problema foi resolvido ou a funcionalidade foi implementada corretamente>
 
 ---
 
@@ -44,12 +42,12 @@ tea issues create \
   --labels "<labels>" \
   --description "$(cat <<'EOF'
 ### 🎯 Problema / Contexto
-<texto>
+<texto explicando o cenário>
 
 ### 🛠️ Como Resolver
-- [ ] <passo>
+<texto detalhando a solução técnica>
 
-### ✅ Critérios de Aceite (Como Testar)
-- [ ] <passo>
+### ✅ Como Testar
+<texto com as etapas e comportamentos esperados para validação>
 EOF
 )"

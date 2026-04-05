@@ -33,7 +33,6 @@ func (h *Handler) GetFinancialCalendar(w http.ResponseWriter, r *http.Request) {
 		  AND t.is_active = true
 		  AND t.date >= $2::date
 		  AND t.date <= $3::date
-		  AND (t.status = 'PENDING' OR t.date >= NOW())
 		ORDER BY t.date ASC
 	`, claims.UserID, from, to)
 	if err != nil {
@@ -74,12 +73,16 @@ func (h *Handler) GetFinancialCalendar(w http.ResponseWriter, r *http.Request) {
 	for _, day := range orderedDays {
 		entries := dayMap[day]
 		var incomeCents, expenseCents int64
+		var hasPending bool
 		txs := make([]any, 0, len(entries))
 		for _, e := range entries {
 			if e.Type == "INCOME" {
 				incomeCents += e.AmountCents
 			} else if e.Type == "EXPENSE" {
 				expenseCents += e.AmountCents
+			}
+			if e.Status == "PENDING" {
+				hasPending = true
 			}
 			txs = append(txs, map[string]any{
 				"id":          e.ID,
@@ -94,10 +97,11 @@ func (h *Handler) GetFinancialCalendar(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 		result = append(result, map[string]any{
-			"date":              day,
-			"transactions":      txs,
-			"totalIncomeCents":  incomeCents,
-			"totalExpenseCents": expenseCents,
+			"date":         day,
+			"transactions": txs,
+			"income":       money.ToReais(incomeCents),
+			"expense":      money.ToReais(expenseCents),
+			"hasPending":   hasPending,
 		})
 	}
 

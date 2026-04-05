@@ -1,30 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import {
-  LayoutGrid,
-  Activity,
-  ArrowLeftRight,
-  Fuel,
-  Target,
-  Wallet,
-  CalendarDays,
-  Settings,
-} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { navigationItems } from '../lib/navigation';
 
-const NAV_ITEMS = [
-  { id: 'panorama', to: '/' as const, icon: LayoutGrid, label: 'Panorama' },
-  { id: 'transactions', to: '/transactions' as const, icon: Activity, label: 'Transações' },
-  { id: 'transfers', to: '/transfers' as const, icon: ArrowLeftRight, label: 'Transf.' },
-  { id: 'vehicles', to: '/vehicles' as const, icon: Fuel, label: 'Veículos' },
-  { id: 'budgets', to: '/budgets' as const, icon: Target, label: 'Orçamentos' },
-  { id: 'accounts', to: '/accounts' as const, icon: Wallet, label: 'Contas' },
-  { id: 'calendar', to: '/calendar' as const, icon: CalendarDays, label: 'Calendário' },
-  { id: 'settings', to: '/settings' as const, icon: Settings, label: 'Ajustes' },
-];
-
-// Triplicamos os itens para criar a ilusão de scroll infinito
-const INFINITE_ITEMS = [...NAV_ITEMS, ...NAV_ITEMS, ...NAV_ITEMS];
+const MOBILE_NAV_ITEMS = navigationItems.filter((item) => !item.desktopOnly);
+const INFINITE_ITEMS = [...MOBILE_NAV_ITEMS, ...MOBILE_NAV_ITEMS, ...MOBILE_NAV_ITEMS];
 
 export default function BottomNav() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -33,25 +13,29 @@ export default function BottomNav() {
     const el = scrollRef.current;
     if (!el) return;
 
-    const setWidth = el.scrollWidth / 3;
-    el.scrollLeft = setWidth;
+    const width = el.scrollWidth / 3;
+    el.scrollLeft = width;
 
     let isJumping = false;
 
     const handleScroll = () => {
       if (isJumping) return;
-      
+
       const { scrollLeft, scrollWidth } = el;
       const setWidth = scrollWidth / 3;
 
       if (scrollLeft >= setWidth * 2) {
         isJumping = true;
         el.scrollTo({ left: scrollLeft - setWidth, behavior: 'auto' });
-        setTimeout(() => { isJumping = false; }, 50);
-      } else if (scrollLeft <= setWidth / 4) { // Pula um pouco antes do zero absoluto pra evitar bugs
+        setTimeout(() => {
+          isJumping = false;
+        }, 50);
+      } else if (scrollLeft <= setWidth / 4) {
         isJumping = true;
         el.scrollTo({ left: scrollLeft + setWidth, behavior: 'auto' });
-        setTimeout(() => { isJumping = false; }, 50);
+        setTimeout(() => {
+          isJumping = false;
+        }, 50);
       }
     };
 
@@ -66,7 +50,7 @@ export default function BottomNav() {
         className="flex items-stretch overflow-x-auto no-scrollbar snap-x snap-mandatory"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        {INFINITE_ITEMS.map(({ id, to, icon: Icon, label }, index) => (
+        {INFINITE_ITEMS.map(({ id, to, icon: Icon, label, shortLabel }, index) => (
           <Link
             key={`${id}-${index}`}
             to={to}
@@ -75,13 +59,12 @@ export default function BottomNav() {
             activeOptions={{ exact: to === '/' }}
           >
             <Icon className="w-5 h-5 shrink-0" />
-            <span className="truncate w-full text-center px-1">{label}</span>
+            <span className="truncate w-full text-center px-1">{shortLabel ?? label}</span>
           </Link>
         ))}
-        {/* Toggle de tema no final para mobile (como o header sumiu) */}
         <div className="flex flex-col items-center justify-center min-w-[72px] min-h-[56px] snap-center">
-            <ThemeToggle />
-            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Tema</span>
+          <ThemeToggle />
+          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Tema</span>
         </div>
       </div>
     </nav>

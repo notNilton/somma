@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { User, Shield, ChevronRight, LogOut, CarFront, Fuel, type LucideIcon } from 'lucide-react';
+import SettingsShell from '../../components/SettingsShell';
 import { api } from '../../lib/api';
 import { auth } from '../../lib/auth';
 
@@ -65,7 +66,7 @@ function SettingsPage() {
   });
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <SettingsShell>
       <div>
         <h1 className="text-xl sm:text-2xl font-display font-bold">Configurações</h1>
         <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
@@ -141,11 +142,11 @@ function SettingsPage() {
         />
         <SettingItem
           icon={Fuel}
-          to="/vehicles"
+          to="/wallet/vehicles"
           title="Resumos de Veículos"
           description="Abastecimentos e manutenções."
         />
       </div>
-    </div>
+    </SettingsShell>
   );
 }

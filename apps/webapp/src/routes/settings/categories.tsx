@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tag, Plus, Loader2, Pencil, Trash2, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import SettingsShell from '../../components/SettingsShell';
 import { api } from '../../lib/api';
 import { CategoryModal } from '../../components/CategoryModal';
 
@@ -83,7 +84,8 @@ function CategoriesSettingsPage() {
   };
 
   return (
-    <div className="p-8 max-w-3xl mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <SettingsShell>
+      <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div>
         <h1 className="text-2xl font-display font-bold tracking-tight">Categorias</h1>
         <p className="text-muted-foreground mt-1 text-sm">
@@ -311,6 +313,7 @@ function CategoriesSettingsPage() {
             : null
         }
       />
-    </div>
+      </div>
+    </SettingsShell>
   );
 }

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, User, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import SettingsShell from '../../components/SettingsShell';
 import { api } from '../../lib/api';
 
 export const Route = createFileRoute('/settings/personal-info')({
@@ -66,7 +67,8 @@ function PersonalInfoPage() {
   };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <SettingsShell>
+      <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center gap-4">
         <Link
           to="/settings"
@@ -170,6 +172,7 @@ function PersonalInfoPage() {
           </div>
         </form>
       )}
-    </div>
+      </div>
+    </SettingsShell>
   );
 }

@@ -8,6 +8,18 @@ interface FetchOptions {
   headers?: Record<string, string>;
 }
 
+export interface ApiDataResponse<T> {
+  data?: T;
+}
+
+export function unwrapData<T>(res: T | ApiDataResponse<T> | null | undefined, fallback: T): T {
+  if (res == null) return fallback;
+  if (typeof res === 'object' && 'data' in res) {
+    return (res.data ?? fallback) as T;
+  }
+  return res;
+}
+
 async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
   const token = auth.getToken();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -24,7 +36,7 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
       auth.logout();
     }
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message ?? `API error: ${res.status}`);
+    throw new Error(body.message ?? body.error ?? `API error: ${res.status}`);
   }
 
   // 204 No Content ou body vazio — retorna null sem tentar parsear
@@ -64,7 +76,7 @@ export const api = {
         auth.logout();
       }
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.message ?? `API error: ${res.status}`);
+      throw new Error(body.message ?? body.error ?? `API error: ${res.status}`);
     }
     return res.json() as Promise<T>;
   },
@@ -120,9 +132,21 @@ export const api = {
   },
 
   // --- Transactions Export ---
-  exportTransactions: async (from: string, to: string): Promise<Blob> => {
+  exportTransactions: async (params: {
+    from: string;
+    to: string;
+    search?: string;
+    type?: string;
+    categoryId?: string;
+    accountId?: string;
+    classification?: string;
+  }): Promise<Blob> => {
     const token = auth.getToken();
-    const res = await fetch(`${BASE_URL}/api/v1/transactions/export?from=${from}&to=${to}`, {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v) qs.append(k, v);
+    });
+    const res = await fetch(`${BASE_URL}/api/v1/transactions/export?${qs.toString()}`, {
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     });
     if (!res.ok) throw new Error(`Export error: ${res.status}`);

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import PrivacyAmount from '../components/PrivacyAmount';
 import Fab from '../components/Fab';
-import { api } from '../lib/api';
+import { api, unwrapData, type ApiDataResponse } from '../lib/api';
 import { MonthSelector } from '../components/MonthSelector';
 import {
   Bar,
@@ -28,6 +28,10 @@ import {
   Loader2,
   BarChart3,
   PieChart as PieChartIcon,
+  Target,
+  Banknote,
+  CreditCard,
+  Landmark,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -62,6 +66,45 @@ interface DashboardData {
     day: string;
     value: number;
   }>;
+}
+
+interface MonthlyEvolutionItem {
+  month: string;
+  income: number;
+  expenses: number;
+  net: number;
+}
+
+interface CategoryBreakdownItem {
+  categoryId?: string | null;
+  categoryName?: string | null;
+  categoryColor?: string | null;
+  type: string;
+  total: number;
+  totalCents: number;
+  count: number;
+}
+
+interface CategoryBreakdownResponse {
+  month: string;
+  type: string;
+  items: CategoryBreakdownItem[];
+}
+
+interface BudgetSummaryItem {
+  id: string;
+  limitAmount?: number;
+  amount?: number;
+  spent: number;
+  remaining?: number;
+  percentUsed: number;
+  isOverBudget?: boolean;
+}
+
+interface BudgetSummaryResponse {
+  month: string;
+  budgets?: BudgetSummaryItem[];
+  data?: BudgetSummaryItem[];
 }
 
 function MetricCard({
@@ -102,6 +145,47 @@ function MetricCard({
 const formatBrl = (val: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
+function normalizeMonthlyEvolution(
+  res: MonthlyEvolutionItem[] | ApiDataResponse<MonthlyEvolutionItem[]> | null | undefined,
+) {
+  return unwrapData(res, []).map((item) => ({
+    ...item,
+    expense: item.expenses,
+  }));
+}
+
+function normalizeBreakdown(
+  res:
+    | CategoryBreakdownResponse
+    | ApiDataResponse<CategoryBreakdownResponse>
+    | CategoryBreakdownItem[]
+    | ApiDataResponse<CategoryBreakdownItem[]>
+    | null
+    | undefined,
+) {
+  const raw = unwrapData(res, [] as CategoryBreakdownItem[] | CategoryBreakdownResponse);
+  const items = Array.isArray(raw) ? raw : raw.items ?? [];
+
+  return items.map((item) => ({
+    category: item.categoryName ?? 'Sem categoria',
+    amount: item.total,
+    color: item.categoryColor ?? undefined,
+    count: item.count,
+  }));
+}
+
+function normalizeBudgetSummary(
+  res:
+    | BudgetSummaryResponse
+    | ApiDataResponse<BudgetSummaryItem[]>
+    | BudgetSummaryItem[]
+    | null
+    | undefined,
+) {
+  const raw = unwrapData(res, [] as BudgetSummaryItem[] | BudgetSummaryResponse);
+  return Array.isArray(raw) ? raw : raw.data ?? raw.budgets ?? [];
+}
+
 function UserDashboard() {
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -121,8 +205,10 @@ function UserDashboard() {
   const { data: evolutionData = [] } = useQuery({
     queryKey: ['dashboard', 'monthly-evolution'],
     queryFn: async () => {
-      const res = await api.getMonthlyEvolution<any>();
-      return Array.isArray(res) ? res : (res as any)?.data ?? [];
+      const res = await api.getMonthlyEvolution<
+        MonthlyEvolutionItem[] | ApiDataResponse<MonthlyEvolutionItem[]>
+      >();
+      return normalizeMonthlyEvolution(res);
     },
     staleTime: 1000 * 60,
   });
@@ -130,8 +216,24 @@ function UserDashboard() {
   const { data: breakdownData = [] } = useQuery({
     queryKey: ['dashboard', 'category-breakdown', currentMonthValue, breakdownType],
     queryFn: async () => {
-      const res = await api.getCategoryBreakdown<any>(currentMonthValue, breakdownType);
-      return Array.isArray(res) ? res : (res as any)?.data ?? [];
+      const res = await api.getCategoryBreakdown<
+        | CategoryBreakdownResponse
+        | ApiDataResponse<CategoryBreakdownResponse>
+        | CategoryBreakdownItem[]
+        | ApiDataResponse<CategoryBreakdownItem[]>
+      >(currentMonthValue, breakdownType);
+      return normalizeBreakdown(res);
+    },
+    staleTime: 1000 * 60,
+  });
+
+  const { data: budgetSummary = [] } = useQuery({
+    queryKey: ['budgets', 'status', currentMonthValue, 'dashboard-summary'],
+    queryFn: async () => {
+      const res = await api.getBudgetsStatus<
+        BudgetSummaryResponse | ApiDataResponse<BudgetSummaryItem[]> | BudgetSummaryItem[]
+      >(currentMonthValue);
+      return normalizeBudgetSummary(res);
     },
     staleTime: 1000 * 60,
   });
@@ -150,9 +252,44 @@ function UserDashboard() {
   const [yearStr, monthStr] = currentMonthValue.split('-');
   const currentMonth = new Date(parseInt(yearStr), parseInt(monthStr) - 1).toLocaleString('pt-BR', { month: 'long' });
   const maxFlow = Math.max(...data.cashFlow.map((d) => d.value), 1);
+  const totalBudgetLimit = budgetSummary.reduce(
+    (sum, item) => sum + Number(item.limitAmount ?? item.amount ?? 0),
+    0,
+  );
+  const totalBudgetSpent = budgetSummary.reduce((sum, item) => sum + Number(item.spent ?? 0), 0);
+  const totalBudgetRemaining = budgetSummary.reduce(
+    (sum, item) =>
+      sum +
+      Number(
+        item.remaining ??
+          (Number(item.limitAmount ?? item.amount ?? 0) - Number(item.spent ?? 0)),
+      ),
+    0,
+  );
+  const overBudgetCount = budgetSummary.filter((item) => item.isOverBudget).length;
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
+    <div className="relative flex-1 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.15),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.10),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(59,130,246,0.04))]" />
+        <div className="absolute -left-8 top-14 rotate-[-10deg] text-sky-500/[0.07]">
+          <Wallet className="h-28 w-28 sm:h-36 sm:w-36 lg:h-44 lg:w-44" />
+        </div>
+        <div className="absolute right-[8%] top-10 rotate-[12deg] text-emerald-500/[0.06]">
+          <TrendingUp className="h-32 w-32 sm:h-40 sm:w-40 lg:h-52 lg:w-52" />
+        </div>
+        <div className="absolute left-[30%] top-28 rotate-[7deg] text-sky-500/[0.04]">
+          <Landmark className="h-20 w-20 sm:h-28 sm:w-28 lg:h-36 lg:w-36" />
+        </div>
+        <div className="absolute bottom-24 right-[14%] rotate-[-9deg] text-emerald-500/[0.05]">
+          <Banknote className="h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40" />
+        </div>
+        <div className="absolute bottom-6 left-[10%] rotate-[8deg] text-sky-500/[0.04]">
+          <CreditCard className="h-28 w-28 sm:h-40 sm:w-40 lg:h-52 lg:w-52" />
+        </div>
+      </div>
+
+      <div className="relative p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -168,7 +305,7 @@ function UserDashboard() {
           />
           {/* Botão visível apenas no desktop — mobile usa FAB */}
           <button
-            onClick={() => void navigate({ to: '/transactions/crud-transactions', search: { transactionId: undefined } })}
+            onClick={() => void navigate({ to: '/activity/transactions/crud-transactions', search: { transactionId: undefined } })}
             className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -324,7 +461,7 @@ function UserDashboard() {
                 Atividade Recente
               </h2>
               <button
-                onClick={() => void navigate({ to: '/transactions' })}
+                onClick={() => void navigate({ to: '/activity/transactions' })}
                 className="text-[10px] font-bold text-primary hover:underline"
               >
                 Ver tudo →
@@ -359,46 +496,112 @@ function UserDashboard() {
           </div>
         </div>
 
-        {/* Direita: Contas */}
-        <div className="card-premium overflow-hidden h-fit">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-              <Wallet className="w-3.5 h-3.5" />
-              Suas Contas
-            </h2>
-            <button
-              onClick={() => void navigate({ to: '/accounts' })}
-              className="text-[10px] font-bold text-primary hover:underline"
-            >
-              Gerenciar →
-            </button>
-          </div>
-          <div className="divide-y divide-border">
-            {data.accounts.map((acc, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
+        {/* Direita: Contas + Orçamentos */}
+        <div className="flex flex-col gap-4 h-fit">
+          <div className="card-premium overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5" />
+                Suas Contas
+              </h2>
+              <button
+                onClick={() => void navigate({ to: '/wallet/accounts' })}
+                className="text-[10px] font-bold text-primary hover:underline"
               >
-                <p className="text-sm font-medium">{acc.name}</p>
-                <PrivacyAmount value={acc.balance} className="text-sm font-bold" />
+                Gerenciar →
+              </button>
+            </div>
+            <div className="divide-y divide-border">
+              {data.accounts.map((acc, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
+                >
+                  <p className="text-sm font-medium">{acc.name}</p>
+                  <PrivacyAmount value={acc.balance} className="text-sm font-bold" />
+                </div>
+              ))}
+            </div>
+            <div className="px-4 py-3 border-t border-border bg-muted/20">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Total
+                </p>
+                <PrivacyAmount value={data.totalBalance} className="text-sm font-bold" />
               </div>
-            ))}
-          </div>
-          <div className="px-4 py-3 border-t border-border bg-muted/20">
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Total
-              </p>
-              <PrivacyAmount value={data.totalBalance} className="text-sm font-bold" />
             </div>
           </div>
+
+          <div className="card-premium overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5" />
+                Orçamentos
+              </h2>
+              <button
+                onClick={() => void navigate({ to: '/planning/budgets', search: { month: currentMonthValue } })}
+                className="text-[10px] font-bold text-primary hover:underline"
+              >
+                Abrir →
+              </button>
+            </div>
+            {budgetSummary.length === 0 ? (
+              <div className="px-4 py-5 text-sm text-muted-foreground">
+                Nenhum orçamento ativo em {currentMonth}.
+              </div>
+            ) : (
+              <>
+                <div className="divide-y divide-border">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Planejado
+                    </p>
+                    <PrivacyAmount value={totalBudgetLimit} className="text-sm font-bold" />
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Gasto
+                    </p>
+                    <PrivacyAmount
+                      value={totalBudgetSpent}
+                      className="text-sm font-bold text-rose-500"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Restante
+                    </p>
+                    <PrivacyAmount
+                      value={totalBudgetRemaining}
+                      className={`text-sm font-bold ${
+                        totalBudgetRemaining >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                      }`}
+                    />
+                  </div>
+                </div>
+                <div className="px-4 py-3 border-t border-border bg-muted/20 flex items-center justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Estourados
+                  </p>
+                  <span
+                    className={`text-sm font-bold ${
+                      overBudgetCount > 0 ? 'text-rose-500' : 'text-emerald-500'
+                    }`}
+                  >
+                    {overBudgetCount}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
         </div>
+      </div>
       </div>
 
       {/* FAB mobile — Nova Transação */}
       <Fab
         label="Nova transação"
-        onClick={() => void navigate({ to: '/transactions/crud-transactions', search: { transactionId: undefined } })}
+        onClick={() => void navigate({ to: '/activity/transactions/crud-transactions', search: { transactionId: undefined } })}
       />
     </div>
   );

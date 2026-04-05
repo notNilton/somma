@@ -13,17 +13,17 @@ import { auth } from '../lib/auth';
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   beforeLoad: ({ location }) => {
-    const isPublic = ['/login', '/register'].includes(location.pathname);
+    const isPublic = location.pathname.startsWith('/auth');
     const isAuthenticated = auth.isAuthenticated();
 
     if (!isAuthenticated && !isPublic) {
       throw redirect({
-        to: '/login',
+        to: '/auth/login',
         search: { redirect: location.href },
       });
     }
 
-    if (isAuthenticated && location.pathname === '/login') {
+    if (isAuthenticated && isPublic) {
       throw redirect({ to: '/' });
     }
   },
@@ -42,14 +42,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootComponent() {
   const location = useLocation();
   const { queryClient } = Route.useRouteContext();
-  const isAuthPage = ['/login', '/register'].includes(location.pathname);
+  const isAuthPage = location.pathname.startsWith('/auth');
 
   return (
     <div className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)] min-h-screen flex flex-col">
       <QueryClientProvider client={queryClient}>
         <PrivacyProvider>
           {!isAuthPage && <Header />}
-          <main className="flex-1 pb-16 sm:pb-0">
+          <main className="flex flex-1 flex-col pb-16 sm:pb-0">
             <Outlet />
           </main>
           {!isAuthPage && <Footer />}

@@ -19,11 +19,13 @@ import (
 var JWTKey = []byte("test-secret-key")
 
 // Setup conecta no banco de teste e retorna pool + handler + mux.
-// Requer DATABASE_URL setado (ex: postgres://postgres:postgres@localhost:5454/mirante_test).
+// Usa DATABASE_URL quando disponível. Sem DATABASE_URL, tenta o DSN local padrão.
+// Se o banco padrão local não estiver disponível, o teste é pulado com instrução clara.
 func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 	t.Helper()
 
 	dsn := os.Getenv("DATABASE_URL")
+	usingDefaultDSN := dsn == ""
 	if dsn == "" {
 		dsn = "postgres://postgres:postgres@localhost:5454/mirante_test"
 	}
@@ -34,6 +36,10 @@ func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 	}
 
 	if err := pool.Ping(context.Background()); err != nil {
+		if usingDefaultDSN {
+			pool.Close()
+			t.Skipf("testutil: banco de integração indisponível em %s; suba o banco de teste ou defina DATABASE_URL: %v", dsn, err)
+		}
 		t.Fatalf("testutil: ping db: %v", err)
 	}
 
