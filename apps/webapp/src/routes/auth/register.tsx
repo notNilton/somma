@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ShieldCheck, ArrowRight, Mail, Lock, User, Phone, FileText, Loader2 } from 'lucide-react';
-import { auth } from '../lib/auth';
-import { api } from '../lib/api';
+import { auth } from '../../lib/auth';
+import { api } from '../../lib/api';
 
-export const Route = createFileRoute('/register')({
+export const Route = createFileRoute('/auth/register')({
   component: RegisterPage,
 });
 
@@ -168,7 +168,7 @@ function RegisterPage() {
 
           <p className="text-center text-xs text-muted-foreground mt-2">
             Já tem uma conta?{' '}
-            <Link to="/login" className="text-primary font-bold hover:underline">
+            <Link to="/auth/login" className="text-primary font-bold hover:underline">
               Entrar
             </Link>
           </p>
