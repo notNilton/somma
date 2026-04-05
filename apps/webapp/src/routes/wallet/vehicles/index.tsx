@@ -17,6 +17,8 @@ import PrivacyAmount from '../../../components/PrivacyAmount';
 import Fab from '../../../components/Fab';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import WalletShell from '../../../components/WalletShell';
+import { SectionEmptyState, SectionLoadingState } from '../../../components/SectionFeedback';
+import SectionPageHeader from '../../../components/SectionPageHeader';
 import { api } from '../../../lib/api';
 import type { Vehicle, RefuelingLog, VehicleExpenseStats, VehicleMaintenanceLog } from './-types';
 
@@ -178,12 +180,7 @@ function VehiclesPage() {
   if (vehiclesLoading) {
     return (
       <WalletShell contentClassName="flex-1 justify-center">
-        <div className="flex items-center justify-center py-24">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          <p className="text-xs text-muted-foreground">Carregando veículos...</p>
-        </div>
-        </div>
+        <SectionLoadingState message="Carregando veículos..." />
       </WalletShell>
     );
   }
@@ -191,32 +188,35 @@ function VehiclesPage() {
   if (vehicles.length === 0) {
     return (
       <WalletShell>
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl sm:text-2xl font-display font-bold">Veículos</h1>
-          <button
-            type="button"
-            onClick={handleCreate}
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Novo Veículo
-          </button>
-        </div>
-        <div className="card-premium p-12 flex flex-col items-center justify-center gap-3 text-center">
-          <Car className="w-10 h-10 text-muted-foreground/40" />
-          <p className="font-bold text-sm">Nenhum veículo cadastrado</p>
-          <p className="text-xs text-muted-foreground max-w-[260px]">
-            Adicione um veículo para ver o histórico de abastecimentos e manutenções.
-          </p>
-          <button
-            type="button"
-            onClick={handleCreate}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth mt-1"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Novo Veículo
-          </button>
-        </div>
+        <SectionPageHeader
+          title="Veículos"
+          description="Acompanhe abastecimentos, manutenções e indicadores da sua frota."
+          actions={
+            <button
+              type="button"
+              onClick={handleCreate}
+              className="hidden sm:flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Novo Veículo
+            </button>
+          }
+        />
+        <SectionEmptyState
+          icon={Car}
+          title="Nenhum veículo cadastrado"
+          description="Adicione um veículo para ver o histórico de abastecimentos e manutenções."
+          action={
+            <button
+              type="button"
+              onClick={handleCreate}
+              className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Novo Veículo
+            </button>
+          }
+        />
         <Fab label="Novo veículo" onClick={handleCreate} />
       </WalletShell>
     );
@@ -235,10 +235,10 @@ function VehiclesPage() {
         isLoading={deleteMutation.isPending}
       />
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-display font-bold">Veículos</h1>
-        <div className="flex items-center gap-2">
+      <SectionPageHeader
+        title="Veículos"
+        description="Acompanhe abastecimentos, manutenções e indicadores da sua frota."
+        actions={<div className="flex items-center gap-2">
           {activeVehicle && (
             <>
               <button
@@ -262,13 +262,13 @@ function VehiclesPage() {
           <button
             type="button"
             onClick={handleCreate}
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+            className="hidden sm:flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
           >
             <Plus className="w-3.5 h-3.5" />
             Novo Veículo
           </button>
-        </div>
-      </div>
+        </div>}
+      />
 
       {/* Seletor de veículo */}
       {vehicles.length > 1 && (

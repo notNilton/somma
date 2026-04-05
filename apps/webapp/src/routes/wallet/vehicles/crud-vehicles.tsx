@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, CarFront, Hash, Calendar, Fuel } from 'lucide-react';
 import WalletShell from '../../../components/WalletShell';
+import { SectionLoadingState } from '../../../components/SectionFeedback';
+import SectionPageHeader from '../../../components/SectionPageHeader';
 import { api } from '../../../lib/api';
 import { SUPPORTED_BRANDS, getBrandIcon } from '../../../lib/vehicle-brands';
 
@@ -90,36 +92,18 @@ function CrudVehiclesPage() {
   if (isEditing && loadingInitial) {
     return (
       <WalletShell contentClassName="flex-1 justify-center">
-        <div className="flex items-center justify-center py-24 gap-2">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          <p className="text-xs text-muted-foreground">Carregando...</p>
-        </div>
+        <SectionLoadingState message="Carregando veículo..." />
       </WalletShell>
     );
   }
 
   return (
     <WalletShell>
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="p-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted transition-smooth"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-display font-bold">
-              {isEditing ? 'Editar Veículo' : 'Novo Veículo'}
-            </h1>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hidden sm:block">
-              Gerenciamento de frota e consumo
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+      <SectionPageHeader
+        title={isEditing ? 'Editar Veículo' : 'Novo Veículo'}
+        description="Gerenciamento de frota e consumo."
+        backTo="/wallet/vehicles"
+        actions={<div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleCancel}
@@ -142,8 +126,8 @@ function CrudVehiclesPage() {
               </>
             )}
           </button>
-        </div>
-      </div>
+        </div>}
+      />
 
       {/* Form */}
       <form id="vehicle-form" onSubmit={handleSubmit} className="card-premium p-4 sm:p-6">

@@ -5,6 +5,8 @@ import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
 import PrivacyAmount from '../../../components/PrivacyAmount';
 import Fab from '../../../components/Fab';
 import WalletShell from '../../../components/WalletShell';
+import { SectionEmptyState, SectionLoadingState } from '../../../components/SectionFeedback';
+import SectionPageHeader from '../../../components/SectionPageHeader';
 import {
   ArrowDownLeft,
   ChevronLeft,
@@ -846,39 +848,36 @@ function CardsPage() {
   return (
     <>
       <WalletShell>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-display font-bold">Cartões</h1>
-            <p className="hidden sm:block text-xs text-muted-foreground mt-0.5">
-              Gerencie cartões e acompanhe faturas por período.
-            </p>
-          </div>
-          <button
-            onClick={openCreate}
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Novo cartão
-          </button>
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          </div>
-        ) : orderedCards.length === 0 ? (
-          <div className="card-premium flex flex-col items-center justify-center gap-3 py-20 text-center">
-            <div className="rounded-2xl bg-muted/50 p-4 text-muted-foreground">
-              <Wallet className="w-8 h-8" />
-            </div>
-            <p className="text-sm font-semibold text-muted-foreground">Nenhum cartão cadastrado</p>
+        <SectionPageHeader
+          title="Cartoes"
+          description="Gerencie cartoes e acompanhe faturas por periodo."
+          actions={
             <button
               onClick={openCreate}
-              className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              className="hidden sm:flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20"
             >
-              Cadastrar primeiro cartão
+              <Plus className="w-3.5 h-3.5" />
+              Novo cartao
             </button>
-          </div>
+          }
+        />
+
+        {isLoading ? (
+          <SectionLoadingState message="Carregando cartoes..." />
+        ) : orderedCards.length === 0 ? (
+          <SectionEmptyState
+            icon={Wallet}
+            title="Nenhum cartao cadastrado"
+            description="Cadastre o primeiro cartao para acompanhar limites e faturas."
+            action={
+              <button
+                onClick={openCreate}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                Cadastrar primeiro cartao
+              </button>
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {orderedCards.map((card) => (
