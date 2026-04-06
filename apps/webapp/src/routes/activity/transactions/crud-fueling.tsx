@@ -14,6 +14,8 @@ import {
   CircleDollarSign,
 } from 'lucide-react';
 import ActivityShell from '../../../components/ActivityShell';
+import { SectionLoadingState } from '../../../components/SectionFeedback';
+import SectionPageHeader from '../../../components/SectionPageHeader';
 import { api } from '../../../lib/api';
 import { formatCurrency, cleanNumeric, formatValue, formatKm } from '../../../lib/formatters';
 import CustomSelect from '../../../components/ui/CustomSelect';
@@ -195,10 +197,7 @@ function CrudFuelingPage() {
   if (isEditing && isLoadingTx) {
     return (
       <ActivityShell contentClassName="flex-1 justify-center">
-        <div className="flex items-center justify-center py-24 gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground font-bold font-display">Carregando abastecimento...</p>
-        </div>
+        <SectionLoadingState message="Carregando abastecimento..." />
       </ActivityShell>
     );
   }
@@ -206,26 +205,11 @@ function CrudFuelingPage() {
   return (
     <ActivityShell>
       <form onSubmit={handleSubmit} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={goBack}
-              className="p-2.5 rounded-lg hover:bg-muted transition-smooth text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
-                <Fuel className="w-5 h-5" />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-display font-bold">
-                {isEditing ? 'Editar Abastecimento' : 'Novo Abastecimento'}
-              </h1>
-            </div>
-          </div>
-          <div className="flex gap-2">
+        <SectionPageHeader
+          title={isEditing ? 'Editar Abastecimento' : 'Novo Abastecimento'}
+          description="Registre consumo, quilometragem e custo por litro."
+          backTo="/activity/transactions"
+          actions={<div className="flex gap-2">
             <button
               type="submit"
               disabled={isLoading || isSubmitDisabled}
@@ -238,8 +222,8 @@ function CrudFuelingPage() {
               )}
               {isEditing ? 'Atualizar' : 'Confirmar'}
             </button>
-          </div>
-        </div>
+          </div>}
+        />
 
         {error && (
           <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-sm font-medium">

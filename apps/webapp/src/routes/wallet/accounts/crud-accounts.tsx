@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
 import WalletShell from '../../../components/WalletShell';
+import { SectionLoadingState } from '../../../components/SectionFeedback';
+import SectionPageHeader from '../../../components/SectionPageHeader';
 import { api } from '../../../lib/api';
 import type { Account } from './index';
 
@@ -222,10 +224,7 @@ function CrudAccountsPage() {
   if (isEditing && isLoadingAccount) {
     return (
       <WalletShell contentClassName="flex-1 justify-center">
-        <div className="flex items-center justify-center py-24 gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando...</p>
-        </div>
+        <SectionLoadingState message="Carregando conta..." />
       </WalletShell>
     );
   }
@@ -233,28 +232,13 @@ function CrudAccountsPage() {
   return (
     <WalletShell>
       <form onSubmit={handleSubmit}>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={goBack}
-              className="p-2.5 rounded-lg hover:bg-muted transition-smooth text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-display font-bold">
-                {isEditing ? 'Editar Conta' : 'Nova Conta'}
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
-                {isEditing
-                  ? 'Atualize os dados da conta bancária ou carteira.'
-                  : 'Preencha os dados da nova conta bancária ou carteira.'}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
+        <SectionPageHeader
+          title={isEditing ? 'Editar Conta' : 'Nova Conta'}
+          description={isEditing
+            ? 'Atualize os dados da conta bancária ou carteira.'
+            : 'Preencha os dados da nova conta bancária ou carteira.'}
+          backTo="/wallet/accounts"
+          actions={<div className="flex gap-2">
             <button
               type="button"
               onClick={goBack}
@@ -274,8 +258,8 @@ function CrudAccountsPage() {
               )}
               Salvar
             </button>
-          </div>
-        </div>
+          </div>}
+        />
 
         {error && (
           <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-sm">

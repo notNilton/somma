@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tag, Plus, Loader2, Pencil, Trash2, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import SettingsShell from '../../components/SettingsShell';
+import { SectionEmptyState, SectionLoadingState } from '../../components/SectionFeedback';
+import SectionPageHeader from '../../components/SectionPageHeader';
 import { api } from '../../lib/api';
 import { CategoryModal } from '../../components/CategoryModal';
 
@@ -85,13 +87,12 @@ function CategoriesSettingsPage() {
 
   return (
     <SettingsShell>
-      <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div>
-        <h1 className="text-2xl font-display font-bold tracking-tight">Categorias</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Centralize a organização das suas categorias de receitas e despesas.
-        </p>
-      </div>
+      <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300 sm:gap-8">
+      <SectionPageHeader
+        title="Categorias"
+        description="Centralize a organização das suas categorias de receitas e despesas."
+        backTo="/settings"
+      />
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1">

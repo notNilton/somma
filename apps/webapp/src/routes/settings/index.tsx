@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { User, Shield, ChevronRight, LogOut, CarFront, Fuel, type LucideIcon } from 'lucide-react';
 import SettingsShell from '../../components/SettingsShell';
+import SectionPageHeader from '../../components/SectionPageHeader';
 import { api } from '../../lib/api';
 import { auth } from '../../lib/auth';
 
@@ -67,12 +68,10 @@ function SettingsPage() {
 
   return (
     <SettingsShell>
-      <div>
-        <h1 className="text-xl sm:text-2xl font-display font-bold">Configurações</h1>
-        <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
-          Gerencie seu perfil e preferências.
-        </p>
-      </div>
+      <SectionPageHeader
+        title="Configuracoes"
+        description="Gerencie seu perfil, preferencias e dados da conta."
+      />
 
       <div className="card-premium overflow-hidden divide-y divide-border">
         {/* Perfil */}

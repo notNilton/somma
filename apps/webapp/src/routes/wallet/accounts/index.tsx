@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import PrivacyAmount from '../../../components/PrivacyAmount';
 import Fab from '../../../components/Fab';
 import WalletShell from '../../../components/WalletShell';
+import { SectionLoadingState } from '../../../components/SectionFeedback';
+import SectionPageHeader from '../../../components/SectionPageHeader';
 import {
   Plus,
   Wallet,
@@ -417,23 +419,22 @@ function AccountsPage() {
 
   return (
     <WalletShell>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-display font-bold">Contas</h1>
-        <button
-          onClick={handleCreate}
-          className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Nova Conta
-        </button>
-      </div>
+      <SectionPageHeader
+        title="Contas"
+        description="Gerencie saldos, estrutura financeira e limites disponiveis."
+        actions={
+          <button
+            onClick={handleCreate}
+            className="hidden sm:flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Nova conta
+          </button>
+        }
+      />
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-16 gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando...</p>
-        </div>
+        <SectionLoadingState message="Carregando contas..." />
       ) : (
         <>
           {/* Resumo */}

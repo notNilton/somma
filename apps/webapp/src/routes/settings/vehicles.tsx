@@ -3,6 +3,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CarFront, Plus, History, Edit2, Trash2, Loader2 } from 'lucide-react';
 import SettingsShell from '../../components/SettingsShell';
+import { SectionLoadingState } from '../../components/SectionFeedback';
+import SectionPageHeader from '../../components/SectionPageHeader';
 import PrivacyAmount from '../../components/PrivacyAmount';
 import { api } from '../../lib/api';
 import { VehicleModal } from '../../components/VehicleModal';
@@ -181,28 +183,24 @@ function VehiclesPage() {
 
   return (
     <SettingsShell>
-      <div className="flex flex-col gap-10">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-display font-bold whitespace-nowrap">Frota & Combustível</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie seus veículos e acompanhe o desempenho e custos de manutenção.
-          </p>
-        </div>
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-smooth active:scale-95 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Adicionar Veículo
-        </button>
-      </div>
+      <div className="flex flex-col gap-6 sm:gap-8">
+      <SectionPageHeader
+        title="Frota e Combustivel"
+        description="Gerencie seus veículos e acompanhe o desempenho e custos de manutenção."
+        backTo="/settings"
+        actions={
+          <button
+            onClick={handleAdd}
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:scale-[1.02] transition-smooth active:scale-95 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Adicionar Veículo
+          </button>
+        }
+      />
 
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground font-medium">Carregando frota...</p>
-        </div>
+        <SectionLoadingState message="Carregando frota..." />
       ) : (
         <div className="flex flex-wrap gap-6">
           {vehicles.map((vehicle) => (

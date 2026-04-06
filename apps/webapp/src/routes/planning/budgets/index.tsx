@@ -6,6 +6,8 @@ import PlanningShell from '../../../components/PlanningShell';
 import { api, unwrapData, type ApiDataResponse } from '../../../lib/api';
 import Fab from '../../../components/Fab';
 import { MonthSelector } from '../../../components/MonthSelector';
+import { SectionEmptyState, SectionLoadingState } from '../../../components/SectionFeedback';
+import SectionPageHeader from '../../../components/SectionPageHeader';
 import {
   Plus,
   Target,
@@ -482,44 +484,37 @@ function BudgetsPage() {
   return (
     <>
       <PlanningShell>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-display font-bold">Orçamentos</h1>
-            <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
-              Defina limites de gastos por categoria.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <MonthSelector
-              value={currentMonthValue}
-              onChange={(m) => {
-                void navigate({ to: '/planning/budgets', search: { month: m } });
-                queryClient.invalidateQueries({ queryKey: ['budgets', 'status'] });
-              }}
-            />
-            <button
-              onClick={() => { setEditTarget(undefined); setShowModal(true); }}
-              className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Novo Orçamento</span>
-            </button>
-          </div>
-        </div>
+        <SectionPageHeader
+          title="Orcamentos"
+          description="Defina limites de gastos por categoria."
+          actions={
+            <>
+              <MonthSelector
+                value={currentMonthValue}
+                onChange={(m) => {
+                  void navigate({ to: '/planning/budgets', search: { month: m } });
+                  queryClient.invalidateQueries({ queryKey: ['budgets', 'status'] });
+                }}
+              />
+              <button
+                onClick={() => { setEditTarget(undefined); setShowModal(true); }}
+                className="hidden sm:flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Novo orcamento</span>
+              </button>
+            </>
+          }
+        />
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20 gap-3">
-            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          </div>
+          <SectionLoadingState message="Carregando orcamentos..." />
         ) : statusList.length === 0 ? (
-          <div className="card-premium flex flex-col items-center justify-center py-20 gap-3 text-center">
-            <div className="p-4 rounded-2xl bg-muted/50 text-muted-foreground">
-              <Target className="w-8 h-8" />
-            </div>
-            <p className="text-sm font-semibold text-muted-foreground">Nenhum orçamento neste mês</p>
-            <p className="text-xs text-muted-foreground/70">Clique em "Novo Orçamento" para começar.</p>
-          </div>
+          <SectionEmptyState
+            icon={Target}
+            title="Nenhum orcamento neste mes"
+            description='Clique em "Novo orcamento" para comecar.'
+          />
         ) : (
           <>
             {overBudget.length > 0 && (
