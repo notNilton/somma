@@ -101,6 +101,19 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("PATCH /api/v1/budgets/{id}", auth(h.UpdateBudget))
 	mux.HandleFunc("DELETE /api/v1/budgets/{id}", auth(h.DeleteBudget))
 
+	// Planning
+	mux.HandleFunc("GET /api/v1/plans", auth(h.ListPlanningPlans))
+	mux.HandleFunc("GET /api/v1/plans/{id}", auth(h.GetPlanningPlan))
+	mux.HandleFunc("POST /api/v1/plans", auth(h.CreatePlanningPlan))
+	mux.HandleFunc("PATCH /api/v1/plans/{id}", auth(h.UpdatePlanningPlan))
+	mux.HandleFunc("DELETE /api/v1/plans/{id}", auth(h.DeletePlanningPlan))
+	mux.HandleFunc("POST /api/v1/plans/{id}/items", auth(h.CreatePlanningItem))
+	mux.HandleFunc("PATCH /api/v1/plans/{id}/items/{itemId}", auth(h.UpdatePlanningItem))
+	mux.HandleFunc("DELETE /api/v1/plans/{id}/items/{itemId}", auth(h.DeletePlanningItem))
+	mux.HandleFunc("POST /api/v1/plans/{id}/contributions", auth(h.CreatePlanningContribution))
+	mux.HandleFunc("PATCH /api/v1/plans/{id}/contributions/{contributionId}", auth(h.UpdatePlanningContribution))
+	mux.HandleFunc("DELETE /api/v1/plans/{id}/contributions/{contributionId}", auth(h.DeletePlanningContribution))
+
 	// Settings
 	mux.HandleFunc("GET /api/v1/settings/profile", auth(h.GetProfile))
 	mux.HandleFunc("PATCH /api/v1/settings/profile", auth(h.UpdateProfile))

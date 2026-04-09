@@ -19,22 +19,23 @@ import (
 )
 
 type createTransactionDto struct {
-	AccountID         string   `json:"accountId"`
-	CategoryID        *string  `json:"categoryId"`
-	Type              string   `json:"type"`
-	Classification    *string  `json:"classification"`
-	PaymentMethod     *string  `json:"paymentMethod"`
-	Channel           *string  `json:"channel"`
-	CardID            *string  `json:"cardId"`
-	Status            *string  `json:"status"`
-	IsRecurring       *bool    `json:"isRecurring"`
-	Amount            float64  `json:"amount"`
-	TotalInstallments *int     `json:"totalInstallments"`
-	PaidInstallments  *int     `json:"paidInstallments"`
-	Date              string   `json:"date"`
-	Description       string   `json:"description"`
-	Notes             *string  `json:"notes"`
-	CurrencyCode      *string  `json:"currencyCode"`
+	AccountID         string  `json:"accountId"`
+	PlanningPlanID    *string `json:"planningPlanId"`
+	CategoryID        *string `json:"categoryId"`
+	Type              string  `json:"type"`
+	Classification    *string `json:"classification"`
+	PaymentMethod     *string `json:"paymentMethod"`
+	Channel           *string `json:"channel"`
+	CardID            *string `json:"cardId"`
+	Status            *string `json:"status"`
+	IsRecurring       *bool   `json:"isRecurring"`
+	Amount            float64 `json:"amount"`
+	TotalInstallments *int    `json:"totalInstallments"`
+	PaidInstallments  *int    `json:"paidInstallments"`
+	Date              string  `json:"date"`
+	Description       string  `json:"description"`
+	Notes             *string `json:"notes"`
+	CurrencyCode      *string `json:"currencyCode"`
 	// Combustível
 	VehicleID     *string  `json:"vehicleId"`
 	Station       *string  `json:"station"`
@@ -84,6 +85,11 @@ func (h *Handler) buildTransactionsFilter(q url.Values, userID string) (string, 
 	}
 	if v := q.Get("categoryId"); v != "" {
 		filters = append(filters, fmt.Sprintf("t.category_id = $%d", i))
+		args = append(args, v)
+		i++
+	}
+	if v := q.Get("planningPlanId"); v != "" {
+		filters = append(filters, fmt.Sprintf("t.planning_plan_id = $%d", i))
 		args = append(args, v)
 		i++
 	}
@@ -138,13 +144,16 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 	where, args, i := h.buildTransactionsFilter(q, claims.UserID)
 	query := fmt.Sprintf(`
 		SELECT t.id, t.account_id, t.user_id, t.category_id, t.card_id,
+		       t.planning_plan_id,
 		       t.type, t.classification, t.payment_method, t.channel, t.status,
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
 		       t.date, t.description, t.notes, t.currency_code, t.affects_account,
 		       t.is_active, t.deleted_at, t.created_at, t.updated_at,
-		       c.name AS category_name, c.color AS category_color
+		       c.name AS category_name, c.color AS category_color,
+		       p.name AS planning_plan_name
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
+		LEFT JOIN planning_plans p ON p.id = t.planning_plan_id
 		WHERE %s
 		ORDER BY t.date DESC
 		LIMIT $%d OFFSET $%d
@@ -162,12 +171,12 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var t models.TransactionWithCategory
 		if err := rows.Scan(
-			&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID,
+			&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID, &t.PlanningPlanID,
 			&t.Type, &t.Classification, &t.PaymentMethod, &t.Channel, &t.Status,
 			&t.IsRecurring, &t.AmountCents, &t.TotalInstallments, &t.PaidInstallments,
 			&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.AffectsAccount,
 			&t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
-			&t.CategoryName, &t.CategoryColor,
+			&t.CategoryName, &t.CategoryColor, &t.PlanningPlanName,
 		); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
@@ -188,21 +197,24 @@ func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 	var t models.TransactionWithCategory
 	err := h.db.QueryRow(r.Context(), `
 		SELECT t.id, t.account_id, t.user_id, t.category_id, t.card_id,
+		       t.planning_plan_id,
 		       t.type, t.classification, t.payment_method, t.channel, t.status,
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
 		       t.date, t.description, t.notes, t.currency_code, t.affects_account,
 		       t.is_active, t.deleted_at, t.created_at, t.updated_at,
-		       c.name AS category_name, c.color AS category_color
+		       c.name AS category_name, c.color AS category_color,
+		       p.name AS planning_plan_name
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
+		LEFT JOIN planning_plans p ON p.id = t.planning_plan_id
 		WHERE t.id = $1 AND t.user_id = $2 AND t.is_active = true
 	`, id, claims.UserID).Scan(
-		&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID,
+		&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID, &t.PlanningPlanID,
 		&t.Type, &t.Classification, &t.PaymentMethod, &t.Channel, &t.Status,
 		&t.IsRecurring, &t.AmountCents, &t.TotalInstallments, &t.PaidInstallments,
 		&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.AffectsAccount,
 		&t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
-		&t.CategoryName, &t.CategoryColor,
+		&t.CategoryName, &t.CategoryColor, &t.PlanningPlanName,
 	)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "transaction not found")
@@ -251,6 +263,10 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// UTC 12:00 para evitar problemas de fuso
+	if len(dto.Date) < 10 {
+		writeError(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
 	parsedDate, err := time.Parse("2006-01-02", dto.Date[:10])
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
@@ -266,22 +282,22 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	var t models.Transaction
 	err = h.db.QueryRow(r.Context(), `
 		INSERT INTO transactions (
-			account_id, user_id, category_id, card_id, type, classification,
+			account_id, user_id, planning_plan_id, category_id, card_id, type, classification,
 			payment_method, channel, status, is_recurring, amount_cents,
 			total_installments, paid_installments, date, description, notes,
 			currency_code, affects_account
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
-		RETURNING id, account_id, user_id, category_id, card_id, type, classification,
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+		RETURNING id, account_id, user_id, planning_plan_id, category_id, card_id, type, classification,
 		          payment_method, channel, status, is_recurring, amount_cents,
 		          total_installments, paid_installments, date, description, notes,
 		          currency_code, affects_account, is_active, deleted_at, created_at, updated_at
 	`,
-		dto.AccountID, claims.UserID, dto.CategoryID, dto.CardID, dto.Type, classification,
+		dto.AccountID, claims.UserID, dto.PlanningPlanID, dto.CategoryID, dto.CardID, dto.Type, classification,
 		paymentMethod, channel, status, isRecurring, amountCents,
 		dto.TotalInstallments, dto.PaidInstallments, txDate, dto.Description, dto.Notes,
 		currency, affectsAccount,
 	).Scan(
-		&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID, &t.Type, &t.Classification,
+		&t.ID, &t.AccountID, &t.UserID, &t.PlanningPlanID, &t.CategoryID, &t.CardID, &t.Type, &t.Classification,
 		&t.PaymentMethod, &t.Channel, &t.Status, &t.IsRecurring, &t.AmountCents,
 		&t.TotalInstallments, &t.PaidInstallments, &t.Date, &t.Description, &t.Notes,
 		&t.CurrencyCode, &t.AffectsAccount, &t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
@@ -329,21 +345,22 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 	var t models.Transaction
 	err := h.db.QueryRow(r.Context(), `
 		UPDATE transactions SET
-			category_id        = COALESCE($1, category_id),
-			status             = COALESCE(NULLIF($2,''), status),
-			amount_cents       = COALESCE($3, amount_cents),
-			description        = COALESCE(NULLIF($4,''), description),
-			notes              = COALESCE($5, notes),
+			planning_plan_id    = CASE WHEN $1 = '' THEN NULL ELSE COALESCE($1, planning_plan_id) END,
+			category_id         = CASE WHEN $2 = '' THEN NULL ELSE COALESCE($2, category_id) END,
+			status              = COALESCE(NULLIF($3,''), status),
+			amount_cents        = COALESCE($4, amount_cents),
+			description         = COALESCE(NULLIF($5,''), description),
+			notes               = COALESCE($6, notes),
 			updated_at         = NOW()
-		WHERE id = $6 AND user_id = $7 AND is_active = true
-		RETURNING id, account_id, user_id, category_id, card_id, type, classification,
+		WHERE id = $7 AND user_id = $8 AND is_active = true
+		RETURNING id, account_id, user_id, planning_plan_id, category_id, card_id, type, classification,
 		          payment_method, channel, status, is_recurring, amount_cents,
 		          total_installments, paid_installments, date, description, notes,
 		          currency_code, affects_account, is_active, deleted_at, created_at, updated_at
 	`,
-		dto.CategoryID, dto.Status, amountCents, dto.Description, dto.Notes, id, claims.UserID,
+		dto.PlanningPlanID, dto.CategoryID, dto.Status, amountCents, dto.Description, dto.Notes, id, claims.UserID,
 	).Scan(
-		&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID, &t.Type, &t.Classification,
+		&t.ID, &t.AccountID, &t.UserID, &t.PlanningPlanID, &t.CategoryID, &t.CardID, &t.Type, &t.Classification,
 		&t.PaymentMethod, &t.Channel, &t.Status, &t.IsRecurring, &t.AmountCents,
 		&t.TotalInstallments, &t.PaidInstallments, &t.Date, &t.Description, &t.Notes,
 		&t.CurrencyCode, &t.AffectsAccount, &t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
@@ -486,13 +503,16 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 
 	rows, err := h.db.Query(r.Context(), `
 		SELECT t.id, t.account_id, t.user_id, t.category_id, t.card_id,
+		       t.planning_plan_id,
 		       t.type, t.classification, t.payment_method, t.channel, t.status,
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
 		       t.date, t.description, t.notes, t.currency_code, t.affects_account,
 		       t.is_active, t.deleted_at, t.created_at, t.updated_at,
-		       c.name AS category_name, c.color AS category_color
+		       c.name AS category_name, c.color AS category_color,
+		       p.name AS planning_plan_name
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
+		LEFT JOIN planning_plans p ON p.id = t.planning_plan_id
 		WHERE t.user_id = $1
 		  AND t.is_active = true
 		  AND (t.date > NOW() OR t.is_recurring = true)
@@ -508,12 +528,12 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 	for rows.Next() {
 		var t models.TransactionWithCategory
 		if err := rows.Scan(
-			&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID,
+			&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID, &t.PlanningPlanID,
 			&t.Type, &t.Classification, &t.PaymentMethod, &t.Channel, &t.Status,
 			&t.IsRecurring, &t.AmountCents, &t.TotalInstallments, &t.PaidInstallments,
 			&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.AffectsAccount,
 			&t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
-			&t.CategoryName, &t.CategoryColor,
+			&t.CategoryName, &t.CategoryColor, &t.PlanningPlanName,
 		); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
@@ -606,6 +626,7 @@ func transactionResponse(t models.TransactionWithCategory) map[string]any {
 		"id":                t.ID,
 		"accountId":         t.AccountID,
 		"userId":            t.UserID,
+		"planningPlanId":    t.PlanningPlanID,
 		"categoryId":        t.CategoryID,
 		"cardId":            t.CardID,
 		"type":              t.Type,
@@ -630,6 +651,12 @@ func transactionResponse(t models.TransactionWithCategory) map[string]any {
 		r["category"] = map[string]any{
 			"name":  t.CategoryName,
 			"color": t.CategoryColor,
+		}
+	}
+	if t.PlanningPlanName != nil || t.PlanningPlanID != nil {
+		r["planningPlan"] = map[string]any{
+			"id":   t.PlanningPlanID,
+			"name": t.PlanningPlanName,
 		}
 	}
 	return r
