@@ -107,6 +107,7 @@ function TransactionsPage() {
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
     queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['planning'] });
   };
 
   const deleteMutation = useMutation({
@@ -780,6 +781,11 @@ function TransactionsPage() {
                           {classificationLabel && t.classification !== 'COMMON' && (
                             <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
                               {classificationLabel}
+                            </span>
+                          )}
+                          {t.planningPlan?.name && (
+                            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-600 border border-sky-500/20 shrink-0">
+                              {t.planningPlan.name}
                             </span>
                           )}
                         </div>

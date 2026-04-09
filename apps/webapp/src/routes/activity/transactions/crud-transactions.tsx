@@ -19,6 +19,8 @@ import CustomSelect from '../../../components/ui/CustomSelect';
 export const Route = createFileRoute('/activity/transactions/crud-transactions')({
   validateSearch: (search: Record<string, unknown>) => ({
     transactionId: typeof search.transactionId === 'string' ? search.transactionId : undefined,
+    planningPlanId:
+      typeof search.planningPlanId === 'string' ? search.planningPlanId : undefined,
   }),
   component: CrudTransactionsPage,
 });
@@ -54,10 +56,17 @@ interface Transaction {
   classification?: string;
   channel?: string;
   isRecurring?: boolean;
+  planningPlanId?: string;
   categoryId?: string;
   accountId?: string;
   vehicleId?: string;
   currentKm?: number;
+}
+
+interface PlanningPlan {
+  id: string;
+  name: string;
+  status: 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELED';
 }
 
 type TransactionModalTab = 'expense' | 'income' | 'bill_payment';
@@ -81,7 +90,7 @@ const labelCls = 'text-[10px] font-bold uppercase tracking-widest text-muted-for
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function CrudTransactionsPage() {
-  const { transactionId } = Route.useSearch();
+  const { transactionId, planningPlanId: preselectedPlanningPlanId } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isEditing = !!transactionId;
@@ -122,6 +131,13 @@ function CrudTransactionsPage() {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: plans = [] } = useQuery({
+    queryKey: ['planning', 'plans'],
+    queryFn: () =>
+      api.listPlans<PlanningPlan[]>(),
+    staleTime: 1000 * 60 * 5,
+  });
+
   // ─── Form state ────────────────────────────────────────────────────────────
 
   const [activeTab, setActiveTab] = useState<TransactionModalTab>('expense');
@@ -129,6 +145,7 @@ function CrudTransactionsPage() {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('0');
+  const [planningPlanId, setPlanningPlanId] = useState(preselectedPlanningPlanId ?? '');
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -155,13 +172,14 @@ function CrudTransactionsPage() {
     setDate(new Date(initialData.date).toISOString().split('T')[0]);
     setDescription(initialData.description ?? '');
     setAmount(Math.floor(Math.abs(Number(initialData.amount)) * 100).toString());
+    setPlanningPlanId(initialData.planningPlanId ?? preselectedPlanningPlanId ?? '');
     setCategoryId(initialData.categoryId ?? '');
     setAccountId(initialData.accountId ?? '');
     setIsRecurring(initialData.isRecurring ?? false);
     setClassification((initialData.classification as Classification | undefined) ?? 'COMMON');
     setVehicleId(initialData.vehicleId ?? '');
     setCurrentKm(initialData.currentKm ? Math.floor(Number(initialData.currentKm)).toString() : '0');
-  }, [initialData]);
+  }, [initialData, preselectedPlanningPlanId]);
 
   // ─── Tab change side-effects ───────────────────────────────────────────────
 
@@ -207,7 +225,8 @@ function CrudTransactionsPage() {
         date,
         type: activeTab === 'income' ? 'INCOME' : 'EXPENSE',
         isRecurring,
-        categoryId: categoryId || undefined,
+        planningPlanId: isEditing ? planningPlanId : planningPlanId || undefined,
+        categoryId: isEditing ? categoryId : categoryId || undefined,
         accountId,
         channel: activeTab === 'bill_payment' ? 'BANK' : channel,
         classification,
@@ -226,6 +245,7 @@ function CrudTransactionsPage() {
 
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['planning'] });
       goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar transação.');
@@ -352,6 +372,26 @@ function CrudTransactionsPage() {
                   />
                 </div>
               )}
+              <div>
+                <label className={labelCls}>Planejamento</label>
+                <CustomSelect
+                  value={planningPlanId}
+                  onChange={setPlanningPlanId}
+                  placeholder="Sem planejamento"
+                  options={plans
+                    .filter((plan) => plan.status !== 'CANCELED')
+                    .map((plan) => ({
+                      value: plan.id,
+                      label: plan.name,
+                      description:
+                        plan.status === 'PAUSED'
+                          ? 'Planejamento pausado'
+                          : plan.status === 'COMPLETED'
+                            ? 'Planejamento concluído'
+                            : 'Planejamento ativo',
+                    }))}
+                />
+              </div>
           </div>
         </div>
 

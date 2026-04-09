@@ -34,6 +34,7 @@ export interface Tx {
   sourceTransactionId?: string;
   installmentNum?: number;
   totalInstallments?: number;
+  planningPlanId?: string | null;
   categoryId?: string;
   accountId?: string;
   cardId?: string | null;
@@ -41,6 +42,10 @@ export interface Tx {
   category?: TxCategory;
   account?: TxAccount;
   card?: TxCard | null;
+  planningPlan?: {
+    id?: string | null;
+    name?: string | null;
+  };
 }
 
 export function startOfMonthLocal(): Date {
