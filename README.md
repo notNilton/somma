@@ -39,52 +39,37 @@ database/
 
 - Go 1.24+
 - Node.js 22+
-- Docker + Docker Compose
-- PostgreSQL rodando na porta **5433** (via Docker)
-- [Air](https://github.com/air-verse/air) (para hot-reload no Go)
+- Docker ou Podman
+- [Air](https://github.com/air-verse/air) (opcional, para hot-reload no Go)
 
 ### Setup
 
 ```bash
-# 1. Subir o banco
-docker compose up -d db
-
-# 2. Copiar variáveis de ambiente
-cp apps/backend/.env.example apps/backend/.env
-
-# 3. Rodar migrations
-cd apps/backend
-go run ./cmd/migrate up   # requer DATABASE_URL no .env
-
-# 4. Backend (com hot-reload via air)
-air
-
-# 5. Webapp (outro terminal)
-cd apps/webapp
-npm install
-npm run dev
+make up
 ```
+
+O `make up` sobe o PostgreSQL local, cria `apps/backend/.env` quando necessario, aplica migrations e inicia backend + webapp.
 
 ### Variáveis de ambiente (backend)
 
 ```env
 PORT=3000
-DATABASE_URL=postgres://user:pass@localhost:5433/mirante
+DATABASE_URL=postgresql://postgres:postgres@localhost:5454/mirante?sslmode=disable
 JWT_SECRET=sua-chave-secreta
-WEBAPP_URL=http://localhost:5173
+WEBAPP_URL=http://localhost:3400
 ENV=development
 ```
 
 ### Migrations
 
 ```bash
-cd apps/backend
-
-go run ./cmd/migrate up        # aplica pendentes
-go run ./cmd/migrate down      # reverte 1
-go run ./cmd/migrate version   # versão atual
-go run ./cmd/migrate seed      # aplica seeds
+make migrate-up        # aplica pendentes
+make migrate-down      # reverte 1
+make migrate-version   # versão atual
+make seed              # aplica seeds
 ```
+
+Para um fluxo isolado so de banco local, use [docs/local-db.md](/var/home/notNilton/Workspace/nilbyte-studios/mirante/docs/local-db.md) com `make deps-up`, `make db-reset` e os alvos de migration.
 
 Para criar uma nova migration, adicionar dois arquivos em `database/migrations/`:
 

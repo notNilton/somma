@@ -26,8 +26,8 @@ import { Route as SettingsVehiclesRouteImport } from './routes/settings/vehicles
 import { Route as SettingsPersonalInfoRouteImport } from './routes/settings/personal-info'
 import { Route as SettingsDataPrivacyRouteImport } from './routes/settings/data-privacy'
 import { Route as SettingsCategoriesRouteImport } from './routes/settings/categories'
-import { Route as PlanningPlansRouteImport } from './routes/planning/plans'
 import { Route as PlanningReportsRouteImport } from './routes/planning/reports'
+import { Route as PlanningPlansRouteImport } from './routes/planning/plans'
 import { Route as PlanningBudgetsRouteImport } from './routes/planning/budgets'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
@@ -37,8 +37,8 @@ import { Route as ActivityCalendarRouteImport } from './routes/activity/calendar
 import { Route as WalletVehiclesIndexRouteImport } from './routes/wallet/vehicles/index'
 import { Route as WalletCardsIndexRouteImport } from './routes/wallet/cards/index'
 import { Route as WalletAccountsIndexRouteImport } from './routes/wallet/accounts/index'
-import { Route as PlanningPlansIndexRouteImport } from './routes/planning/plans/index'
 import { Route as PlanningReportsIndexRouteImport } from './routes/planning/reports/index'
+import { Route as PlanningPlansIndexRouteImport } from './routes/planning/plans/index'
 import { Route as PlanningBudgetsIndexRouteImport } from './routes/planning/budgets/index'
 import { Route as ActivityTransfersIndexRouteImport } from './routes/activity/transfers/index'
 import { Route as ActivityTransactionsIndexRouteImport } from './routes/activity/transactions/index'
@@ -134,14 +134,14 @@ const SettingsCategoriesRoute = SettingsCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => SettingsRoute,
 } as any)
-const PlanningPlansRoute = PlanningPlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
-  getParentRoute: () => PlanningRoute,
-} as any)
 const PlanningReportsRoute = PlanningReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => PlanningRoute,
+} as any)
+const PlanningPlansRoute = PlanningPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
   getParentRoute: () => PlanningRoute,
 } as any)
 const PlanningBudgetsRoute = PlanningBudgetsRouteImport.update({
@@ -189,15 +189,15 @@ const WalletAccountsIndexRoute = WalletAccountsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => WalletAccountsRoute,
 } as any)
-const PlanningPlansIndexRoute = PlanningPlansIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => PlanningPlansRoute,
-} as any)
 const PlanningReportsIndexRoute = PlanningReportsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PlanningReportsRoute,
+} as any)
+const PlanningPlansIndexRoute = PlanningPlansIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PlanningPlansRoute,
 } as any)
 const PlanningBudgetsIndexRoute = PlanningBudgetsIndexRouteImport.update({
   id: '/',
@@ -262,8 +262,8 @@ export interface FileRoutesByFullPath {
   '/activity/transfers': typeof ActivityTransfersRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/planning/plans': typeof PlanningPlansRouteWithChildren
   '/planning/budgets': typeof PlanningBudgetsRouteWithChildren
+  '/planning/plans': typeof PlanningPlansRouteWithChildren
   '/planning/reports': typeof PlanningReportsRouteWithChildren
   '/settings/categories': typeof SettingsCategoriesRoute
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
@@ -278,15 +278,15 @@ export interface FileRoutesByFullPath {
   '/wallet/': typeof WalletIndexRoute
   '/activity/transactions/crud-fueling': typeof ActivityTransactionsCrudFuelingRoute
   '/activity/transactions/crud-transactions': typeof ActivityTransactionsCrudTransactionsRoute
+  '/planning/plans/$planId': typeof PlanningPlansPlanIdRoute
   '/wallet/accounts/crud-accounts': typeof WalletAccountsCrudAccountsRoute
   '/wallet/vehicles/crud-vehicles': typeof WalletVehiclesCrudVehiclesRoute
   '/activity/calendar/': typeof ActivityCalendarIndexRoute
   '/activity/transactions/': typeof ActivityTransactionsIndexRoute
   '/activity/transfers/': typeof ActivityTransfersIndexRoute
-  '/planning/plans/': typeof PlanningPlansIndexRoute
   '/planning/budgets/': typeof PlanningBudgetsIndexRoute
+  '/planning/plans/': typeof PlanningPlansIndexRoute
   '/planning/reports/': typeof PlanningReportsIndexRoute
-  '/planning/plans/$planId': typeof PlanningPlansPlanIdRoute
   '/wallet/accounts/': typeof WalletAccountsIndexRoute
   '/wallet/cards/': typeof WalletCardsIndexRoute
   '/wallet/vehicles/': typeof WalletVehiclesIndexRoute
@@ -306,13 +306,13 @@ export interface FileRoutesByTo {
   '/wallet': typeof WalletIndexRoute
   '/activity/transactions/crud-fueling': typeof ActivityTransactionsCrudFuelingRoute
   '/activity/transactions/crud-transactions': typeof ActivityTransactionsCrudTransactionsRoute
+  '/planning/plans/$planId': typeof PlanningPlansPlanIdRoute
   '/wallet/accounts/crud-accounts': typeof WalletAccountsCrudAccountsRoute
   '/wallet/vehicles/crud-vehicles': typeof WalletVehiclesCrudVehiclesRoute
   '/activity/calendar': typeof ActivityCalendarIndexRoute
   '/activity/transactions': typeof ActivityTransactionsIndexRoute
   '/activity/transfers': typeof ActivityTransfersIndexRoute
   '/planning/budgets': typeof PlanningBudgetsIndexRoute
-  '/planning/plans/$planId': typeof PlanningPlansPlanIdRoute
   '/planning/plans': typeof PlanningPlansIndexRoute
   '/planning/reports': typeof PlanningReportsIndexRoute
   '/wallet/accounts': typeof WalletAccountsIndexRoute
@@ -332,8 +332,8 @@ export interface FileRoutesById {
   '/activity/transfers': typeof ActivityTransfersRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/planning/plans': typeof PlanningPlansRouteWithChildren
   '/planning/budgets': typeof PlanningBudgetsRouteWithChildren
+  '/planning/plans': typeof PlanningPlansRouteWithChildren
   '/planning/reports': typeof PlanningReportsRouteWithChildren
   '/settings/categories': typeof SettingsCategoriesRoute
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
@@ -348,15 +348,15 @@ export interface FileRoutesById {
   '/wallet/': typeof WalletIndexRoute
   '/activity/transactions/crud-fueling': typeof ActivityTransactionsCrudFuelingRoute
   '/activity/transactions/crud-transactions': typeof ActivityTransactionsCrudTransactionsRoute
+  '/planning/plans/$planId': typeof PlanningPlansPlanIdRoute
   '/wallet/accounts/crud-accounts': typeof WalletAccountsCrudAccountsRoute
   '/wallet/vehicles/crud-vehicles': typeof WalletVehiclesCrudVehiclesRoute
   '/activity/calendar/': typeof ActivityCalendarIndexRoute
   '/activity/transactions/': typeof ActivityTransactionsIndexRoute
   '/activity/transfers/': typeof ActivityTransfersIndexRoute
-  '/planning/plans/': typeof PlanningPlansIndexRoute
   '/planning/budgets/': typeof PlanningBudgetsIndexRoute
+  '/planning/plans/': typeof PlanningPlansIndexRoute
   '/planning/reports/': typeof PlanningReportsIndexRoute
-  '/planning/plans/$planId': typeof PlanningPlansPlanIdRoute
   '/wallet/accounts/': typeof WalletAccountsIndexRoute
   '/wallet/cards/': typeof WalletCardsIndexRoute
   '/wallet/vehicles/': typeof WalletVehiclesIndexRoute
@@ -375,8 +375,8 @@ export interface FileRouteTypes {
     | '/activity/transfers'
     | '/auth/login'
     | '/auth/register'
-    | '/planning/plans'
     | '/planning/budgets'
+    | '/planning/plans'
     | '/planning/reports'
     | '/settings/categories'
     | '/settings/data-privacy'
@@ -391,15 +391,15 @@ export interface FileRouteTypes {
     | '/wallet/'
     | '/activity/transactions/crud-fueling'
     | '/activity/transactions/crud-transactions'
+    | '/planning/plans/$planId'
     | '/wallet/accounts/crud-accounts'
     | '/wallet/vehicles/crud-vehicles'
     | '/activity/calendar/'
     | '/activity/transactions/'
     | '/activity/transfers/'
-    | '/planning/plans/'
     | '/planning/budgets/'
+    | '/planning/plans/'
     | '/planning/reports/'
-    | '/planning/plans/$planId'
     | '/wallet/accounts/'
     | '/wallet/cards/'
     | '/wallet/vehicles/'
@@ -409,7 +409,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/auth/login'
     | '/auth/register'
-    | '/planning/plans'
     | '/settings/categories'
     | '/settings/data-privacy'
     | '/settings/personal-info'
@@ -420,14 +419,14 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/activity/transactions/crud-fueling'
     | '/activity/transactions/crud-transactions'
+    | '/planning/plans/$planId'
     | '/wallet/accounts/crud-accounts'
     | '/wallet/vehicles/crud-vehicles'
     | '/activity/calendar'
     | '/activity/transactions'
     | '/activity/transfers'
-    | '/planning/plans/$planId'
-    | '/planning/plans'
     | '/planning/budgets'
+    | '/planning/plans'
     | '/planning/reports'
     | '/wallet/accounts'
     | '/wallet/cards'
@@ -445,8 +444,8 @@ export interface FileRouteTypes {
     | '/activity/transfers'
     | '/auth/login'
     | '/auth/register'
-    | '/planning/plans'
     | '/planning/budgets'
+    | '/planning/plans'
     | '/planning/reports'
     | '/settings/categories'
     | '/settings/data-privacy'
@@ -461,15 +460,15 @@ export interface FileRouteTypes {
     | '/wallet/'
     | '/activity/transactions/crud-fueling'
     | '/activity/transactions/crud-transactions'
+    | '/planning/plans/$planId'
     | '/wallet/accounts/crud-accounts'
     | '/wallet/vehicles/crud-vehicles'
     | '/activity/calendar/'
     | '/activity/transactions/'
     | '/activity/transfers/'
-    | '/planning/plans/'
     | '/planning/budgets/'
+    | '/planning/plans/'
     | '/planning/reports/'
-    | '/planning/plans/$planId'
     | '/wallet/accounts/'
     | '/wallet/cards/'
     | '/wallet/vehicles/'
@@ -738,6 +737,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WalletAccountsCrudAccountsRouteImport
       parentRoute: typeof WalletAccountsRoute
     }
+    '/planning/plans/$planId': {
+      id: '/planning/plans/$planId'
+      path: '/$planId'
+      fullPath: '/planning/plans/$planId'
+      preLoaderRoute: typeof PlanningPlansPlanIdRouteImport
+      parentRoute: typeof PlanningPlansRoute
+    }
     '/activity/transactions/crud-transactions': {
       id: '/activity/transactions/crud-transactions'
       path: '/crud-transactions'
@@ -751,13 +757,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/activity/transactions/crud-fueling'
       preLoaderRoute: typeof ActivityTransactionsCrudFuelingRouteImport
       parentRoute: typeof ActivityTransactionsRoute
-    }
-    '/planning/plans/$planId': {
-      id: '/planning/plans/$planId'
-      path: '/$planId'
-      fullPath: '/planning/plans/$planId'
-      preLoaderRoute: typeof PlanningPlansPlanIdRouteImport
-      parentRoute: typeof PlanningPlansRoute
     }
   }
 }
@@ -830,6 +829,18 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface PlanningBudgetsRouteChildren {
+  PlanningBudgetsIndexRoute: typeof PlanningBudgetsIndexRoute
+}
+
+const PlanningBudgetsRouteChildren: PlanningBudgetsRouteChildren = {
+  PlanningBudgetsIndexRoute: PlanningBudgetsIndexRoute,
+}
+
+const PlanningBudgetsRouteWithChildren = PlanningBudgetsRoute._addFileChildren(
+  PlanningBudgetsRouteChildren,
+)
+
 interface PlanningPlansRouteChildren {
   PlanningPlansPlanIdRoute: typeof PlanningPlansPlanIdRoute
   PlanningPlansIndexRoute: typeof PlanningPlansIndexRoute
@@ -842,18 +853,6 @@ const PlanningPlansRouteChildren: PlanningPlansRouteChildren = {
 
 const PlanningPlansRouteWithChildren = PlanningPlansRoute._addFileChildren(
   PlanningPlansRouteChildren,
-)
-
-interface PlanningBudgetsRouteChildren {
-  PlanningBudgetsIndexRoute: typeof PlanningBudgetsIndexRoute
-}
-
-const PlanningBudgetsRouteChildren: PlanningBudgetsRouteChildren = {
-  PlanningBudgetsIndexRoute: PlanningBudgetsIndexRoute,
-}
-
-const PlanningBudgetsRouteWithChildren = PlanningBudgetsRoute._addFileChildren(
-  PlanningBudgetsRouteChildren,
 )
 
 interface PlanningReportsRouteChildren {
@@ -869,15 +868,15 @@ const PlanningReportsRouteWithChildren = PlanningReportsRoute._addFileChildren(
 )
 
 interface PlanningRouteChildren {
-  PlanningPlansRoute: typeof PlanningPlansRouteWithChildren
   PlanningBudgetsRoute: typeof PlanningBudgetsRouteWithChildren
+  PlanningPlansRoute: typeof PlanningPlansRouteWithChildren
   PlanningReportsRoute: typeof PlanningReportsRouteWithChildren
   PlanningIndexRoute: typeof PlanningIndexRoute
 }
 
 const PlanningRouteChildren: PlanningRouteChildren = {
-  PlanningPlansRoute: PlanningPlansRouteWithChildren,
   PlanningBudgetsRoute: PlanningBudgetsRouteWithChildren,
+  PlanningPlansRoute: PlanningPlansRouteWithChildren,
   PlanningReportsRoute: PlanningReportsRouteWithChildren,
   PlanningIndexRoute: PlanningIndexRoute,
 }
