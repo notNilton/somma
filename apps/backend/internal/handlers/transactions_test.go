@@ -292,6 +292,74 @@ func TestImportTransactions_CreditCardTarget(t *testing.T) {
 	}
 }
 
+func TestImportTransactions_TSV(t *testing.T) {
+	pool, mux := testutil.Setup(t)
+	testutil.CleanTables(t, pool)
+	tok := testutil.RegisterUser(t, mux, "tsvimport@example.com", "secret123")
+	accID := helperAccount(t, mux, tok)
+
+	tsvContent := "date\tdescription\tamount\ttype\n2026-02-11\tTaxi\t42.30\tEXPENSE\n"
+	rec := sendImportFile(t, mux, tok, "/api/v1/transactions/import", accID, "", "extrato.tsv", tsvContent)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var result map[string]any
+	testutil.DecodeJSON(t, rec, &result)
+	if result["created"].(float64) != 1 {
+		t.Fatalf("expected 1 created, got %v: %s", result["created"], rec.Body.String())
+	}
+}
+
+func TestImportTransactions_HTTPValidation(t *testing.T) {
+	pool, mux := testutil.Setup(t)
+	testutil.CleanTables(t, pool)
+	tok := testutil.RegisterUser(t, mux, "importvalidation@example.com", "secret123")
+	accID := helperAccount(t, mux, tok)
+
+	t.Run("missing file", func(t *testing.T) {
+		var buf bytes.Buffer
+		w := multipart.NewWriter(&buf)
+		_ = w.WriteField("accountId", accID)
+		_ = w.Close()
+
+		req := httptest.NewRequest("POST", "/api/v1/transactions/import", &buf)
+		req.Header.Set("Content-Type", w.FormDataContentType())
+		req.Header.Set("Authorization", "Bearer "+tok)
+
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d: %s", rec.Code, rec.Body.String())
+		}
+	})
+
+	t.Run("missing target", func(t *testing.T) {
+		rec := sendImportFile(t, mux, tok, "/api/v1/transactions/import", "", "", "extrato.csv", "date,description,amount\n2026-01-01,Ok,10\n")
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d: %s", rec.Code, rec.Body.String())
+		}
+	})
+
+	t.Run("unsupported format", func(t *testing.T) {
+		rec := sendImportFile(t, mux, tok, "/api/v1/transactions/import", accID, "", "extrato.ofx", "whatever")
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d: %s", rec.Code, rec.Body.String())
+		}
+	})
+
+	t.Run("account from another user", func(t *testing.T) {
+		otherTok := testutil.RegisterUser(t, mux, "importother@example.com", "secret123")
+		otherAccID := helperAccount(t, mux, otherTok)
+
+		rec := sendImportFile(t, mux, tok, "/api/v1/transactions/import", otherAccID, "", "extrato.csv", "date,description,amount\n2026-01-01,Ok,10\n")
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d: %s", rec.Code, rec.Body.String())
+		}
+	})
+}
+
 func sendImportFile(t *testing.T, mux *http.ServeMux, tok, path, accountID, cardID, filename, content string) *httptest.ResponseRecorder {
 	t.Helper()
 	var buf bytes.Buffer

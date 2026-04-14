@@ -45,7 +45,12 @@ func main() {
 			start := time.Now()
 			rw := &responseWriter{ResponseWriter: w, status: 200}
 			next.ServeHTTP(rw, r)
-			log.Printf("%s %s %d %s", r.Method, r.URL.Path, rw.status, time.Since(start))
+			elapsed := time.Since(start)
+			if elapsed > 500*time.Millisecond {
+				log.Printf("SLOW %s %s %d %s", r.Method, r.URL.Path, rw.status, elapsed)
+			} else {
+				log.Printf("%s %s %d %s", r.Method, r.URL.Path, rw.status, elapsed)
+			}
 		})
 	}
 

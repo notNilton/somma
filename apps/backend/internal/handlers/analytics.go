@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/nilbyte/mirante/backend/internal/middleware"
@@ -141,6 +142,85 @@ func (h *Handler) GetCategoryBreakdown(w http.ResponseWriter, r *http.Request) {
 		"month": month,
 		"type":  txType,
 		"items": items,
+	})
+}
+
+// GetAnnualEvolution retorna 12 meses de receitas e despesas para o ano solicitado.
+// Query param: year (padrão: ano atual).
+func (h *Handler) GetAnnualEvolution(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.ClaimsFromContext(r.Context())
+
+	year := time.Now().Year()
+	if raw := r.URL.Query().Get("year"); raw != "" {
+		if y, err := strconv.Atoi(raw); err == nil && y >= 2000 {
+			year = y
+		}
+	}
+
+	rows, err := h.db.Query(r.Context(), `
+		SELECT EXTRACT(MONTH FROM date)::INT AS month,
+		       type,
+		       COALESCE(SUM(amount_cents), 0) AS total
+		FROM transactions
+		WHERE user_id = $1
+		  AND is_active = true
+		  AND affects_account = true
+		  AND type IN ('INCOME', 'EXPENSE')
+		  AND classification != 'TRANSFER'
+		  AND EXTRACT(YEAR FROM date) = $2
+		GROUP BY month, type
+		ORDER BY month ASC
+	`, claims.UserID, year)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	defer rows.Close()
+
+	type monthPoint struct {
+		IncomeCents  int64
+		ExpenseCents int64
+	}
+	pointMap := make(map[int]*monthPoint)
+	for rows.Next() {
+		var m int
+		var txType string
+		var total int64
+		if err := rows.Scan(&m, &txType, &total); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		if _, ok := pointMap[m]; !ok {
+			pointMap[m] = &monthPoint{}
+		}
+		if txType == "INCOME" {
+			pointMap[m].IncomeCents = total
+		} else {
+			pointMap[m].ExpenseCents = total
+		}
+	}
+
+	result := make([]any, 12)
+	for i := 1; i <= 12; i++ {
+		month := time.Month(i)
+		label := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC).Format("2006-01")
+		p, ok := pointMap[i]
+		if !ok {
+			p = &monthPoint{}
+		}
+		result[i-1] = map[string]any{
+			"month":        label,
+			"income":       money.ToReais(p.IncomeCents),
+			"expenses":     money.ToReais(p.ExpenseCents),
+			"net":          money.ToReais(p.IncomeCents - p.ExpenseCents),
+			"incomeCents":  p.IncomeCents,
+			"expenseCents": p.ExpenseCents,
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"year": year,
+		"data": result,
 	})
 }
 

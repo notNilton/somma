@@ -85,6 +85,8 @@ export const api = {
   getDashboard: <T>(month?: string) =>
     apiFetch<T>(`/api/v1/dashboard${month ? `?month=${month}` : ''}`),
   getMonthlyEvolution: <T>() => apiFetch<T>('/api/v1/dashboard/monthly-evolution'),
+  getAnnualEvolution: <T>(year?: number) =>
+    apiFetch<T>(`/api/v1/analytics/annual-evolution${year ? `?year=${year}` : ''}`),
   getCategoryBreakdown: <T>(month?: string, type?: string) => {
     const params = new URLSearchParams();
     if (month) params.append('month', month);

@@ -93,6 +93,7 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("GET /api/v1/dashboard", auth(h.GetDashboard))
 	mux.HandleFunc("GET /api/v1/dashboard/monthly-evolution", auth(h.GetMonthlyEvolution))
 	mux.HandleFunc("GET /api/v1/dashboard/category-breakdown", auth(h.GetCategoryBreakdown))
+	mux.HandleFunc("GET /api/v1/analytics/annual-evolution", auth(h.GetAnnualEvolution))
 
 	// Budgets
 	mux.HandleFunc("GET /api/v1/budgets", auth(h.ListBudgets))
