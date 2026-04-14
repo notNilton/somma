@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"crypto/sha256"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/nilbyte/mirante/backend/internal/cache"
+	"github.com/nilbyte/mirante/backend/internal/importer"
 	"github.com/nilbyte/mirante/backend/internal/middleware"
 	"github.com/nilbyte/mirante/backend/internal/models"
 	"github.com/nilbyte/mirante/backend/internal/money"
@@ -393,109 +393,49 @@ func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ImportCSV(w http.ResponseWriter, r *http.Request) {
+	h.ImportTransactions(w, r)
+}
+
+func (h *Handler) ImportTransactions(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.ClaimsFromContext(r.Context())
 
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
+	if err := r.ParseMultipartForm(importer.MaxUploadBytes); err != nil {
 		writeError(w, http.StatusBadRequest, "file too large (max 10MB)")
 		return
 	}
 
-	file, _, err := r.FormFile("file")
+	file, header, err := r.FormFile("file")
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "file field required")
 		return
 	}
 	defer file.Close()
 
-	accountID := r.FormValue("accountId")
-	if accountID == "" {
-		writeError(w, http.StatusBadRequest, "accountId is required")
-		return
-	}
-
-	records, err := csv.NewReader(file).ReadAll()
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid csv file")
-		return
-	}
-
-	var created, skipped, skippedInvalid, skippedDuplicate int
-	var errs []string
-
-	for i, record := range records {
-		if i == 0 {
-			continue // pular header
-		}
-		if len(record) < 3 {
-			skippedInvalid++
-			continue
-		}
-
-		// Fingerprint para deduplicação
-		raw := strings.Join(record, ",")
-		hash := fmt.Sprintf("%x", sha256.Sum256([]byte(raw)))
-
-		tag, err := h.db.Exec(r.Context(), `
-			INSERT INTO import_fingerprints (hash, account_id) VALUES ($1, $2) ON CONFLICT DO NOTHING
-		`, hash, accountID)
-		if err != nil {
-			skippedInvalid++
-			continue
-		}
-		if tag.RowsAffected() == 0 {
-			skippedDuplicate++
-			continue
-		}
-
-		// Parsear campos: date, description, amount (mínimo)
-		dateStr := strings.TrimSpace(record[0])
-		description := strings.TrimSpace(record[1])
-		amountStr := strings.TrimSpace(record[2])
-
-		parsedDate, err := time.Parse("2006-01-02", dateStr)
-		if err != nil {
-			errs = append(errs, fmt.Sprintf("row %d: invalid date '%s'", i+1, dateStr))
-			skippedInvalid++
-			continue
-		}
-
-		amountFloat, err := strconv.ParseFloat(strings.ReplaceAll(amountStr, ",", "."), 64)
-		if err != nil || amountFloat == 0 {
-			errs = append(errs, fmt.Sprintf("row %d: invalid amount '%s'", i+1, amountStr))
-			skippedInvalid++
-			continue
-		}
-
-		txType := models.TransactionTypeEXPENSE
-		if amountFloat > 0 {
-			txType = models.TransactionTypeINCOME
-		}
-		if amountFloat < 0 {
-			amountFloat = -amountFloat
-		}
-
-		txDate := time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 12, 0, 0, 0, time.UTC)
-
-		_, err = h.db.Exec(r.Context(), `
-			INSERT INTO transactions (account_id, user_id, type, amount_cents, date, description, currency_code, affects_account)
-			VALUES ($1, $2, $3, $4, $5, $6, 'BRL', true)
-		`, accountID, claims.UserID, txType, money.ToCents(amountFloat), txDate, description)
-		if err != nil {
-			errs = append(errs, fmt.Sprintf("row %d: %s", i+1, err.Error()))
-			skipped++
-			continue
-		}
-
-		created++
-	}
-
-	writeJSON(w, http.StatusOK, map[string]any{
-		"created":          created,
-		"skipped":          skipped,
-		"skippedInvalid":   skippedInvalid,
-		"skippedDuplicate": skippedDuplicate,
-		"errors":           errs,
+	result, err := importer.ImportTransactions(r.Context(), h.db, importer.TransactionImportOptions{
+		UserID:      claims.UserID,
+		AccountID:   r.FormValue("accountId"),
+		CardID:      r.FormValue("cardId"),
+		Filename:    header.Filename,
+		ContentType: header.Header.Get("Content-Type"),
+		Format:      r.FormValue("format"),
+		Reader:      file,
 	})
+	if err != nil {
+		switch {
+		case errors.Is(err, importer.ErrUnsupportedFormat):
+			writeError(w, http.StatusBadRequest, "unsupported file format")
+		default:
+			writeError(w, http.StatusBadRequest, err.Error())
+		}
+		return
+	}
+
+	h.cache.DeletePrefix(cache.DashboardPrefix(claims.UserID))
+	status := http.StatusOK
+	if result.Created == 0 && result.SkippedDuplicate > 0 && result.Skipped == 0 && result.SkippedInvalid == 0 {
+		status = http.StatusConflict
+	}
+	writeJSON(w, status, result)
 }
 
 func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request) {

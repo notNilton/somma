@@ -65,6 +65,7 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("GET /api/v1/transactions/future", auth(h.ListFutureTransactions))
 	mux.HandleFunc("GET /api/v1/transactions/{id}", auth(h.GetTransaction))
 	mux.HandleFunc("POST /api/v1/transactions", auth(h.CreateTransaction))
+	mux.HandleFunc("POST /api/v1/transactions/import", auth(h.ImportTransactions))
 	mux.HandleFunc("POST /api/v1/transactions/import-csv", auth(h.ImportCSV))
 	mux.HandleFunc("PATCH /api/v1/transactions/{id}", auth(h.UpdateTransaction))
 	mux.HandleFunc("DELETE /api/v1/transactions/{id}", auth(h.DeleteTransaction))

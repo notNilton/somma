@@ -84,11 +84,11 @@ export function ImportModal({ isOpen, onClose, accounts, onImported }: ImportMod
       if (mode === 'account') form.append('accountId', accountId);
       if (mode === 'card') form.append('cardId', cardId);
 
-      const data = await api.postForm<ImportResult>('/transactions/import-csv', form);
+      const data = await api.postForm<ImportResult>('/transactions/import', form);
       setResult(data);
       onImported();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Erro ao importar CSV.');
+      setError(e instanceof Error ? e.message : 'Erro ao importar arquivo.');
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +112,7 @@ export function ImportModal({ isOpen, onClose, accounts, onImported }: ImportMod
               <FileUp className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-lg font-bold font-display tracking-tight">Importar CSV</h2>
+              <h2 className="text-lg font-bold font-display tracking-tight">Importar arquivo</h2>
               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
                 Selecione destino e envie o arquivo
               </p>
@@ -157,11 +157,11 @@ export function ImportModal({ isOpen, onClose, accounts, onImported }: ImportMod
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 block">
-              Arquivo CSV
+              Arquivo
             </label>
             <input
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.tsv,.json,text/csv,text/tab-separated-values,application/json"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm"
               disabled={isLoading}
