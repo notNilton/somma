@@ -1,10 +1,8 @@
-name: On Dev
-run-name: On Dev - ${{ gitea.actor }}
+name: Pull Request
+run-name: PR - ${{ gitea.actor }}
 
 on:
-  push:
-    branches:
-      - development
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -84,4 +82,3 @@ jobs:
           DATABASE_URL=postgres://ci:ci@localhost:5432/ci \
           docker compose -f docker-compose.yml config --quiet
           echo "✅ docker-compose.yml válido"
-

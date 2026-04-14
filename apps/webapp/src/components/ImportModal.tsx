@@ -114,7 +114,7 @@ export function ImportModal({ isOpen, onClose, accounts, onImported }: ImportMod
             <div>
               <h2 className="text-lg font-bold font-display tracking-tight">Importar arquivo</h2>
               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
-                Selecione destino e envie o arquivo
+                CSV, TSV ou JSON
               </p>
             </div>
           </div>
