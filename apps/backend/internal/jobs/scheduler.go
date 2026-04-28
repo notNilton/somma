@@ -21,7 +21,6 @@ func (s *Scheduler) Start() {
 	log.Println("jobs: scheduler started")
 	go s.runEvery(time.Hour, "recurring-transactions", s.checkRecurringTransactions)
 	go s.runAt(0, 5, "budget-alerts", s.checkBudgetAlerts)
-	go s.runAt(0, 10, "invoice-alerts", s.checkInvoiceDue)
 }
 
 // runEvery executa a função a cada intervalo

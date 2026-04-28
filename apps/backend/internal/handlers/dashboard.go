@@ -33,12 +33,19 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		userName = userName[:idx]
 	}
 
-	// Total balance (sempre atual, não filtrado por mês)
+	// Total balance calculado a partir dos lançamentos ativos do usuário.
 	var totalBalanceCents int64
 	h.db.QueryRow(r.Context(), `
-		SELECT COALESCE(SUM(balance_cents), 0)
-		FROM accounts
-		WHERE user_id = $1 AND is_active = true AND include_in_total = true
+		SELECT COALESCE(SUM(
+			CASE
+				WHEN type = 'INCOME' AND affects_account = true THEN amount_cents
+				WHEN type = 'EXPENSE' AND affects_account = true THEN -amount_cents
+				ELSE 0
+			END
+		), 0)
+		FROM transactions
+		WHERE user_id = $1
+		  AND is_active = true
 	`, claims.UserID).Scan(&totalBalanceCents)
 
 	// Income e expenses do mês selecionado
@@ -65,28 +72,6 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 			} else {
 				monthlyExpensesCents = cents
 			}
-		}
-	}
-
-	// Contas resumidas
-	var accounts []any
-	accountRows, err := h.db.Query(r.Context(), `
-		SELECT id, name, balance_cents FROM accounts
-		WHERE user_id = $1 AND is_active = true
-		ORDER BY created_at ASC
-	`, claims.UserID)
-	if err == nil {
-		defer accountRows.Close()
-		for accountRows.Next() {
-			var id string
-			var name string
-			var balanceCents int64
-			accountRows.Scan(&id, &name, &balanceCents)
-			accounts = append(accounts, map[string]any{
-				"id":      id,
-				"name":    name,
-				"balance": money.ToReais(balanceCents),
-			})
 		}
 	}
 
@@ -147,9 +132,6 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if accounts == nil {
-		accounts = []any{}
-	}
 	if recentTxs == nil {
 		recentTxs = []any{}
 	}
@@ -164,7 +146,6 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		"monthlyIncome":      money.ToReais(monthlyIncomeCents),
 		"monthlyExpenses":    money.ToReais(monthlyExpensesCents),
 		"safeToSpend":        money.ToReais(totalBalanceCents - monthlyExpensesCents),
-		"accounts":           accounts,
 		"recentTransactions": recentTxs,
 		"cashFlow":           cashFlow,
 	}

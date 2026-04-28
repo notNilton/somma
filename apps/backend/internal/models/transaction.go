@@ -4,10 +4,8 @@ import "time"
 
 type Transaction struct {
 	ID                string
-	AccountID         string
 	UserID            string
 	CategoryID        *string
-	CardID            *string
 	Type              string
 	Classification    string
 	PaymentMethod     string
@@ -32,5 +30,4 @@ type TransactionWithCategory struct {
 	Transaction
 	CategoryName  *string
 	CategoryColor *string
-	AccountName   *string
 }

@@ -7,7 +7,7 @@ import (
 
 func (s *Scheduler) checkRecurringTransactions() {
 	rows, err := s.db.Query(s.ctx, `
-		SELECT id, user_id, account_id, category_id, type, amount_cents,
+		SELECT id, user_id, category_id, type, amount_cents,
 		       description, date, currency_code
 		FROM transactions
 		WHERE is_recurring = true
@@ -22,18 +22,18 @@ func (s *Scheduler) checkRecurringTransactions() {
 	defer rows.Close()
 
 	type pendingTx struct {
-		ID, UserID, AccountID string
-		CategoryID            *string
-		Type, Description     string
-		CurrencyCode          string
-		AmountCents           int64
-		Date                  time.Time
+		ID, UserID        string
+		CategoryID        *string
+		Type, Description string
+		CurrencyCode      string
+		AmountCents       int64
+		Date              time.Time
 	}
 
 	var pending []pendingTx
 	for rows.Next() {
 		var tx pendingTx
-		if err := rows.Scan(&tx.ID, &tx.UserID, &tx.AccountID, &tx.CategoryID,
+		if err := rows.Scan(&tx.ID, &tx.UserID, &tx.CategoryID,
 			&tx.Type, &tx.AmountCents, &tx.Description, &tx.Date, &tx.CurrencyCode); err != nil {
 			log.Printf("jobs: recurring scan error: %v", err)
 			continue
@@ -57,10 +57,10 @@ func (s *Scheduler) checkRecurringTransactions() {
 		nextDate := time.Date(tx.Date.Year(), tx.Date.Month()+1, tx.Date.Day(), 12, 0, 0, 0, time.UTC)
 		_, err = s.db.Exec(s.ctx, `
 			INSERT INTO transactions (
-				account_id, user_id, category_id, type, amount_cents,
+				user_id, category_id, type, amount_cents,
 				date, description, currency_code, is_recurring, status, affects_account
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,'PENDING',true)
-		`, tx.AccountID, tx.UserID, tx.CategoryID, tx.Type, tx.AmountCents,
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,true,'PENDING',true)
+		`, tx.UserID, tx.CategoryID, tx.Type, tx.AmountCents,
 			nextDate, tx.Description, tx.CurrencyCode)
 		if err != nil {
 			log.Printf("jobs: recurring create next error for tx %s: %v", tx.ID, err)

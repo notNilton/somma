@@ -26,27 +26,6 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("GET /users/me", auth(h.GetMe))
 	mux.HandleFunc("PATCH /users/me", auth(h.UpdateMe))
 
-	// Accounts
-	mux.HandleFunc("GET /api/v1/accounts", auth(h.ListAccounts))
-	mux.HandleFunc("GET /api/v1/accounts/credit-summary", auth(h.GetCreditSummary))
-	mux.HandleFunc("GET /api/v1/accounts/{id}", auth(h.GetAccount))
-	mux.HandleFunc("POST /api/v1/accounts", auth(h.CreateAccount))
-	mux.HandleFunc("PATCH /api/v1/accounts/{id}", auth(h.UpdateAccount))
-	mux.HandleFunc("DELETE /api/v1/accounts/{id}", auth(h.DeleteAccount))
-
-	// Cards
-	mux.HandleFunc("GET /api/v1/cards", auth(h.ListCards))
-	mux.HandleFunc("GET /api/v1/cards/{id}", auth(h.GetCard))
-	mux.HandleFunc("GET /api/v1/cards/{id}/statement", auth(h.GetCardStatement))
-	mux.HandleFunc("POST /api/v1/cards", auth(h.CreateCard))
-	mux.HandleFunc("PATCH /api/v1/cards/{id}", auth(h.UpdateCard))
-	mux.HandleFunc("DELETE /api/v1/cards/{id}", auth(h.DeleteCard))
-
-	// Transfers
-	mux.HandleFunc("GET /api/v1/transfers", auth(h.ListTransfers))
-	mux.HandleFunc("POST /api/v1/transfers", auth(h.CreateTransfer))
-	mux.HandleFunc("DELETE /api/v1/transfers/{id}", auth(h.DeleteTransfer))
-
 	// Categories
 	mux.HandleFunc("GET /api/v1/categories", auth(h.ListCategories))
 	mux.HandleFunc("GET /api/v1/categories/{id}", auth(h.GetCategory))
@@ -63,12 +42,9 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 
 	// Transactions
 	mux.HandleFunc("GET /api/v1/transactions", auth(h.ListTransactions))
-	mux.HandleFunc("GET /api/v1/transactions/export", auth(h.ExportTransactionsCSV))
 	mux.HandleFunc("GET /api/v1/transactions/future", auth(h.ListFutureTransactions))
 	mux.HandleFunc("GET /api/v1/transactions/{id}", auth(h.GetTransaction))
 	mux.HandleFunc("POST /api/v1/transactions", auth(h.CreateTransaction))
-	mux.HandleFunc("POST /api/v1/transactions/import", auth(h.ImportTransactions))
-	mux.HandleFunc("POST /api/v1/transactions/import-csv", auth(h.ImportCSV))
 	mux.HandleFunc("PATCH /api/v1/transactions/{id}", auth(h.UpdateTransaction))
 	mux.HandleFunc("DELETE /api/v1/transactions/{id}", auth(h.DeleteTransaction))
 
@@ -81,15 +57,6 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("POST /api/v1/vehicles", auth(h.CreateVehicle))
 	mux.HandleFunc("PATCH /api/v1/vehicles/{id}", auth(h.UpdateVehicle))
 	mux.HandleFunc("DELETE /api/v1/vehicles/{id}", auth(h.DeleteVehicle))
-
-	// Account Access (Colaboração)
-	mux.HandleFunc("GET /api/v1/accounts/{id}/members", auth(h.ListAccountMembers))
-	mux.HandleFunc("POST /api/v1/accounts/{id}/members", auth(h.InviteMember))
-	mux.HandleFunc("PATCH /api/v1/accounts/{id}/members/{userId}", auth(h.UpdateMemberRole))
-	mux.HandleFunc("DELETE /api/v1/accounts/{id}/members/{userId}", auth(h.RevokeMember))
-
-	// Calendário Financeiro
-	mux.HandleFunc("GET /api/v1/calendar", auth(h.GetFinancialCalendar))
 
 	// Dashboard & Analytics
 	mux.HandleFunc("GET /api/v1/dashboard", auth(h.GetDashboard))
