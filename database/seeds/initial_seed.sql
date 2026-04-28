@@ -1,16 +1,14 @@
 -- Seed data for Mirante
 -- Cenário principal: Nilton Santos com dados suficientes para navegar por
--- dashboard, activity, wallet, planning, vehicles e settings.
+-- dashboard, activity, wallet, vehicles e settings.
 
 -- 0. Limpeza em ordem respeitando FKs
 TRUNCATE TABLE
     transaction_tags,
     refueling_logs,
-    vehicle_maintenances,
     transfers,
     transactions,
     import_fingerprints,
-    budgets,
     account_access,
     cards,
     categories,
@@ -41,7 +39,7 @@ VALUES
         '65999990001',
         '123.456.789-00',
         FALSE,
-        '$2a$10$NW57BAuRGOxHi45/go9XVOgAXf8UEFE52vMxdR.CV/5oFTE5aW7SK'
+        '$2a$12$.XnRfSRpVjfhFU0UQ22nIeNP1sFTsC4behpNxSjCfPUepv2wklE2u'
     ),
     (
         'bf5b4d17-6db3-41aa-b86a-c5d1f90f1152',
@@ -68,6 +66,8 @@ INSERT INTO accounts (
     type,
     ownership,
     bank_name,
+    cpf,
+    cnpj,
     color,
     icon,
     currency_code,
@@ -82,13 +82,10 @@ INSERT INTO accounts (
     is_active
 )
 VALUES
-    ('acc-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank',            'CHECKING',   'PERSONAL', 'Nubank',          '#8A05BE', 'bank',        'BRL',   485250, NULL,    TRUE,  TRUE,  TRUE,  TRUE,  NULL, NULL, TRUE),
-    ('acc-2', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Inter',             'CHECKING',   'PERSONAL', 'Inter',           '#FF7A00', 'bank',        'BRL',   214800, NULL,    TRUE,  TRUE,  FALSE, TRUE,  NULL, NULL, TRUE),
-    ('acc-3', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Reserva BB',        'SAVINGS',    'PERSONAL', 'Banco do Brasil', '#F4C400', 'piggy-bank',  'BRL',  3200000, NULL,    FALSE, FALSE, FALSE, TRUE,  NULL, NULL, TRUE),
-    ('acc-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Carteira',          'CASH',       'PERSONAL', NULL,               '#34A853', 'wallet',      'BRL',    18500, NULL,    TRUE,  FALSE, FALSE, TRUE,  NULL, NULL, TRUE),
-    ('acc-5', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'XP Investimentos',  'INVESTMENT', 'PERSONAL', 'XP',              '#111827', 'trending-up', 'BRL',  8150000, NULL,    FALSE, FALSE, FALSE, TRUE,  NULL, NULL, TRUE),
-    ('acc-6', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Caixa PJ',          'CHECKING',   'BUSINESS', 'Caixa Economica', '#005CA9', 'briefcase',   'BRL',   950000, NULL,    TRUE,  TRUE,  TRUE,  TRUE,  NULL, NULL, TRUE),
-    ('acc-7', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Conta Compartilhada', 'CHECKING', 'PERSONAL', 'Sicredi',         '#2E7D32', 'users',       'BRL',   128400, NULL,    TRUE,  TRUE,  FALSE, TRUE,  NULL, NULL, TRUE)
+    ('acc-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CPF',       'CHECKING', 'PERSONAL', 'Nubank',          '123.456.789-00', NULL, '#8A05BE', 'bank',        'BRL',  50000, 830000, TRUE,  TRUE,  TRUE,  TRUE,  7, 15, TRUE),
+    ('acc-2', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Banco do Brasil CPF','CHECKING', 'PERSONAL', 'Banco do Brasil', '123.456.789-00', NULL, '#F4C400', 'bank',        'BRL',   8300,      0, TRUE,  TRUE,  FALSE, TRUE, NULL, NULL, TRUE),
+    ('acc-3', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Mercado Pago CPF', 'WALLET',   'PERSONAL', 'Mercado Pago',    '123.456.789-00', NULL, '#00B4D8', 'wallet',      'BRL',      0, 320000, TRUE,  TRUE,  TRUE,  TRUE,  5, 15, TRUE),
+    ('acc-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CNPJ',      'CHECKING', 'BUSINESS', 'Nubank',          NULL, '12.345.678/0001-90', '#5E35B1', 'briefcase', 'BRL',      0, 320000, TRUE,  TRUE,  TRUE,  TRUE, 10, 20, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- 3. Cartoes
@@ -108,17 +105,17 @@ INSERT INTO cards (
     is_active
 )
 VALUES
-    ('card-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', 'Nubank Roxinho',       'Mastercard', '1234', 'CREDIT',  650000, '#8A05BE', 'credit-card',  7, 15, TRUE),
-    ('card-2', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', 'Inter Debito',         'Mastercard', '5678', 'DEBIT',      NULL, '#FF7A00', 'credit-card', NULL, NULL, TRUE),
-    ('card-3', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-6', 'Caixa Empresarial',    'Visa',       '9012', 'CREDIT', 1200000, '#005CA9', 'credit-card', 10, 20, TRUE),
-    ('card-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-7', 'Sicredi Compartilhado', 'Visa',      '4421', 'DEBIT',      NULL, '#2E7D32', 'credit-card', NULL, NULL, TRUE)
+    ('card-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', 'Nubank CPF',        'Mastercard', '1234', 'CREDIT',  830000, '#8A05BE', 'credit-card',  7, 15, TRUE),
+    ('card-2', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', 'Banco do Brasil CPF','Visa',       '5678', 'DEBIT',      NULL, '#F4C400', 'credit-card', NULL, NULL, TRUE),
+    ('card-3', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-3', 'Mercado Pago CPF',  'Mastercard', '9012', 'CREDIT',  320000, '#00B4D8', 'credit-card',  5, 15, TRUE),
+    ('card-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-4', 'Nubank CNPJ',       'Mastercard', '4421', 'CREDIT',  320000, '#5E35B1', 'credit-card', 10, 20, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- 4. Compartilhamento de conta
 INSERT INTO account_access (id, account_id, user_id, role)
 VALUES
-    ('access-1', 'acc-7', 'bf5b4d17-6db3-41aa-b86a-c5d1f90f1152', 'EDITOR'),
-    ('access-2', 'acc-6', 'bf5b4d17-6db3-41aa-b86a-c5d1f90f1152', 'VIEWER')
+    ('access-1', 'acc-4', 'bf5b4d17-6db3-41aa-b86a-c5d1f90f1152', 'EDITOR'),
+    ('access-2', 'acc-2', 'bf5b4d17-6db3-41aa-b86a-c5d1f90f1152', 'VIEWER')
 ON CONFLICT (account_id, user_id) DO NOTHING;
 
 -- 5. Veiculos
@@ -195,29 +192,29 @@ INSERT INTO transactions (
 )
 VALUES
     ('tra-1',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     'cat-3',  'INCOME',   'COMMON',      'DEBIT',  'PIX',         'COMPLETED', FALSE, 1200000, NULL, NULL, TIMESTAMPTZ '2026-04-01 09:00:00-04', 'Salario Mirante',                     'Competencia abril',                         TRUE,  TRUE, 'BRL'),
-    ('tra-2',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-6', NULL,     'cat-12', 'INCOME',   'COMMON',      'DEBIT',  'PIX',         'COMPLETED', FALSE,  275000, NULL, NULL, TIMESTAMPTZ '2026-04-03 16:30:00-04', 'Freelance landing page',               'Projeto entregue para cliente local',       TRUE,  TRUE, 'BRL'),
+    ('tra-2',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-4', NULL,     'cat-12', 'INCOME',   'COMMON',      'DEBIT',  'PIX',         'COMPLETED', FALSE,  275000, NULL, NULL, TIMESTAMPTZ '2026-04-03 16:30:00-04', 'Recebimento Nubank CNPJ - freelance',  'Projeto entregue para cliente local',       TRUE,  TRUE, 'BRL'),
     ('tra-3',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     'cat-11', 'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,    4850, NULL, NULL, TIMESTAMPTZ '2026-04-02 12:15:00-04', 'Almoco executivo',                     NULL,                                        TRUE,  TRUE, 'BRL'),
     ('tra-4',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', 'card-1', 'cat-7',  'EXPENSE',  'COMMON',      'CREDIT', 'CARD_CREDIT', 'COMPLETED', TRUE,     5590, NULL, NULL, TIMESTAMPTZ '2026-04-02 20:00:00-04', 'Netflix',                             'Assinatura mensal',                         FALSE, TRUE, 'BRL'),
     ('tra-5',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', 'card-1', 'cat-7',  'EXPENSE',  'COMMON',      'CREDIT', 'CARD_CREDIT', 'COMPLETED', TRUE,     1990, NULL, NULL, TIMESTAMPTZ '2026-04-03 08:00:00-04', 'iCloud 200GB',                         'Backup da familia',                         FALSE, TRUE, 'BRL'),
-    ('tra-6',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-10', 'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,   18640, NULL, NULL, TIMESTAMPTZ '2026-04-03 19:40:00-04', 'Atacadao da semana',                   'Compras para casa',                         TRUE,  TRUE, 'BRL'),
-    ('tra-7',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     'cat-2',  'EXPENSE',  'FUEL',        'DEBIT',  'BANK',        'COMPLETED', FALSE,   22490, NULL, NULL, TIMESTAMPTZ '2026-04-04 07:30:00-04', 'Abastecimento Uno',                    'Tanque quase completo',                     TRUE,  TRUE, 'BRL'),
-    ('tra-8',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-8',  'EXPENSE',  'MAINTENANCE', 'DEBIT',  'BANK',        'COMPLETED', FALSE,   34800, NULL, NULL, TIMESTAMPTZ '2026-03-25 10:10:00-04', 'Troca de oleo Uno',                    'Filtro e oleo 15W40',                       TRUE,  TRUE, 'BRL'),
-    ('tra-9',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-7', 'card-4', 'cat-13', 'EXPENSE',  'COMMON',      'DEBIT',  'CARD_DEBIT',  'COMPLETED', TRUE,   145000, NULL, NULL, TIMESTAMPTZ '2026-04-05 08:00:00-04', 'Aluguel apartamento',                  'Conta compartilhada',                       TRUE,  TRUE, 'BRL'),
-    ('tra-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-7', NULL,     'cat-14', 'EXPENSE',  'COMMON',      'DEBIT',  'PIX',         'COMPLETED', TRUE,     9990, NULL, NULL, TIMESTAMPTZ '2026-04-05 09:30:00-04', 'Internet fibra',                       'Mensalidade abril',                         TRUE,  TRUE, 'BRL'),
-    ('tra-11', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     NULL,     'TRANSFER', 'TRANSFER',    'DEBIT',  'PIX',         'COMPLETED', FALSE,   50000, NULL, NULL, TIMESTAMPTZ '2026-04-05 13:15:00-04', 'Transferencia Nubank para Inter',      'Reserva para despesas da semana',           TRUE,  TRUE, 'BRL'),
-    ('tra-12', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     NULL,     'TRANSFER', 'TRANSFER',    'DEBIT',  'PIX',         'COMPLETED', FALSE,   50000, NULL, NULL, TIMESTAMPTZ '2026-04-05 13:15:10-04', 'Transferencia Nubank para Inter',      'Entrada correspondente',                    TRUE,  TRUE, 'BRL'),
-    ('tra-13', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     NULL,     'TRANSFER', 'TRANSFER',    'DEBIT',  'BANK',        'COMPLETED', FALSE,  120000, NULL, NULL, TIMESTAMPTZ '2026-04-06 18:00:00-04', 'Aplicacao XP',                          'Movimentacao para investimento',            TRUE,  TRUE, 'BRL'),
-    ('tra-14', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-5', NULL,     NULL,     'TRANSFER', 'TRANSFER',    'DEBIT',  'BANK',        'COMPLETED', FALSE,  120000, NULL, NULL, TIMESTAMPTZ '2026-04-06 18:00:10-04', 'Aplicacao XP',                          'Entrada na conta de investimentos',         TRUE,  TRUE, 'BRL'),
-    ('tra-15', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-5', NULL,     'cat-15', 'INCOME',   'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,    8750, NULL, NULL, TIMESTAMPTZ '2026-04-08 09:00:00-04', 'Rendimento CDB',                        'Credito automatico da corretora',           TRUE,  TRUE, 'BRL'),
-    ('tra-16', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-6', 'card-3', 'cat-6',  'EXPENSE',  'COMMON',      'CREDIT', 'CARD_CREDIT', 'COMPLETED', FALSE,   32990,    6,    1, TIMESTAMPTZ '2026-04-09 11:20:00-04', 'Curso de design',                      'Parcelado para equipe interna',             FALSE, TRUE, 'BRL'),
-    ('tra-17', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-6', NULL,     'cat-13', 'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'PENDING',   TRUE,    68000, NULL, NULL, TIMESTAMPTZ '2026-04-12 08:00:00-04', 'Conta de energia escritorio',          'Agendada para debito automatico',           TRUE,  TRUE, 'BRL'),
-    ('tra-18', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-4', NULL,     'cat-4',  'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,     750, NULL, NULL, TIMESTAMPTZ '2026-04-02 18:40:00-04', 'Cafe na praca',                         NULL,                                        TRUE,  TRUE, 'BRL'),
-    ('tra-19', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-5',  'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,   12490, NULL, NULL, TIMESTAMPTZ '2026-04-01 17:15:00-04', 'Farmacia Drogasil',                    'Medicamentos e vitaminas',                  TRUE,  TRUE, 'BRL'),
-    ('tra-20', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', 'card-1', 'cat-4',  'EXPENSE',  'COMMON',      'CREDIT', 'CARD_CREDIT', 'COMPLETED', FALSE,   18990, NULL, NULL, TIMESTAMPTZ '2026-04-10 21:00:00-04', 'Cinema e jantar',                      'Saida de sexta',                            FALSE, TRUE, 'BRL'),
-    ('tra-21', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-2',  'EXPENSE',  'FUEL',        'DEBIT',  'BANK',        'COMPLETED', FALSE,    6200, NULL, NULL, TIMESTAMPTZ '2026-04-11 08:10:00-04', 'Abastecimento CG 160',                  'Gasolina para a moto',                      TRUE,  TRUE, 'BRL'),
-    ('tra-22', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     'cat-12', 'INCOME',   'COMMON',      'DEBIT',  'PIX',         'COMPLETED', FALSE,   95000, NULL, NULL, TIMESTAMPTZ '2026-03-20 14:00:00-04', 'Freela dashboard',                      'Projeto concluido em marco',                TRUE,  TRUE, 'BRL'),
-    ('tra-23', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-10', 'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,   15420, NULL, NULL, TIMESTAMPTZ '2026-03-28 19:20:00-04', 'Mercado do mes',                        'Compras finais de marco',                   TRUE,  TRUE, 'BRL'),
-    ('tra-24', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-6', NULL,     NULL,     'ADJUSTMENT','COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,   15000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:30:00-04', 'Ajuste de caixa pequeno',               'Correcao de saldo inicial do escritorio',   TRUE,  TRUE, 'BRL')
+    ('tra-6',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-10', 'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,   18640, NULL, NULL, TIMESTAMPTZ '2026-04-03 19:40:00-04', 'Mercado do Banco do Brasil CPF',       'Compras para casa',                         TRUE,  TRUE, 'BRL'),
+    ('tra-7',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     'cat-2',  'EXPENSE',  'FUEL',        'DEBIT',  'BANK',        'COMPLETED', FALSE,   22490, NULL, NULL, TIMESTAMPTZ '2026-04-04 07:30:00-04', 'Abastecimento Nubank CPF',             'Tanque quase completo',                     TRUE,  TRUE, 'BRL'),
+    ('tra-8',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-8',  'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,   34800, NULL, NULL, TIMESTAMPTZ '2026-03-25 10:10:00-04', 'Manutencao do Uno',                    'Filtro e oleo 15W40',                       TRUE,  TRUE, 'BRL'),
+    ('tra-9',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', 'card-2', 'cat-13', 'EXPENSE',  'COMMON',      'DEBIT',  'CARD_DEBIT',  'COMPLETED', TRUE,   145000, NULL, NULL, TIMESTAMPTZ '2026-04-05 08:00:00-04', 'Aluguel do apartamento',               'Pago pelo Banco do Brasil CPF',            TRUE,  TRUE, 'BRL'),
+    ('tra-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-14', 'EXPENSE',  'COMMON',      'DEBIT',  'PIX',         'COMPLETED', TRUE,     9990, NULL, NULL, TIMESTAMPTZ '2026-04-05 09:30:00-04', 'Internet do apartamento',              'Mensalidade abril',                         TRUE,  TRUE, 'BRL'),
+    ('tra-11', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     NULL,     'TRANSFER', 'TRANSFER',    'DEBIT',  'PIX',         'COMPLETED', FALSE,   50000, NULL, NULL, TIMESTAMPTZ '2026-04-05 13:15:00-04', 'Transferencia Nubank CPF para Banco do Brasil CPF', 'Reserva para despesas da semana', TRUE,  TRUE, 'BRL'),
+    ('tra-12', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     NULL,     'TRANSFER', 'TRANSFER',    'DEBIT',  'PIX',         'COMPLETED', FALSE,   50000, NULL, NULL, TIMESTAMPTZ '2026-04-05 13:15:10-04', 'Transferencia Nubank CPF para Banco do Brasil CPF', 'Entrada correspondente', TRUE,  TRUE, 'BRL'),
+    ('tra-13', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     NULL,     'TRANSFER', 'TRANSFER',    'DEBIT',  'BANK',        'COMPLETED', FALSE,  120000, NULL, NULL, TIMESTAMPTZ '2026-04-06 18:00:00-04', 'Aplicacao Nubank CPF para Nubank CNPJ', 'Movimentacao para investimento', TRUE,  TRUE, 'BRL'),
+    ('tra-14', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-4', NULL,     NULL,     'TRANSFER', 'TRANSFER',    'DEBIT',  'BANK',        'COMPLETED', FALSE,  120000, NULL, NULL, TIMESTAMPTZ '2026-04-06 18:00:10-04', 'Aplicacao Nubank CPF para Nubank CNPJ', 'Entrada na conta de investimentos', TRUE,  TRUE, 'BRL'),
+    ('tra-15', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-4', NULL,     'cat-15', 'INCOME',   'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,    8750, NULL, NULL, TIMESTAMPTZ '2026-04-08 09:00:00-04', 'Rendimento Nubank CNPJ',               'Credito automatico da corretora',           TRUE,  TRUE, 'BRL'),
+    ('tra-16', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-4', 'card-4', 'cat-6',  'EXPENSE',  'COMMON',      'CREDIT', 'CARD_CREDIT', 'COMPLETED', FALSE,   32990,    6,    1, TIMESTAMPTZ '2026-04-09 11:20:00-04', 'Curso de design do Nubank CNPJ',       'Parcelado para equipe interna',             FALSE, TRUE, 'BRL'),
+    ('tra-17', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-4', NULL,     'cat-13', 'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'PENDING',   TRUE,    68000, NULL, NULL, TIMESTAMPTZ '2026-04-12 08:00:00-04', 'Conta de energia do escritorio',       'Agendada para debito automatico',           TRUE,  TRUE, 'BRL'),
+    ('tra-18', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-3', NULL,     'cat-4',  'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,     750, NULL, NULL, TIMESTAMPTZ '2026-04-02 18:40:00-04', 'Cafe na praca com Mercado Pago CPF',   NULL,                                        TRUE,  TRUE, 'BRL'),
+    ('tra-19', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-5',  'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,   12490, NULL, NULL, TIMESTAMPTZ '2026-04-01 17:15:00-04', 'Farmacia no Banco do Brasil CPF',      'Medicamentos e vitaminas',                  TRUE,  TRUE, 'BRL'),
+    ('tra-20', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', 'card-1', 'cat-4',  'EXPENSE',  'COMMON',      'CREDIT', 'CARD_CREDIT', 'COMPLETED', FALSE,   18990, NULL, NULL, TIMESTAMPTZ '2026-04-10 21:00:00-04', 'Cinema e jantar no Nubank CPF',        'Saida de sexta',                            FALSE, TRUE, 'BRL'),
+    ('tra-21', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-2',  'EXPENSE',  'FUEL',        'DEBIT',  'BANK',        'COMPLETED', FALSE,    6200, NULL, NULL, TIMESTAMPTZ '2026-04-11 08:10:00-04', 'Abastecimento no Banco do Brasil CPF',  'Gasolina para a moto',                      TRUE,  TRUE, 'BRL'),
+    ('tra-22', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-1', NULL,     'cat-12', 'INCOME',   'COMMON',      'DEBIT',  'PIX',         'COMPLETED', FALSE,   95000, NULL, NULL, TIMESTAMPTZ '2026-03-20 14:00:00-04', 'Freela pago no Nubank CPF',            'Projeto concluido em marco',                TRUE,  TRUE, 'BRL'),
+    ('tra-23', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-2', NULL,     'cat-10', 'EXPENSE',  'COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,   15420, NULL, NULL, TIMESTAMPTZ '2026-03-28 19:20:00-04', 'Mercado do Banco do Brasil CPF',       'Compras finais de marco',                   TRUE,  TRUE, 'BRL'),
+    ('tra-24', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-4', NULL,     NULL,     'ADJUSTMENT','COMMON',      'DEBIT',  'BANK',        'COMPLETED', FALSE,   15000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:30:00-04', 'Ajuste de saldo Nubank CNPJ',          'Correcao de saldo inicial do escritorio',   TRUE,  TRUE, 'BRL')
 ON CONFLICT (id) DO NOTHING;
 
 -- 9. Vínculos de transferencia
@@ -243,43 +240,7 @@ VALUES
     ('log-2', 'veh-2', 'tra-21', 'Posto Avenida Norte',  'GASOLINA_COMUM',    18240.5, 10.120, 612)
 ON CONFLICT (id) DO NOTHING;
 
--- 11. Manutencoes
-INSERT INTO vehicle_maintenances (
-    id,
-    vehicle_id,
-    transaction_id,
-    maintenance_type,
-    provider
-)
-VALUES
-    ('mnt-1', 'veh-1', 'tra-8', 'OIL_CHANGE', 'Auto Center Rapido')
-ON CONFLICT (id) DO NOTHING;
-
--- 12. Orcamentos
-INSERT INTO budgets (
-    id,
-    user_id,
-    category_id,
-    amount_cents,
-    month,
-    year,
-    notes,
-    is_active
-)
-VALUES
-    ('bud-1',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-1',  90000, 4, 2026, 'Meta geral de alimentacao do mes', TRUE),
-    ('bud-2',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2',  35000, 4, 2026, 'Combustivel do Uno e da moto', TRUE),
-    ('bud-3',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4',  25000, 4, 2026, 'Lazer em finais de semana', TRUE),
-    ('bud-4',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5',  30000, 4, 2026, 'Farmacia e consultas', TRUE),
-    ('bud-5',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7',  12000, 4, 2026, 'Assinaturas recorrentes', TRUE),
-    ('bud-6',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-13', 160000, 4, 2026, 'Moradia compartilhada', TRUE),
-    ('bud-7',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-14',  12000, 4, 2026, 'Internet e celular', TRUE),
-    ('bud-8',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-1',  85000, 3, 2026, 'Historico de marco', TRUE),
-    ('bud-9',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2',  28000, 3, 2026, 'Historico de marco', TRUE),
-    ('bud-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4',  22000, 3, 2026, 'Historico de marco', TRUE)
-ON CONFLICT (user_id, category_id, month, year) DO NOTHING;
-
--- 13. Tags em transacoes
+-- 11. Tags em transacoes
 INSERT INTO transaction_tags (transaction_id, tag_id)
 VALUES
     ('tra-1',  'tag-3'),
@@ -294,10 +255,10 @@ VALUES
     ('tra-20', 'tag-2')
 ON CONFLICT DO NOTHING;
 
--- 14. Fingerprints de importacao para testar deduplicacao
+-- 12. Fingerprints de importacao para testar deduplicacao
 INSERT INTO import_fingerprints (hash, account_id)
 VALUES
     ('fp-nubank-2026-04-01-salario-1200000', 'acc-1'),
-    ('fp-inter-2026-04-03-mercado-18640',    'acc-2'),
-    ('fp-caixa-2026-04-03-freela-275000',    'acc-6')
+    ('fp-bb-2026-04-03-mercado-18640',       'acc-2'),
+    ('fp-nubank-cnpj-2026-04-03-freela-275000', 'acc-4')
 ON CONFLICT (hash) DO NOTHING;
