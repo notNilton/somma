@@ -272,7 +272,10 @@ func (h *Handler) GetVehicleExpenseStats(w http.ResponseWriter, r *http.Request)
 
 	var totalFuelCents int64
 	err := h.db.QueryRow(r.Context(), `
-		SELECT COALESCE(SUM(rl.liters * rl.price_per_liter_cents), 0)
+		SELECT COALESCE(
+			ROUND(SUM(COALESCE(rl.liters, 0) * COALESCE(rl.price_per_liter_cents, 0))),
+			0
+		)::bigint
 		FROM refueling_logs rl
 		JOIN vehicles v ON v.id = rl.vehicle_id
 		WHERE rl.vehicle_id = $1 AND v.user_id = $2

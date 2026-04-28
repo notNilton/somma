@@ -118,6 +118,10 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	err := h.db.QueryRow(r.Context(), `
 		INSERT INTO categories (user_id, name, type, description, color, parent_id)
 		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (user_id, name, type) DO UPDATE SET
+			description = EXCLUDED.description,
+			color = EXCLUDED.color,
+			updated_at = NOW()
 		RETURNING id, user_id, name, type, description, color, parent_id, created_at, updated_at
 	`, claims.UserID, dto.Name, dto.Type, dto.Description, dto.Color, dto.ParentID).Scan(
 		&c.ID, &c.UserID, &c.Name, &c.Type, &c.Description, &c.Color, &c.ParentID, &c.CreatedAt, &c.UpdatedAt,

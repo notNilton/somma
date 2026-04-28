@@ -1,11 +1,55 @@
 package handlers_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
 	"github.com/nilbyte/mirante/backend/internal/testutil"
 )
+
+func TestGetVehicleExpenseStats_WithFuel(t *testing.T) {
+	pool, mux := testutil.Setup(t)
+	testutil.CleanTables(t, pool)
+	tok := testutil.RegisterUser(t, mux, "vehfuel@example.com", "secret123")
+
+	rec := testutil.Do(t, mux, "POST", "/api/v1/vehicles", map[string]any{
+		"name":  "Carro Fuel",
+		"brand": "Toyota",
+		"model": "Corolla",
+		"year":  2022,
+	}, tok)
+	var v map[string]any
+	testutil.DecodeJSON(t, rec, &v)
+	id := v["id"].(string)
+
+	var transactionID string
+	if err := pool.QueryRow(context.Background(), `
+		INSERT INTO transactions (
+			user_id, type, classification, payment_method, channel,
+			status, amount_cents, date, description, currency_code, affects_account
+		) VALUES (
+			(SELECT id FROM users WHERE email = $1), 'EXPENSE', 'FUEL', 'DEBIT', 'BANK',
+			'COMPLETED', 23960, NOW(), 'Abastecimento teste', 'BRL', true
+		)
+		RETURNING id
+	`, "vehfuel@example.com").Scan(&transactionID); err != nil {
+		t.Fatalf("insert transaction: %v", err)
+	}
+
+	if _, err := pool.Exec(context.Background(), `
+		INSERT INTO refueling_logs (
+			vehicle_id, transaction_id, station, fuel_type, current_km, liters, price_per_liter_cents
+		) VALUES ($1, $2, 'Posto Teste', 'GASOLINA_COMUM', 1000, 40, 599)
+	`, id, transactionID); err != nil {
+		t.Fatalf("insert refueling log: %v", err)
+	}
+
+	recStats := testutil.Do(t, mux, "GET", "/api/v1/vehicles/"+id+"/expenses-stats", nil, tok)
+	if recStats.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", recStats.Code, recStats.Body.String())
+	}
+}
 
 func TestCreateVehicle_Success(t *testing.T) {
 	pool, mux := testutil.Setup(t)
