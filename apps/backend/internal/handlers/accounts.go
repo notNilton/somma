@@ -44,6 +44,9 @@ func (d *createAccountDto) validate() error {
 	if d.CreditLimit != nil && *d.CreditLimit < 0 {
 		return errors.New("creditLimit must be >= 0")
 	}
+	if d.Balance != nil && *d.Balance < 0 {
+		return errors.New("balance must be >= 0")
+	}
 	if d.ClosingDay != nil && (*d.ClosingDay < 1 || *d.ClosingDay > 28) {
 		return errors.New("closingDay must be 1-28")
 	}
@@ -197,26 +200,27 @@ func (h *Handler) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 	var a models.Account
 	err := h.db.QueryRow(r.Context(), `
 		UPDATE accounts SET
-			name              = COALESCE(NULLIF($1,''), name),
-			type              = COALESCE(NULLIF($2,''), type),
-			bank_name         = COALESCE($3, bank_name),
-			color             = COALESCE($4, color),
-			icon              = COALESCE($5, icon),
-			credit_limit_cents = COALESCE($6, credit_limit_cents),
-			has_debit         = COALESCE($7, has_debit),
-			has_pix           = COALESCE($8, has_pix),
-			has_credit        = COALESCE($9, has_credit),
-			include_in_total  = COALESCE($10, include_in_total),
-			closing_day       = COALESCE($11, closing_day),
-			due_day           = COALESCE($12, due_day),
-			updated_at        = NOW()
-		WHERE id = $13 AND user_id = $14 AND is_active = true
+			name               = COALESCE(NULLIF($1::TEXT, ''), name),
+			type               = COALESCE(NULLIF($2::TEXT, '')::account_type, type),
+			bank_name          = COALESCE($3::TEXT, bank_name),
+			color              = COALESCE($4::TEXT, color),
+			icon               = COALESCE($5::TEXT, icon),
+			credit_limit_cents = COALESCE($6::BIGINT, credit_limit_cents),
+			balance_cents      = COALESCE($7::BIGINT, balance_cents),
+			has_debit          = COALESCE($8::BOOLEAN, has_debit),
+			has_pix            = COALESCE($9::BOOLEAN, has_pix),
+			has_credit         = COALESCE($10::BOOLEAN, has_credit),
+			include_in_total   = COALESCE($11::BOOLEAN, include_in_total),
+			closing_day        = COALESCE($12::INT, closing_day),
+			due_day            = COALESCE($13::INT, due_day),
+			updated_at         = NOW()
+		WHERE id = $14 AND user_id = $15 AND is_active = true
 		RETURNING id, user_id, name, type, ownership, bank_name, cpf, cnpj, color, icon,
 		          currency_code, balance_cents, credit_limit_cents, has_debit, has_pix, has_credit,
 		          include_in_total, closing_day, due_day, is_active, deleted_at, created_at, updated_at
 	`,
 		dto.Name, dto.Type, dto.BankName, dto.Color, dto.Icon,
-		money.ToCentsPtr(dto.CreditLimit), dto.HasDebit, dto.HasPix, dto.HasCredit,
+		money.ToCentsPtr(dto.CreditLimit), money.ToCentsPtr(dto.Balance), dto.HasDebit, dto.HasPix, dto.HasCredit,
 		dto.IncludeInTotal, dto.ClosingDay, dto.DueDay, id, claims.UserID,
 	).Scan(
 		&a.ID, &a.UserID, &a.Name, &a.Type, &a.Ownership, &a.BankName, &a.Cpf, &a.Cnpj,
