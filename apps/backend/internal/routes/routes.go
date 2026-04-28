@@ -17,6 +17,8 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("GET /health", h.Health)
 
 	// Auth (público)
+	mux.HandleFunc("POST /api/auth/register", h.Register)
+	mux.HandleFunc("POST /api/auth/login", h.Login)
 	mux.HandleFunc("POST /auth/register", h.Register)
 	mux.HandleFunc("POST /auth/login", h.Login)
 
@@ -74,8 +76,6 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("GET /api/v1/vehicles", auth(h.ListVehicles))
 	mux.HandleFunc("GET /api/v1/vehicles/{id}", auth(h.GetVehicle))
 	mux.HandleFunc("GET /api/v1/vehicles/{id}/refuelings", auth(h.GetVehicleRefuelings))
-	mux.HandleFunc("GET /api/v1/vehicles/{id}/maintenances", auth(h.GetVehicleMaintenances))
-	mux.HandleFunc("GET /api/v1/vehicles/{id}/expenses-stats", auth(h.GetVehicleExpenseStats))
 	mux.HandleFunc("POST /api/v1/vehicles", auth(h.CreateVehicle))
 	mux.HandleFunc("PATCH /api/v1/vehicles/{id}", auth(h.UpdateVehicle))
 	mux.HandleFunc("DELETE /api/v1/vehicles/{id}", auth(h.DeleteVehicle))
@@ -94,27 +94,6 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("GET /api/v1/dashboard/monthly-evolution", auth(h.GetMonthlyEvolution))
 	mux.HandleFunc("GET /api/v1/dashboard/category-breakdown", auth(h.GetCategoryBreakdown))
 	mux.HandleFunc("GET /api/v1/analytics/annual-evolution", auth(h.GetAnnualEvolution))
-
-	// Budgets
-	mux.HandleFunc("GET /api/v1/budgets", auth(h.ListBudgets))
-	mux.HandleFunc("GET /api/v1/budgets/status", auth(h.GetBudgetsStatus))
-	mux.HandleFunc("GET /api/v1/budgets/{id}", auth(h.GetBudget))
-	mux.HandleFunc("POST /api/v1/budgets", auth(h.CreateBudget))
-	mux.HandleFunc("PATCH /api/v1/budgets/{id}", auth(h.UpdateBudget))
-	mux.HandleFunc("DELETE /api/v1/budgets/{id}", auth(h.DeleteBudget))
-
-	// Planning
-	mux.HandleFunc("GET /api/v1/plans", auth(h.ListPlanningPlans))
-	mux.HandleFunc("GET /api/v1/plans/{id}", auth(h.GetPlanningPlan))
-	mux.HandleFunc("POST /api/v1/plans", auth(h.CreatePlanningPlan))
-	mux.HandleFunc("PATCH /api/v1/plans/{id}", auth(h.UpdatePlanningPlan))
-	mux.HandleFunc("DELETE /api/v1/plans/{id}", auth(h.DeletePlanningPlan))
-	mux.HandleFunc("POST /api/v1/plans/{id}/items", auth(h.CreatePlanningItem))
-	mux.HandleFunc("PATCH /api/v1/plans/{id}/items/{itemId}", auth(h.UpdatePlanningItem))
-	mux.HandleFunc("DELETE /api/v1/plans/{id}/items/{itemId}", auth(h.DeletePlanningItem))
-	mux.HandleFunc("POST /api/v1/plans/{id}/contributions", auth(h.CreatePlanningContribution))
-	mux.HandleFunc("PATCH /api/v1/plans/{id}/contributions/{contributionId}", auth(h.UpdatePlanningContribution))
-	mux.HandleFunc("DELETE /api/v1/plans/{id}/contributions/{contributionId}", auth(h.DeletePlanningContribution))
 
 	// Settings
 	mux.HandleFunc("GET /api/v1/settings/profile", auth(h.GetProfile))

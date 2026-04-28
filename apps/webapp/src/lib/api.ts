@@ -32,7 +32,7 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
   });
 
   if (!res.ok) {
-    if (res.status === 401) {
+    if (res.status === 401 && !path.startsWith('/api/auth/')) {
       auth.logout();
     }
     const body = await res.json().catch(() => ({}));
@@ -72,7 +72,7 @@ export const api = {
       },
     });
     if (!res.ok) {
-      if (res.status === 401) {
+      if (res.status === 401 && !path.startsWith('/api/auth/')) {
         auth.logout();
       }
       const body = await res.json().catch(() => ({}));
@@ -101,50 +101,6 @@ export const api = {
     apiFetch<T>('/api/v1/transfers', { method: 'POST', body: JSON.stringify(dto) }),
   deleteTransfer: <T>(id: string) =>
     apiFetch<T>(`/api/v1/transfers/${id}`, { method: 'DELETE' }),
-
-  // --- Budgets ---
-  listBudgets: <T>(month?: string) =>
-    apiFetch<T>(`/api/v1/budgets${month ? `?month=${month}` : ''}`),
-  getBudgetsStatus: <T>(month?: string) =>
-    apiFetch<T>(`/api/v1/budgets/status${month ? `?month=${month}` : ''}`),
-  createBudget: <T>(dto: unknown) =>
-    apiFetch<T>('/api/v1/budgets', { method: 'POST', body: JSON.stringify(dto) }),
-  updateBudget: <T>(id: string, dto: unknown) =>
-    apiFetch<T>(`/api/v1/budgets/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
-  deleteBudget: <T>(id: string) =>
-    apiFetch<T>(`/api/v1/budgets/${id}`, { method: 'DELETE' }),
-
-  // --- Planning ---
-  listPlans: <T>() => apiFetch<T>('/api/v1/plans'),
-  getPlan: <T>(id: string) => apiFetch<T>(`/api/v1/plans/${id}`),
-  createPlan: <T>(dto: unknown) =>
-    apiFetch<T>('/api/v1/plans', { method: 'POST', body: JSON.stringify(dto) }),
-  updatePlan: <T>(id: string, dto: unknown) =>
-    apiFetch<T>(`/api/v1/plans/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
-  deletePlan: <T>(id: string) => apiFetch<T>(`/api/v1/plans/${id}`, { method: 'DELETE' }),
-  createPlanItem: <T>(planId: string, dto: unknown) =>
-    apiFetch<T>(`/api/v1/plans/${planId}/items`, { method: 'POST', body: JSON.stringify(dto) }),
-  updatePlanItem: <T>(planId: string, itemId: string, dto: unknown) =>
-    apiFetch<T>(`/api/v1/plans/${planId}/items/${itemId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(dto),
-    }),
-  deletePlanItem: <T>(planId: string, itemId: string) =>
-    apiFetch<T>(`/api/v1/plans/${planId}/items/${itemId}`, { method: 'DELETE' }),
-  createPlanContribution: <T>(planId: string, dto: unknown) =>
-    apiFetch<T>(`/api/v1/plans/${planId}/contributions`, {
-      method: 'POST',
-      body: JSON.stringify(dto),
-    }),
-  updatePlanContribution: <T>(planId: string, contributionId: string, dto: unknown) =>
-    apiFetch<T>(`/api/v1/plans/${planId}/contributions/${contributionId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(dto),
-    }),
-  deletePlanContribution: <T>(planId: string, contributionId: string) =>
-    apiFetch<T>(`/api/v1/plans/${planId}/contributions/${contributionId}`, {
-      method: 'DELETE',
-    }),
 
   // --- Calendar ---
   getFinancialCalendar: <T>(from?: string, to?: string) => {
