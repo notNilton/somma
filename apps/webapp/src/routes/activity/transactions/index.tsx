@@ -12,8 +12,10 @@ import {
   FileUp,
   FileDown,
   Search,
+  ArrowLeftRight,
   ArrowUpRight,
   ArrowDownLeft,
+  ArrowRight,
   Edit2,
   Trash2,
   Loader2,
@@ -58,6 +60,303 @@ const CHANNEL_LABEL: Record<string, string> = {
   CASH: 'Dinheiro',
 };
 
+interface TransferApi {
+  id: string;
+  createdAt?: string;
+  amount: number | string;
+  source?: {
+    id?: string;
+    accountId?: string;
+    description?: string;
+    date?: string;
+  };
+  destination?: {
+    id?: string;
+    accountId?: string;
+    description?: string;
+    date?: string;
+  };
+}
+
+interface Transfer {
+  id: string;
+  description?: string;
+  amount: number | string;
+  date: string;
+  fromAccountId?: string;
+  toAccountId?: string;
+  fromAccount?: { name: string };
+  toAccount?: { name: string };
+}
+
+interface CreateTransferDto {
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  date: string;
+  description?: string;
+}
+
+const transferInputCls =
+  'w-full bg-muted/40 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-smooth';
+
+function formatTransferDate(date: string) {
+  return new Date(date).toLocaleDateString('pt-BR');
+}
+
+function getSafeTransferDate(transfer: Pick<Transfer, 'date'> & Partial<{ createdAt: string }>) {
+  return transfer.date || transfer.createdAt || '';
+}
+
+function normalizeTransfer(transfer: TransferApi, accountNameById: Map<string, string>): Transfer {
+  const sourceAccountId = transfer.source?.accountId;
+  const destinationAccountId = transfer.destination?.accountId;
+  const sourceName =
+    (sourceAccountId ? accountNameById.get(sourceAccountId) : undefined) ??
+    transfer.source?.description ??
+    sourceAccountId ??
+    'Origem';
+  const destinationName =
+    (destinationAccountId ? accountNameById.get(destinationAccountId) : undefined) ??
+    transfer.destination?.description ??
+    destinationAccountId ??
+    'Destino';
+  const date = transfer.createdAt || transfer.source?.date || transfer.destination?.date || '';
+
+  return {
+    id: transfer.id,
+    amount: transfer.amount,
+    date,
+    fromAccountId: sourceAccountId,
+    toAccountId: destinationAccountId,
+    fromAccount: { name: sourceName },
+    toAccount: { name: destinationName },
+  };
+}
+
+function TransferRow({
+  transfer,
+  onDelete,
+}: {
+  transfer: Transfer;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/20 transition-smooth">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <ArrowLeftRight className="w-4 h-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-bold truncate">
+            {transfer.fromAccount?.name ?? '—'} <span className="text-muted-foreground mx-1">→</span>{' '}
+            {transfer.toAccount?.name ?? '—'}
+          </p>
+          <p className="text-[11px] text-muted-foreground truncate">
+            {transfer.description
+              ? `${transfer.description} · ${formatTransferDate(transfer.date)}`
+              : formatTransferDate(transfer.date)}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <PrivacyAmount value={Number(transfer.amount)} className="text-sm font-bold text-primary" />
+        <button
+          type="button"
+          onClick={() => onDelete(transfer.id)}
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-smooth"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TransferModal({
+  accounts,
+  onClose,
+  onSuccess,
+}: {
+  accounts: Array<{ id: string; name: string }>;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const today = new Date();
+  const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+  const [fromAccountId, setFromAccountId] = useState('');
+  const [toAccountId, setToAccountId] = useState('');
+  const [amount, setAmount] = useState('0');
+  const [date, setDate] = useState(defaultDate);
+  const [description, setDescription] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isDisabled =
+    !fromAccountId || !toAccountId || fromAccountId === toAccountId || Number(amount) <= 0;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isDisabled) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const dto: CreateTransferDto = {
+        fromAccountId,
+        toAccountId,
+        amount: Number(amount) / 100,
+        date,
+        description: description.trim() || undefined,
+      };
+      await api.createTransfer(dto);
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar transferência.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <ArrowLeftRight className="w-4 h-4" />
+            </div>
+            <h2 className="text-base font-bold font-display">Nova transferência</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-muted transition-smooth text-muted-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+          {error && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-medium">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
+                Origem
+              </label>
+              <select
+                value={fromAccountId}
+                onChange={(e) => setFromAccountId(e.target.value)}
+                className={transferInputCls}
+              >
+                <option value="">Selecione...</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="hidden sm:flex items-center justify-center pt-6 text-muted-foreground">
+              <ArrowRight className="w-4 h-4" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
+                Destino
+              </label>
+              <select
+                value={toAccountId}
+                onChange={(e) => setToAccountId(e.target.value)}
+                className={transferInputCls}
+              >
+                <option value="">Selecione...</option>
+                {accounts
+                  .filter((a) => a.id !== fromAccountId)
+                  .map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
+              Valor
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              required
+              value={new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              }).format(Number(amount) / 100)}
+              onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
+              className={`${transferInputCls} font-bold text-primary text-lg`}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
+                Data
+              </label>
+              <input
+                type="date"
+                required
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className={transferInputCls}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
+                Descrição
+              </label>
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Ex: Reserva"
+                className={transferInputCls}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-border text-sm font-bold hover:bg-muted transition-smooth"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading || isDisabled}
+              className="flex-[2] py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-smooth flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ArrowLeftRight className="w-4 h-4" />
+              )}
+              Confirmar transferência
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function TransactionsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: '/activity/transactions/' });
@@ -83,6 +382,7 @@ function TransactionsPage() {
   const [selectedClassification, setSelectedClassification] = useState('all');
   const [cancelRecurringTarget, setCancelRecurringTarget] = useState<Tx | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
   const { data: transactions = [], isLoading } = useTransactionsList({
     search,
@@ -104,10 +404,18 @@ function TransactionsPage() {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: transfers = [] } = useQuery({
+    queryKey: ['transfers'],
+    queryFn: () => api.listTransfers<TransferApi[]>(),
+    staleTime: 1000 * 30,
+  });
+
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
     queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     queryClient.invalidateQueries({ queryKey: ['planning'] });
+    queryClient.invalidateQueries({ queryKey: ['transfers'] });
+    queryClient.invalidateQueries({ queryKey: ['accounts'] });
   };
 
   const deleteMutation = useMutation({
@@ -133,6 +441,15 @@ function TransactionsPage() {
   const stopRecurringMutation = useMutation({
     mutationFn: (id: string) => api.patch(`/api/v1/transactions/${id}`, { isRecurring: false }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+  });
+
+  const deleteTransferMutation = useMutation({
+    mutationFn: (id: string) => api.deleteTransfer(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transfers'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 
   const handleCreate = () =>
@@ -211,6 +528,10 @@ function TransactionsPage() {
   const isAllSelected = allIds.length > 0 && allIds.every((id) => selectedIds[id]);
   const isSomeSelected = allIds.some((id) => selectedIds[id]);
   const selectedCount = Object.keys(selectedIds).length;
+  const accountNameById = new Map(accounts.map((a) => [a.id, a.name]));
+  const recentTransfers = transfers
+    .map((transfer) => normalizeTransfer(transfer, accountNameById))
+    .sort((a, b) => getSafeTransferDate(b).localeCompare(getSafeTransferDate(a)));
 
   const isAnyFilterActive =
     search !== '' ||
@@ -397,6 +718,13 @@ function TransactionsPage() {
           >
             <Fuel className="w-3.5 h-3.5" />
             Abastecimento
+          </button>
+          <button
+            onClick={() => setShowTransferModal(true)}
+            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-smooth"
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5" />
+            Transferência
           </button>
           <button
             onClick={handleCreate}
@@ -849,8 +1177,64 @@ function TransactionsPage() {
         )}
       </div>
 
+      {/* Lista de transferências */}
+      <div className="card-premium overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Transferências
+            </p>
+            <h2 className="text-sm font-bold">Movimentações entre contas</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowTransferModal(true)}
+            className="text-xs font-bold text-primary hover:underline"
+          >
+            Nova transferência
+          </button>
+        </div>
+        {recentTransfers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-2">
+            <p className="text-xs text-muted-foreground">Nenhuma transferência ainda.</p>
+            <button
+              type="button"
+              onClick={() => setShowTransferModal(true)}
+              className="text-xs font-bold text-primary hover:underline"
+            >
+              Criar primeira
+            </button>
+          </div>
+        ) : (
+          recentTransfers.map((transfer) => (
+            <TransferRow
+              key={transfer.id}
+              transfer={transfer}
+              onDelete={(id) => {
+                if (confirm('Excluir esta transferência? Os saldos das contas serão revertidos.')) {
+                  deleteTransferMutation.mutate(id);
+                }
+              }}
+            />
+          ))
+        )}
+      </div>
+
       {/* FAB mobile */}
       <Fab label="Nova transação" onClick={handleCreate} />
+
+      {showTransferModal && (
+        <TransferModal
+          accounts={accounts}
+          onClose={() => setShowTransferModal(false)}
+          onSuccess={() => {
+            setShowTransferModal(false);
+            queryClient.invalidateQueries({ queryKey: ['transfers'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+          }}
+        />
+      )}
     </ActivityShell>
   );
 }

@@ -29,13 +29,31 @@ interface Account {
   balance: number;
 }
 
+interface TransferApi {
+  id: string;
+  createdAt?: string;
+  amount: number | string;
+  source?: {
+    id?: string;
+    accountId?: string;
+    description?: string;
+    date?: string;
+  };
+  destination?: {
+    id?: string;
+    accountId?: string;
+    description?: string;
+    date?: string;
+  };
+}
+
 interface Transfer {
   id: string;
   description?: string;
   amount: number;
   date: string;
-  fromAccountId: string;
-  toAccountId: string;
+  fromAccountId?: string;
+  toAccountId?: string;
   fromAccount?: { name: string };
   toAccount?: { name: string };
 }
@@ -103,6 +121,36 @@ function CustomSelect({
       )}
     </div>
   );
+}
+
+function getSafeTransferDate(transfer: Pick<Transfer, 'date'> & Partial<{ createdAt: string }>) {
+  return transfer.date || transfer.createdAt || '';
+}
+
+function normalizeTransfer(transfer: TransferApi, accountNameById: Map<string, string>): Transfer {
+  const sourceAccountId = transfer.source?.accountId;
+  const destinationAccountId = transfer.destination?.accountId;
+  const sourceName =
+    (sourceAccountId ? accountNameById.get(sourceAccountId) : undefined) ??
+    transfer.source?.description ??
+    sourceAccountId ??
+    'Origem';
+  const destinationName =
+    (destinationAccountId ? accountNameById.get(destinationAccountId) : undefined) ??
+    transfer.destination?.description ??
+    destinationAccountId ??
+    'Destino';
+  const date = transfer.createdAt || transfer.source?.date || transfer.destination?.date || '';
+
+  return {
+    id: transfer.id,
+    amount: Number(transfer.amount),
+    date,
+    fromAccountId: sourceAccountId,
+    toAccountId: destinationAccountId,
+    fromAccount: { name: sourceName },
+    toAccount: { name: destinationName },
+  };
 }
 
 // ─── Transfer Modal ───────────────────────────────────────────────────────────
@@ -327,7 +375,7 @@ function TransfersPage() {
 
   const { data: transfers = [], isLoading } = useQuery({
     queryKey: ['transfers'],
-    queryFn: () => api.listTransfers<Transfer[]>(),
+    queryFn: () => api.listTransfers<TransferApi[]>(),
     staleTime: 1000 * 60,
   });
 
@@ -360,8 +408,11 @@ function TransfersPage() {
   };
 
   // Group transfers by month
-  const grouped = transfers.reduce<Record<string, Transfer[]>>((acc, t) => {
-    const key = t.date.slice(0, 7); // YYYY-MM
+  const accountNameById = new Map(accounts.map((acc) => [acc.id, acc.name]));
+  const normalizedTransfers = transfers.map((t) => normalizeTransfer(t, accountNameById));
+
+  const grouped = normalizedTransfers.reduce<Record<string, Transfer[]>>((acc, t) => {
+    const key = getSafeTransferDate(t).slice(0, 7); // YYYY-MM
     if (!acc[key]) acc[key] = [];
     acc[key].push(t);
     return acc;
