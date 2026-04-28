@@ -216,6 +216,96 @@ func (h *Handler) GetVehicleRefuelings(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, logs)
 }
 
+func (h *Handler) GetVehicleMaintenances(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.ClaimsFromContext(r.Context())
+	id := r.PathValue("id")
+
+	rows, err := h.db.Query(r.Context(), `
+		SELECT vm.id, vm.vehicle_id, vm.transaction_id, vm.maintenance_type, vm.provider, vm.created_at, vm.updated_at
+		FROM vehicle_maintenances vm
+		JOIN vehicles v ON v.id = vm.vehicle_id
+		WHERE vm.vehicle_id = $1 AND v.user_id = $2
+		ORDER BY vm.created_at DESC
+	`, id, claims.UserID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	defer rows.Close()
+
+	var maintenances []any
+	for rows.Next() {
+		var item struct {
+			ID              string
+			VehicleID       string
+			TransactionID   string
+			MaintenanceType string
+			Provider        *string
+			CreatedAt       time.Time
+			UpdatedAt       time.Time
+		}
+		if err := rows.Scan(
+			&item.ID, &item.VehicleID, &item.TransactionID, &item.MaintenanceType, &item.Provider, &item.CreatedAt, &item.UpdatedAt,
+		); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		maintenances = append(maintenances, map[string]any{
+			"id":              item.ID,
+			"vehicleId":       item.VehicleID,
+			"transactionId":   item.TransactionID,
+			"maintenanceType": item.MaintenanceType,
+			"provider":        item.Provider,
+			"createdAt":       item.CreatedAt,
+		})
+	}
+
+	if maintenances == nil {
+		maintenances = []any{}
+	}
+	writeJSON(w, http.StatusOK, maintenances)
+}
+
+func (h *Handler) GetVehicleExpenseStats(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.ClaimsFromContext(r.Context())
+	id := r.PathValue("id")
+
+	var totalFuelCents int64
+	err := h.db.QueryRow(r.Context(), `
+		SELECT COALESCE(SUM(rl.liters * rl.price_per_liter_cents), 0)
+		FROM refueling_logs rl
+		JOIN vehicles v ON v.id = rl.vehicle_id
+		WHERE rl.vehicle_id = $1 AND v.user_id = $2
+	`, id, claims.UserID).Scan(&totalFuelCents)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	var totalMaintenanceCents int64
+	err = h.db.QueryRow(r.Context(), `
+		SELECT COALESCE(SUM(t.amount_cents), 0)
+		FROM vehicle_maintenances vm
+		JOIN vehicles v ON v.id = vm.vehicle_id
+		JOIN transactions t ON t.id = vm.transaction_id
+		WHERE vm.vehicle_id = $1
+		  AND v.user_id = $2
+		  AND t.is_active = true
+	`, id, claims.UserID).Scan(&totalMaintenanceCents)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	totalFuel := money.ToReais(totalFuelCents)
+	totalMaintenance := money.ToReais(totalMaintenanceCents)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"totalFuel":       totalFuel,
+		"totalMaintenance": totalMaintenance,
+		"total":           totalFuel + totalMaintenance,
+	})
+}
+
 func vehicleResponse(v models.Vehicle) map[string]any {
 	return map[string]any{
 		"id":           v.ID,
