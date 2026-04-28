@@ -145,6 +145,22 @@ function SettingsPage() {
           title="Resumos de Veículos"
           description="Abastecimentos e manutenções."
         />
+        <button
+          type="button"
+          onClick={() => auth.logout()}
+          className="flex w-full items-center justify-between px-3 py-2.5 hover:bg-rose-500/5 transition-smooth cursor-pointer group text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="p-1 rounded-md bg-rose-500/10 text-rose-500 border border-rose-500/20 group-hover:bg-rose-500 group-hover:text-white group-hover:border-rose-500 transition-smooth">
+              <LogOut className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <p className="font-bold text-xs">Sair</p>
+              <p className="text-[10px] text-muted-foreground">Encerrar a sessão atual.</p>
+            </div>
+          </div>
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-smooth shrink-0" />
+        </button>
       </div>
     </SettingsShell>
   );
