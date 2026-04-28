@@ -21,7 +21,7 @@ function LoginPage() {
     setError(null);
 
     try {
-      const { accessToken } = await api.post<{ accessToken: string }>('/auth/login', { email, password });
+      const { accessToken } = await api.post<{ accessToken: string }>('/api/auth/login', { email, password });
       auth.setToken(accessToken);
 
       // Pequeno delay para feedback visual

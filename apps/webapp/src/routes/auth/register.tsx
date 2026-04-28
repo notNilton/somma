@@ -27,7 +27,7 @@ function RegisterPage() {
     setError(null);
 
     try {
-      const { accessToken } = await api.post<{ accessToken: string }>('/auth/register', formData);
+      const { accessToken } = await api.post<{ accessToken: string }>('/api/auth/register', formData);
       auth.setToken(accessToken);
 
       setTimeout(() => {
