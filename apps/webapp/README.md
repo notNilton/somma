@@ -29,7 +29,7 @@ Para rodar o webapp localmente como parte do monorepo, utilize os scripts dispon
 npm run dev:webapp
 ```
 
-O servidor de desenvolvimento iniciará em `http://localhost:3000` ou na porta configurada pelo TanStack Start.
+O servidor de desenvolvimento iniciará em `http://localhost:3400` ou na porta configurada pelo TanStack Start.
 
 ## Estrutura de Pastas
 

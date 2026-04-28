@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 import { z } from 'zod';
 import {
   ArrowDownLeft,
-  ArrowRight,
   ArrowUpRight,
   Loader2,
   ShieldCheck,
@@ -15,7 +14,7 @@ import SectionShell from '../components/SectionShell';
 import PrivacyAmount from '../components/PrivacyAmount';
 import Fab from '../components/Fab';
 import { api } from '../lib/api';
-import type { Tx } from './activity/transactions/-queries';
+import type { Tx } from './transactions/-queries';
 
 const dashboardSearchSchema = z.object({
   month: z.string().optional(),
@@ -32,11 +31,6 @@ interface DashboardData {
   monthlyIncome: number;
   monthlyExpenses: number;
   safeToSpend: number;
-  accounts: Array<{
-    id: string;
-    name: string;
-    balance: number;
-  }>;
   recentTransactions: Array<{
     id: string;
     description: string;
@@ -100,13 +94,11 @@ function aggregateTransactions(list: Tx[]) {
   const expenses = list.filter((t) => t.type === 'EXPENSE' && t.classification !== 'TRANSFER');
   const income = list.filter((t) => t.type === 'INCOME' && t.classification !== 'TRANSFER');
 
-  const byAccount = new Map<string, number>();
   const byChannel = new Map<string, number>();
   const byCategory = new Map<string, { value: number; color?: string }>();
 
   for (const tx of expenses) {
     const amount = Math.abs(Number(tx.amount));
-    const account = tx.account?.name ?? tx.accountId ?? 'Sem conta';
     const channel =
       tx.channel === 'CARD_CREDIT'
         ? 'Crédito'
@@ -116,10 +108,9 @@ function aggregateTransactions(list: Tx[]) {
             ? 'Pix'
             : tx.channel === 'BANK'
               ? 'Bancária'
-              : 'Outro';
+      : 'Outro';
     const category = tx.category?.name ?? 'Sem categoria';
 
-    byAccount.set(account, (byAccount.get(account) ?? 0) + amount);
     byChannel.set(channel, (byChannel.get(channel) ?? 0) + amount);
     byCategory.set(category, {
       value: (byCategory.get(category)?.value ?? 0) + amount,
@@ -136,7 +127,6 @@ function aggregateTransactions(list: Tx[]) {
   return {
     income: income.reduce((acc, tx) => acc + Math.abs(Number(tx.amount)), 0),
     expenses: expenses.reduce((acc, tx) => acc + Math.abs(Number(tx.amount)), 0),
-    byAccount: toRows([...byAccount.entries()]),
     byChannel: toRows([...byChannel.entries()]),
     byCategory: [...byCategory.entries()]
       .map(([label, item]) => ({ label, value: item.value, color: item.color }))
@@ -234,34 +224,7 @@ function UserDashboard() {
           />
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-                  Gasto por conta
-                </p>
-                <h2 className="text-sm font-bold text-slate-900">Onde o dinheiro saiu</h2>
-              </div>
-            </div>
-            <div className="h-[260px] px-3 py-3">
-              {charts.byAccount.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-xs text-slate-500">
-                  Sem dados neste período.
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={charts.byAccount} layout="vertical" margin={{ left: 8, right: 8 }}>
-                    <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="label" width={90} tick={{ fontSize: 10, fill: '#64748b' }} />
-                    <RechartsTooltip formatter={(val: number) => moneyLabel(val)} />
-                    <Bar dataKey="value" fill="#0f766e" radius={[0, 8, 8, 0]} barSize={18} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
               <div>
@@ -334,89 +297,11 @@ function UserDashboard() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-4">
-          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-                  Atividade recente
-                </p>
-                <h2 className="text-sm font-bold text-slate-900">Últimos lançamentos</h2>
-              </div>
-              <button
-                onClick={() => void navigate({ to: '/activity/transactions' })}
-                className="wallet-sci-button px-3 py-2 text-[10px]"
-              >
-                Ver tudo
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="divide-y divide-slate-200/70">
-              {data.recentTransactions.length === 0 ? (
-                <p className="py-8 text-center text-xs text-slate-500">Nenhuma transação recente.</p>
-              ) : (
-                data.recentTransactions.slice(0, 6).map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/70 transition-smooth"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-900">{t.description}</p>
-                      <p className="truncate text-[10px] text-slate-500">
-                        {t.category?.name ?? '—'} · {new Date(t.date).toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                    <PrivacyAmount
-                      value={t.type === 'INCOME' ? t.amount : -t.amount}
-                      showSign
-                      className={`shrink-0 text-sm font-bold ${
-                        t.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-900'
-                      }`}
-                    />
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden h-fit">
-            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-                  Contas
-                </p>
-                <h2 className="text-sm font-bold text-slate-900">Saldo consolidado</h2>
-              </div>
-              <button
-                onClick={() => void navigate({ to: '/wallet/accounts' })}
-                className="wallet-sci-button px-3 py-2 text-[10px]"
-              >
-                Gerenciar
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="divide-y divide-slate-200/70">
-              {data.accounts.map((acc) => (
-                <div key={acc.id} className="flex items-center justify-between px-4 py-3">
-                  <p className="truncate text-sm font-semibold text-slate-900">{acc.name}</p>
-                  <PrivacyAmount value={acc.balance} className="shrink-0 text-sm font-bold text-slate-900" />
-                </div>
-              ))}
-            </div>
-            <div className="border-t border-slate-200/80 bg-white/70 px-4 py-3">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">Total</p>
-                <PrivacyAmount value={data.totalBalance} className="text-sm font-bold text-slate-900" />
-              </div>
-            </div>
-          </div>
-        </section>
-
         <Fab
           label="Nova transação"
           onClick={() =>
             void navigate({
-              to: '/activity/transactions/crud-transactions',
+              to: '/transactions/crud-transactions',
               search: { transactionId: undefined },
             })
           }

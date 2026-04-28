@@ -1,8 +1,8 @@
-import { ArrowLeftRight, LayoutGrid, Settings, Wallet, type LucideIcon } from 'lucide-react';
+import { LayoutGrid, ReceiptText, Settings, type LucideIcon } from 'lucide-react';
 
 export interface NavigationItem {
   id: string;
-  to: '/' | '/activity' | '/wallet' | '/settings';
+  to: '/' | '/transactions' | '/settings';
   icon: LucideIcon;
   label: string;
   shortLabel?: string;
@@ -11,8 +11,13 @@ export interface NavigationItem {
 }
 
 export const navigationItems: NavigationItem[] = [
-  { id: 'panorama', to: '/', icon: LayoutGrid, label: 'Panorama' },
-  { id: 'activity', to: '/activity', icon: ArrowLeftRight, label: 'Movimentacoes', shortLabel: 'Mov.' },
-  { id: 'wallet', to: '/wallet', icon: Wallet, label: 'Carteira' },
-  { id: 'settings', to: '/settings', icon: Settings, label: 'Ajustes', mobileOnly: true },
+  { id: 'dashboard', to: '/', icon: LayoutGrid, label: 'Dashboard' },
+  {
+    id: 'transactions',
+    to: '/transactions',
+    icon: ReceiptText,
+    label: 'Transactions',
+    shortLabel: 'Tx',
+  },
+  { id: 'config', to: '/settings', icon: Settings, label: 'Config' },
 ];

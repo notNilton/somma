@@ -1,14 +1,14 @@
 import { Link } from '@tanstack/react-router';
-import { CircleDollarSign, User } from 'lucide-react';
+import { CircleDollarSign } from 'lucide-react';
 import { navigationItems } from '../lib/navigation';
 
 const DESKTOP_NAV_ITEMS = navigationItems.filter((item) => !item.mobileOnly && !item.desktopOnly);
 
 export default function Header() {
   return (
-    <header className="hidden sm:block sticky top-0 z-50 border-b border-border bg-background/80 px-4 backdrop-blur-lg">
-      <nav className="max-w-7xl mx-auto flex items-center gap-1 py-3 sm:py-4">
-        <h2 className="m-0 flex-shrink-0 text-base font-semibold tracking-tight mr-6 hidden min-[1100px]:flex">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/90 px-4 backdrop-blur-md">
+      <nav className="mx-auto flex max-w-6xl items-center gap-2 py-3 sm:py-4">
+        <h2 className="m-0 flex-shrink-0 text-base font-semibold tracking-tight mr-4">
           <Link
             to="/"
             className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity px-2 py-1"
@@ -22,7 +22,7 @@ export default function Header() {
           </Link>
         </h2>
 
-        <div className="hidden sm:flex items-center gap-0.5 flex-1 min-w-0">
+        <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto no-scrollbar">
           {DESKTOP_NAV_ITEMS.map(({ id, to, icon: Icon, label }) => (
             <Link
               key={id}
@@ -35,16 +35,6 @@ export default function Header() {
               {label}
             </Link>
           ))}
-        </div>
-
-        <div className="ml-auto flex items-center gap-2 shrink-0">
-          <Link
-            to="/settings"
-            className="hidden sm:flex p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-smooth"
-            title="Perfil"
-          >
-            <User className="w-5 h-5" />
-          </Link>
         </div>
       </nav>
     </header>
