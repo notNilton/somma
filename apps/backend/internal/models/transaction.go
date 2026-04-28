@@ -6,7 +6,6 @@ type Transaction struct {
 	ID                string
 	AccountID         string
 	UserID            string
-	PlanningPlanID    *string
 	CategoryID        *string
 	CardID            *string
 	Type              string
@@ -33,5 +32,4 @@ type TransactionWithCategory struct {
 	Transaction
 	CategoryName     *string
 	CategoryColor    *string
-	PlanningPlanName *string
 }
