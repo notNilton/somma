@@ -29,13 +29,3 @@ type RefuelingLog struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
-
-type VehicleMaintenance struct {
-	ID              string
-	VehicleID       string
-	TransactionID   string
-	MaintenanceType string
-	Provider        *string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-}
