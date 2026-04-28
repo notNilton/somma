@@ -13,14 +13,12 @@ import ActivityShell from '../../../components/ActivityShell';
 import { SectionLoadingState } from '../../../components/SectionFeedback';
 import SectionPageHeader from '../../../components/SectionPageHeader';
 import { api } from '../../../lib/api';
-import { formatCurrency, cleanNumeric, formatKm } from '../../../lib/formatters';
+import { formatCurrency, cleanNumeric } from '../../../lib/formatters';
 import CustomSelect from '../../../components/ui/CustomSelect';
 
 export const Route = createFileRoute('/activity/transactions/crud-transactions')({
   validateSearch: (search: Record<string, unknown>) => ({
     transactionId: typeof search.transactionId === 'string' ? search.transactionId : undefined,
-    planningPlanId:
-      typeof search.planningPlanId === 'string' ? search.planningPlanId : undefined,
   }),
   component: CrudTransactionsPage,
 });
@@ -41,12 +39,6 @@ interface Account {
   creditLimit?: number | string | null;
 }
 
-interface Vehicle {
-  id: string;
-  name: string;
-  brand?: string;
-}
-
 interface Transaction {
   id: string;
   description: string;
@@ -56,23 +48,13 @@ interface Transaction {
   classification?: string;
   channel?: string;
   isRecurring?: boolean;
-  planningPlanId?: string;
   categoryId?: string;
   accountId?: string;
-  vehicleId?: string;
-  currentKm?: number;
-}
-
-interface PlanningPlan {
-  id: string;
-  name: string;
-  status: 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELED';
 }
 
 type TransactionModalTab = 'expense' | 'income' | 'bill_payment';
 type ExpenseKind = 'CREDIT' | 'DEBIT' | 'PIX' | 'BANK' | 'CASH';
-type BaseClassification = 'COMMON' | 'MAINTENANCE';
-type Classification = BaseClassification | 'TRANSFER';
+type Classification = 'COMMON' | 'TRANSFER';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -90,7 +72,7 @@ const labelCls = 'text-[10px] font-bold uppercase tracking-widest text-muted-for
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function CrudTransactionsPage() {
-  const { transactionId, planningPlanId: preselectedPlanningPlanId } = Route.useSearch();
+  const { transactionId } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isEditing = !!transactionId;
@@ -101,8 +83,6 @@ function CrudTransactionsPage() {
   const accountId_uid = useId();
   const categoryId_uid = useId();
   const descriptionId = useId();
-  const vehicleId_uid = useId();
-  const kmId = useId();
 
   // Fetch transaction when editing
   const { data: initialData, isLoading: isLoadingTx } = useQuery({
@@ -125,19 +105,6 @@ function CrudTransactionsPage() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: vehicles = [] } = useQuery({
-    queryKey: ['vehicles'],
-    queryFn: () => api.get<Vehicle[]>('/api/v1/vehicles'),
-    staleTime: 1000 * 60 * 5,
-  });
-
-  const { data: plans = [] } = useQuery({
-    queryKey: ['planning', 'plans'],
-    queryFn: () =>
-      api.listPlans<PlanningPlan[]>(),
-    staleTime: 1000 * 60 * 5,
-  });
-
   // ─── Form state ────────────────────────────────────────────────────────────
 
   const [activeTab, setActiveTab] = useState<TransactionModalTab>('expense');
@@ -145,13 +112,10 @@ function CrudTransactionsPage() {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('0');
-  const [planningPlanId, setPlanningPlanId] = useState(preselectedPlanningPlanId ?? '');
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [classification, setClassification] = useState<Classification>('COMMON');
-  const [vehicleId, setVehicleId] = useState('');
-  const [currentKm, setCurrentKm] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -172,14 +136,11 @@ function CrudTransactionsPage() {
     setDate(new Date(initialData.date).toISOString().split('T')[0]);
     setDescription(initialData.description ?? '');
     setAmount(Math.floor(Math.abs(Number(initialData.amount)) * 100).toString());
-    setPlanningPlanId(initialData.planningPlanId ?? preselectedPlanningPlanId ?? '');
     setCategoryId(initialData.categoryId ?? '');
     setAccountId(initialData.accountId ?? '');
     setIsRecurring(initialData.isRecurring ?? false);
     setClassification((initialData.classification as Classification | undefined) ?? 'COMMON');
-    setVehicleId(initialData.vehicleId ?? '');
-    setCurrentKm(initialData.currentKm ? Math.floor(Number(initialData.currentKm)).toString() : '0');
-  }, [initialData, preselectedPlanningPlanId]);
+  }, [initialData]);
 
   // ─── Tab change side-effects ───────────────────────────────────────────────
 
@@ -217,24 +178,15 @@ function CrudTransactionsPage() {
       const channel = expenseKindToChannel(expenseKind);
 
       const payload = {
-        description:
-          classification === 'MAINTENANCE'
-              ? (description.trim() || 'Manutenção veicular')
-              : description,
+        description,
         amount: actualAmount,
         date,
         type: activeTab === 'income' ? 'INCOME' : 'EXPENSE',
         isRecurring,
-        planningPlanId: isEditing ? planningPlanId : planningPlanId || undefined,
         categoryId: isEditing ? categoryId : categoryId || undefined,
         accountId,
         channel: activeTab === 'bill_payment' ? 'BANK' : channel,
         classification,
-        ...(classification === 'MAINTENANCE' && {
-          vehicleId,
-          currentKm: Number(currentKm),
-          maintenanceType: 'OTHER',
-        }),
       };
 
       if (isEditing && transactionId) {
@@ -245,7 +197,6 @@ function CrudTransactionsPage() {
 
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['planning'] });
       goBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar transação.');
@@ -372,26 +323,6 @@ function CrudTransactionsPage() {
                   />
                 </div>
               )}
-              <div>
-                <label className={labelCls}>Planejamento</label>
-                <CustomSelect
-                  value={planningPlanId}
-                  onChange={setPlanningPlanId}
-                  placeholder="Sem planejamento"
-                  options={plans
-                    .filter((plan) => plan.status !== 'CANCELED')
-                    .map((plan) => ({
-                      value: plan.id,
-                      label: plan.name,
-                      description:
-                        plan.status === 'PAUSED'
-                          ? 'Planejamento pausado'
-                          : plan.status === 'COMPLETED'
-                            ? 'Planejamento concluído'
-                            : 'Planejamento ativo',
-                    }))}
-                />
-              </div>
           </div>
         </div>
 
@@ -409,32 +340,6 @@ function CrudTransactionsPage() {
               />
            </div>
         </div>
-
-        {/* Maintenance extra fields */}
-        {classification === 'MAINTENANCE' && (
-          <div className="card-premium p-6 grid grid-cols-2 gap-4 animate-in slide-in-from-top-2">
-             <div className="col-span-1">
-                <label className={labelCls} htmlFor={vehicleId_uid}>Veículo</label>
-                <CustomSelect
-                  id={vehicleId_uid}
-                  value={vehicleId}
-                  onChange={setVehicleId}
-                  options={vehicles.map(v => ({ value: v.id, label: v.name }))}
-                />
-             </div>
-             <div className="col-span-1">
-                <label className={labelCls} htmlFor={kmId}>Hodômetro Atual (km)</label>
-                <input
-                  id={kmId}
-                  type="text"
-                  inputMode="numeric"
-                  value={formatKm(currentKm)}
-                  onChange={(e) => setCurrentKm(cleanNumeric(e.target.value))}
-                  className={inputCls}
-                />
-             </div>
-          </div>
-        )}
       </form>
     </ActivityShell>
   );
