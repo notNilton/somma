@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, redirect } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, CarFront, Hash, Calendar, Fuel } from 'lucide-react';
+import { Loader2, CarFront, Hash, Calendar, Fuel } from 'lucide-react';
 import WalletShell from '../../../components/WalletShell';
 import { SectionLoadingState } from '../../../components/SectionFeedback';
 import SectionPageHeader from '../../../components/SectionPageHeader';
@@ -12,6 +12,9 @@ export const Route = createFileRoute('/wallet/vehicles/crud-vehicles')({
   validateSearch: (search: Record<string, unknown>) => ({
     vehicleId: typeof search.vehicleId === 'string' ? search.vehicleId : undefined,
   }),
+  beforeLoad: () => {
+    throw redirect({ to: '/wallet/accounts' });
+  },
   component: CrudVehiclesPage,
 });
 
