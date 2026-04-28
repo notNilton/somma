@@ -60,18 +60,23 @@ func main() {
 		}
 		fmt.Printf("version: %d, dirty: %v\n", version, dirty)
 
-	case "seed":
-		if err := runSeed(dbURL); err != nil {
+	case "seed", "seed-complete":
+		if err := runSeedFiles(dbURL, []string{"initial_seed.sql"}); err != nil {
+			log.Fatalf("seed failed: %v", err)
+		}
+		fmt.Println("✅ Seed data applied")
+	case "seed-barebones":
+		if err := runSeedFiles(dbURL, []string{"barebones_seed.sql"}); err != nil {
 			log.Fatalf("seed failed: %v", err)
 		}
 		fmt.Println("✅ Seed data applied")
 
 	default:
-		log.Fatalf("unknown command %q — use: up | down | drop | version | seed", command)
+		log.Fatalf("unknown command %q — use: up | down | drop | version | seed-complete | seed-barebones", command)
 	}
 }
 
-func runSeed(dbURL string) error {
+func runSeedFiles(dbURL string, seedFiles []string) error {
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
@@ -82,17 +87,8 @@ func runSeed(dbURL string) error {
 	migrationsPath := migrationsDir()
 	seedsDir := filepath.Join(filepath.Dir(migrationsPath), "seeds")
 
-	files, err := filepath.Glob(filepath.Join(seedsDir, "*.sql"))
-	if err != nil {
-		return fmt.Errorf("list seeds failed: %v", err)
-	}
-
-	if len(files) == 0 {
-		fmt.Println("⚠️ No seed files found in", seedsDir)
-		return nil
-	}
-
-	for _, file := range files {
+	for _, name := range seedFiles {
+		file := filepath.Join(seedsDir, name)
 		fmt.Printf("🌱 Running seed: %s\n", filepath.Base(file))
 		content, err := os.ReadFile(file)
 		if err != nil {

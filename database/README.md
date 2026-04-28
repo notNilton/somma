@@ -23,9 +23,14 @@ go run ./database/cmd/migrate down
 ```
 
 ### Seeding
-Para popular o banco com o usuário "Nilton Santos" e dados de teste:
+Para popular o banco com o cenário completo, incluindo transações:
 ```bash
-go run ./database/cmd/migrate seed
+go run ./database/cmd/migrate seed-complete
+```
+
+Para popular apenas o cenário mínimo com usuário, contas e veículo:
+```bash
+go run ./database/cmd/migrate seed-barebones
 ```
 
 ## Desenvolvimento

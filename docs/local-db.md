@@ -77,13 +77,19 @@ make db-reset
 
 ## Rodar seed
 
-Para popular o banco com dados iniciais:
+Para popular o banco com dados iniciais completos:
 
 ```bash
-make seed
+make seed-complete
 ```
 
 O seed SQL usado hoje está em [database/seeds/initial_seed.sql](/var/home/notNilton/Workspace/nilbyte-studios/mirante/database/seeds/initial_seed.sql).
+
+Para um banco minimalista com usuario, contas e veiculo:
+
+```bash
+make seed-barebones
+```
 
 ## Fluxo recomendado para testar localmente do zero
 
@@ -91,7 +97,7 @@ O seed SQL usado hoje está em [database/seeds/initial_seed.sql](/var/home/notNi
 make deps-reset
 make env
 make migrate-up
-make seed
+make seed-complete
 make dev
 ```
 

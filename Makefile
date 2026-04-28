@@ -31,7 +31,7 @@ REMOVE_VOLUME ?= 0
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed install test lint clean
+.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed-complete seed-barebones install test lint clean
 
 help:
 	@printf '%s\n' 'Mirante local dev'
@@ -49,7 +49,8 @@ help:
 	@printf '  make migrate-up      Aplica migrations\n'
 	@printf '  make migrate-down    Reverte uma migration\n'
 	@printf '  make migrate-version Mostra a versao atual\n'
-	@printf '  make seed            Aplica seeds\n'
+	@printf '  make seed-complete   Aplica o seed completo com transacoes\n'
+	@printf '  make seed-barebones  Aplica o seed basico com usuario, contas e veiculo\n'
 	@printf '\n%s\n' 'App:'
 	@printf '  make backend         Roda a API Go em localhost:%s\n' '$(BACKEND_PORT)'
 	@printf '  make webapp          Roda o Vite em localhost:%s\n' '$(WEBAPP_PORT)'
@@ -135,7 +136,7 @@ db-reset:
 	@$(CONTAINER_ENGINE) volume rm "$(POSTGRES_VOLUME)" >/dev/null 2>&1 || true
 	@$(MAKE) --no-print-directory db-up
 
-db-setup: db-up env migrate-up seed
+db-setup: db-up env migrate-up seed-complete
 
 minio-up:
 	@set -euo pipefail; \
@@ -194,8 +195,11 @@ migrate-down:
 migrate-version:
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate version
 
-seed:
-	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate seed
+seed-complete:
+	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate seed-complete
+
+seed-barebones:
+	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate seed-barebones
 
 install:
 	@cd apps/webapp && npm install

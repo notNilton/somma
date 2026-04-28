@@ -66,7 +66,8 @@ ENV=development
 make migrate-up        # aplica pendentes
 make migrate-down      # reverte 1
 make migrate-version   # versão atual
-make seed              # aplica seeds
+make seed-complete     # aplica o seed completo
+make seed-barebones    # aplica o seed básico
 ```
 
 Para um fluxo isolado so de banco local, use [docs/local-db.md](/var/home/notNilton/Workspace/nilbyte-studios/mirante/docs/local-db.md) com `make deps-up`, `make db-reset` e os alvos de migration.
