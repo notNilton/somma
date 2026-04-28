@@ -6,7 +6,6 @@ import Fab from '../../../components/Fab';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import WalletShell from '../../../components/WalletShell';
 import { SectionLoadingState } from '../../../components/SectionFeedback';
-import SectionPageHeader from '../../../components/SectionPageHeader';
 import { VehicleModal } from '../../../components/VehicleModal';
 import {
   Plus,
@@ -644,34 +643,29 @@ function AccountsPage() {
 
   return (
     <WalletShell contentClassName="wallet-starfield">
-      <SectionPageHeader
-        title="Contas"
-        description="Gerencie saldos, estrutura financeira e limites disponiveis."
-        actions={
-          <button
-            onClick={handleCreate}
-            className="wallet-sci-button hidden sm:flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold hover:scale-[1.02] active:scale-95 transition-smooth"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Nova conta
-          </button>
-        }
-      />
-
       {isLoading ? (
         <SectionLoadingState message="Carregando contas..." />
       ) : (
         <>
           {/* Resumo */}
           <div className="card-premium wallet-panel-surface p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-slate-500">
-                Patrimônio total
-              </p>
-              <PrivacyAmount
-                value={totalBalance}
-                className="text-xl sm:text-2xl font-bold font-display tracking-tight text-slate-900"
-              />
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                  Patrimônio total
+                </p>
+                <PrivacyAmount
+                  value={totalBalance}
+                  className="text-xl sm:text-2xl font-bold font-display tracking-tight text-slate-900"
+                />
+              </div>
+              <button
+                onClick={handleCreate}
+                className="wallet-sci-button hidden sm:flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold hover:scale-[1.02] active:scale-95 transition-smooth shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Nova conta
+              </button>
             </div>
             <div className="flex items-center justify-between gap-3 text-[10px] text-slate-500">
               <span>
@@ -724,22 +718,24 @@ function AccountsPage() {
           <div className="card-premium wallet-panel-surface p-3 sm:p-4 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-                  Operacional
+                <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                  Veículos
                 </p>
-                <h2 className="text-sm font-bold text-slate-900">Veículos</h2>
+                <p className="text-xl sm:text-2xl font-bold font-display tracking-tight text-slate-900">
+                  {vehicleCount}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={handleCreateVehicle}
-                className="wallet-sci-button shrink-0 px-2.5 py-1.5 text-[11px] font-semibold transition-smooth"
+                className="wallet-sci-button hidden sm:flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold hover:scale-[1.02] active:scale-95 transition-smooth shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Novo veículo
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-3 gap-2 text-center border-t border-slate-300/70 pt-3">
               <div className="border border-slate-300/70 bg-white/65 px-2 py-1.5">
                 <p className="text-[8px] font-bold uppercase tracking-[0.25em] text-slate-500">Frota</p>
                 <p className="text-sm font-bold text-slate-900">{vehicleCount}</p>

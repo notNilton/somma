@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router';
 import { CircleDollarSign, User } from 'lucide-react';
-import ThemeToggle from './ThemeToggle';
 import { navigationItems } from '../lib/navigation';
 
 const DESKTOP_NAV_ITEMS = navigationItems.filter((item) => !item.mobileOnly && !item.desktopOnly);
@@ -18,7 +17,7 @@ export default function Header() {
               <CircleDollarSign className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="font-display font-bold text-lg text-foreground tracking-tighter">
-              Mirante
+              AureaFlow
             </span>
           </Link>
         </h2>
@@ -39,7 +38,6 @@ export default function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-2 shrink-0">
-          <ThemeToggle />
           <Link
             to="/settings"
             className="hidden sm:flex p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-smooth"

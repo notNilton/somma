@@ -383,7 +383,7 @@ function CrudTransactionsPage() {
 
   if (isEditing && isLoadingTx) {
     return (
-      <ActivityShell contentClassName="flex-1 justify-center">
+      <ActivityShell starfield contentClassName="flex-1 justify-center">
         <SectionLoadingState message="Carregando lançamento..." />
       </ActivityShell>
     );
@@ -396,7 +396,7 @@ function CrudTransactionsPage() {
       : `Edição enxuta do lançamento. Modo atual: ${selectedModeMeta.label.toLowerCase()}.`;
 
   return (
-    <ActivityShell>
+    <ActivityShell starfield>
       <form onSubmit={handleSubmit} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
         <SectionPageHeader
           title={title}

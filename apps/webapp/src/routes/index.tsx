@@ -1,38 +1,21 @@
-import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { z } from 'zod';
-import PrivacyAmount from '../components/PrivacyAmount';
-import Fab from '../components/Fab';
-import { api, unwrapData, type ApiDataResponse } from '../lib/api';
-import { MonthSelector } from '../components/MonthSelector';
 import {
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  ComposedChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
-import {
-  Plus,
-  ArrowUpRight,
   ArrowDownLeft,
-  TrendingUp,
+  ArrowRight,
+  ArrowUpRight,
+  Loader2,
   ShieldCheck,
   Wallet,
-  Loader2,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Banknote,
-  CreditCard,
-  Landmark,
-  type LucideIcon,
 } from 'lucide-react';
+import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
+import SectionShell from '../components/SectionShell';
+import PrivacyAmount from '../components/PrivacyAmount';
+import Fab from '../components/Fab';
+import { api } from '../lib/api';
+import type { Tx } from './activity/transactions/-queries';
 
 const dashboardSearchSchema = z.object({
   month: z.string().optional(),
@@ -50,6 +33,7 @@ interface DashboardData {
   monthlyExpenses: number;
   safeToSpend: number;
   accounts: Array<{
+    id: string;
     name: string;
     balance: number;
   }>;
@@ -61,111 +45,116 @@ interface DashboardData {
     date: string;
     category: { name: string; color: string } | null;
   }>;
-  cashFlow: Array<{
-    day: string;
-    value: number;
-  }>;
 }
 
-interface MonthlyEvolutionItem {
-  month: string;
-  income: number;
-  expenses: number;
-  net: number;
-}
-
-interface CategoryBreakdownItem {
-  categoryId?: string | null;
-  categoryName?: string | null;
-  categoryColor?: string | null;
-  type: string;
-  total: number;
-  totalCents: number;
-  count: number;
-}
-
-interface CategoryBreakdownResponse {
-  month: string;
-  type: string;
-  items: CategoryBreakdownItem[];
-}
-
-function MetricCard({
+function StatCard({
   title,
   value,
-  detail,
   icon: Icon,
-  accent,
 }: {
   title: string;
   value: React.ReactNode;
-  detail: string;
-  icon: LucideIcon;
-  accent?: string;
+  icon: typeof Wallet;
 }) {
   return (
-    <div className="card-premium p-3 sm:p-4 flex flex-col gap-2 sm:gap-3">
+    <div className="rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-4 backdrop-blur-sm">
       <div className="flex items-center justify-between">
-        <div className="p-1.5 rounded-lg bg-muted/50 text-muted-foreground border border-border/50">
+        <div className="rounded-lg border border-slate-200/80 bg-white/80 p-2 text-slate-500">
           <Icon className="w-4 h-4" />
         </div>
-        <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-          {detail}
+        <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500">
+          {title}
         </span>
       </div>
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          {title}
-        </p>
-        <div className={`text-lg sm:text-xl font-bold font-display mt-0.5 ${accent ?? ''}`}>
-          {value}
-        </div>
-      </div>
+      <div className="mt-3 text-lg font-bold font-display text-slate-900">{value}</div>
     </div>
   );
 }
 
-const formatBrl = (val: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-
-function normalizeMonthlyEvolution(
-  res: MonthlyEvolutionItem[] | ApiDataResponse<MonthlyEvolutionItem[]> | null | undefined,
-) {
-  return unwrapData(res, []).map((item) => ({
-    ...item,
-    expense: item.expenses,
-  }));
+function moneyLabel(value: number) {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
-function normalizeBreakdown(
-  res:
-    | CategoryBreakdownResponse
-    | ApiDataResponse<CategoryBreakdownResponse>
-    | CategoryBreakdownItem[]
-    | ApiDataResponse<CategoryBreakdownItem[]>
-    | null
-    | undefined,
-) {
-  const raw = unwrapData(res, [] as CategoryBreakdownItem[] | CategoryBreakdownResponse);
-  const items = Array.isArray(raw) ? raw : raw.items ?? [];
+function formatDateLocal(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
 
-  return items.map((item) => ({
-    category: item.categoryName ?? 'Sem categoria',
-    amount: item.total,
-    color: item.categoryColor ?? undefined,
-    count: item.count,
-  }));
+function yearToDateRange(monthValue: string) {
+  const [yearStr, monthStr] = monthValue.split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr) - 1;
+  const from = new Date(year, 0, 1);
+  const to = new Date(year, month + 1, 0);
+  return { from: formatDateLocal(from), to: formatDateLocal(to) };
+}
+
+function aggregateTransactions(list: Tx[]) {
+  const expenses = list.filter((t) => t.type === 'EXPENSE' && t.classification !== 'TRANSFER');
+  const income = list.filter((t) => t.type === 'INCOME' && t.classification !== 'TRANSFER');
+
+  const byAccount = new Map<string, number>();
+  const byChannel = new Map<string, number>();
+  const byCategory = new Map<string, { value: number; color?: string }>();
+
+  for (const tx of expenses) {
+    const amount = Math.abs(Number(tx.amount));
+    const account = tx.account?.name ?? tx.accountId ?? 'Sem conta';
+    const channel =
+      tx.channel === 'CARD_CREDIT'
+        ? 'Crédito'
+        : tx.channel === 'CARD_DEBIT'
+          ? 'Débito'
+          : tx.channel === 'PIX'
+            ? 'Pix'
+            : tx.channel === 'BANK'
+              ? 'Bancária'
+              : 'Outro';
+    const category = tx.category?.name ?? 'Sem categoria';
+
+    byAccount.set(account, (byAccount.get(account) ?? 0) + amount);
+    byChannel.set(channel, (byChannel.get(channel) ?? 0) + amount);
+    byCategory.set(category, {
+      value: (byCategory.get(category)?.value ?? 0) + amount,
+      color: tx.category?.color ?? byCategory.get(category)?.color,
+    });
+  }
+
+  const toRows = (entries: [string, number][]) =>
+    entries
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+
+  return {
+    income: income.reduce((acc, tx) => acc + Math.abs(Number(tx.amount)), 0),
+    expenses: expenses.reduce((acc, tx) => acc + Math.abs(Number(tx.amount)), 0),
+    byAccount: toRows([...byAccount.entries()]),
+    byChannel: toRows([...byChannel.entries()]),
+    byCategory: [...byCategory.entries()]
+      .map(([label, item]) => ({ label, value: item.value, color: item.color }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8),
+  };
 }
 
 function UserDashboard() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [breakdownType, setBreakdownType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
 
-  const currentMonthValue = search.month || (() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  })();
+  const currentMonthValue =
+    search.month ||
+    (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    })();
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', currentMonthValue],
@@ -173,318 +162,266 @@ function UserDashboard() {
     staleTime: 1000 * 60,
   });
 
-  const { data: evolutionData = [] } = useQuery({
-    queryKey: ['dashboard', 'monthly-evolution'],
-    queryFn: async () => {
-      const res = await api.getMonthlyEvolution<
-        MonthlyEvolutionItem[] | ApiDataResponse<MonthlyEvolutionItem[]>
-      >();
-      return normalizeMonthlyEvolution(res);
-    },
+  const { from, to } = yearToDateRange(currentMonthValue);
+
+  const { data: periodTransactions = [] } = useQuery({
+    queryKey: ['dashboard', 'charts', currentMonthValue, from, to],
+    queryFn: () =>
+      api.get<Tx[]>(
+        `/api/v1/transactions?${new URLSearchParams({
+          from,
+          to,
+          page: '1',
+          limit: '5000',
+        }).toString()}`,
+      ),
     staleTime: 1000 * 60,
   });
 
-  const { data: breakdownData = [] } = useQuery({
-    queryKey: ['dashboard', 'category-breakdown', currentMonthValue, breakdownType],
-    queryFn: async () => {
-      const res = await api.getCategoryBreakdown<
-        | CategoryBreakdownResponse
-        | ApiDataResponse<CategoryBreakdownResponse>
-        | CategoryBreakdownItem[]
-        | ApiDataResponse<CategoryBreakdownItem[]>
-      >(currentMonthValue, breakdownType);
-      return normalizeBreakdown(res);
-    },
-    staleTime: 1000 * 60,
-  });
+  const charts = useMemo(() => aggregateTransactions(periodTransactions), [periodTransactions]);
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        <p className="text-xs text-muted-foreground">Carregando...</p>
-      </div>
+      <SectionShell
+        backgroundClassName="bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),transparent_35%),radial-gradient(circle_at_20%_12%,rgba(125,211,252,0.14),transparent_18%),radial-gradient(circle_at_bottom_right,rgba(148,163,184,0.12),transparent_28%),linear-gradient(180deg,rgba(248,250,252,0.98),rgba(226,232,240,0.94))]"
+        decorations={[]}
+        contentClassName="wallet-starfield"
+      >
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-sky-700" />
+            <p className="text-xs text-slate-500">Carregando...</p>
+          </div>
+        </div>
+      </SectionShell>
     );
   }
 
   if (!data) return null;
 
-  const [yearStr, monthStr] = currentMonthValue.split('-');
-  const currentMonth = new Date(parseInt(yearStr), parseInt(monthStr) - 1).toLocaleString('pt-BR', { month: 'long' });
-  const maxFlow = Math.max(...data.cashFlow.map((d) => d.value), 1);
-
   return (
-    <div className="relative flex-1 overflow-hidden">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.15),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.10),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(59,130,246,0.04))]" />
-        <div className="absolute -left-8 top-14 rotate-[-10deg] text-sky-500/[0.07]">
-          <Wallet className="h-28 w-28 sm:h-36 sm:w-36 lg:h-44 lg:w-44" />
-        </div>
-        <div className="absolute right-[8%] top-10 rotate-[12deg] text-emerald-500/[0.06]">
-          <TrendingUp className="h-32 w-32 sm:h-40 sm:w-40 lg:h-52 lg:w-52" />
-        </div>
-        <div className="absolute left-[30%] top-28 rotate-[7deg] text-sky-500/[0.04]">
-          <Landmark className="h-20 w-20 sm:h-28 sm:w-28 lg:h-36 lg:w-36" />
-        </div>
-        <div className="absolute bottom-24 right-[14%] rotate-[-9deg] text-emerald-500/[0.05]">
-          <Banknote className="h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40" />
-        </div>
-        <div className="absolute bottom-6 left-[10%] rotate-[8deg] text-sky-500/[0.04]">
-          <CreditCard className="h-28 w-28 sm:h-40 sm:w-40 lg:h-52 lg:w-52" />
-        </div>
-      </div>
-
-      <div className="relative p-4 sm:p-6 max-w-6xl mx-auto flex flex-col gap-4 sm:gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-display font-bold">Olá, {data.userName} 👋</h1>
-          <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">
-            Aqui está o seu painel financeiro para {currentMonth}.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <MonthSelector
-            value={currentMonthValue}
-            onChange={(m) => navigate({ to: '/', search: { month: m } })}
+    <SectionShell
+      backgroundClassName="bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),transparent_35%),radial-gradient(circle_at_20%_12%,rgba(125,211,252,0.14),transparent_18%),radial-gradient(circle_at_bottom_right,rgba(148,163,184,0.12),transparent_28%),linear-gradient(180deg,rgba(248,250,252,0.98),rgba(226,232,240,0.94))]"
+      decorations={[]}
+      contentClassName="wallet-starfield"
+    >
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 sm:p-6">
+        <section className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <StatCard
+            title="Saldo Total"
+            value={<PrivacyAmount value={data.totalBalance} className="font-display" />}
+            icon={Wallet}
           />
-          {/* Botão visível apenas no desktop — mobile usa FAB */}
-          <button
-            onClick={() => void navigate({ to: '/activity/transactions/crud-transactions', search: { transactionId: undefined } })}
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Nova Transação
-          </button>
-        </div>
-      </div>
+          <StatCard
+            title="Receitas"
+            value={<PrivacyAmount value={charts.income} className="font-display text-emerald-600" />}
+            icon={ArrowUpRight}
+          />
+          <StatCard
+            title="Despesas"
+            value={<PrivacyAmount value={charts.expenses} className="font-display text-slate-900" />}
+            icon={ArrowDownLeft}
+          />
+          <StatCard
+            title="Pode Gastar"
+            value={
+              <PrivacyAmount
+                value={Math.max(data.totalBalance - charts.expenses, 0)}
+                className="font-display text-emerald-600"
+              />
+            }
+            icon={ShieldCheck}
+          />
+        </section>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-        <MetricCard
-          title="Saldo Total"
-          value={<PrivacyAmount value={data.totalBalance} className="font-display" />}
-          detail={`${data.accounts.length} conta${data.accounts.length !== 1 ? 's' : ''}`}
-          icon={Wallet}
-        />
-        <MetricCard
-          title={`Receitas — ${currentMonth}`}
-          value={<PrivacyAmount value={data.monthlyIncome} className="font-display" />}
-          detail="Este mês"
-          icon={ArrowUpRight}
-          accent="text-emerald-500"
-        />
-        <MetricCard
-          title={`Despesas — ${currentMonth}`}
-          value={<PrivacyAmount value={data.monthlyExpenses} className="font-display" />}
-          detail="Este mês"
-          icon={ArrowDownLeft}
-        />
-        <MetricCard
-          title="Pode Gastar"
-          value={<PrivacyAmount value={data.safeToSpend} className="font-display" />}
-          detail="Safe-to-Spend"
-          icon={ShieldCheck}
-          accent={data.safeToSpend >= 0 ? 'text-emerald-500' : 'text-rose-500'}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Esquerda: Gráfico + Transações recentes */}
-        <div className="lg:col-span-2 flex flex-col gap-4 sm:gap-6">
-          {/* Cash Flow */}
-          <div className="card-premium p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
-              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Fluxo de Caixa — 7 dias
-              </h2>
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                  Gasto por conta
+                </p>
+                <h2 className="text-sm font-bold text-slate-900">Onde o dinheiro saiu</h2>
+              </div>
             </div>
-            <div className="h-[100px] sm:h-[140px] flex items-end gap-2 px-1">
-              {data.cashFlow.map((day, i) => {
-                const height = (day.value / maxFlow) * 100;
-                return (
-                  <div key={i} className="flex-1 flex flex-col gap-1 items-center group">
-                    <div className="w-full bg-muted/30 rounded-t h-[70px] sm:h-[110px] flex flex-col justify-end overflow-hidden">
-                      <div
-                        className="w-full bg-primary/40 group-hover:bg-primary/70 transition-smooth"
-                        style={{ height: `${height === 0 ? 4 : height}%` }}
-                      />
-                    </div>
-                    <span className="text-[9px] text-muted-foreground font-medium uppercase">
-                      {day.day}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Monthly Evolution */}
-          <div className="card-premium p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <BarChart3 className="w-3.5 h-3.5 text-muted-foreground" />
-              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Evolução (6 meses)
-              </h2>
-            </div>
-            <div className="h-[250px] w-full text-xs">
-              {evolutionData.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-muted-foreground">
-                  Sem dados para evolução.
+            <div className="h-[260px] px-3 py-3">
+              {charts.byAccount.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-xs text-slate-500">
+                  Sem dados neste período.
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={evolutionData}>
-                    <XAxis dataKey="month" fontSize={10} axisLine={false} tickLine={false} />
-                    <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={(val) => `R$ ${val / 1000}k`} />
-                    <RechartsTooltip cursor={{ fill: 'transparent' }} formatter={(val: number) => formatBrl(val)} />
-                    <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} name="Receita" />
-                    <Bar dataKey="expense" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={40} name="Despesa" />
-                    <Line type="monotone" dataKey="net" stroke="#3b82f6" strokeWidth={2} name="Líquido" dot={{ r: 4 }} />
-                  </ComposedChart>
+                  <BarChart data={charts.byAccount} layout="vertical" margin={{ left: 8, right: 8 }}>
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="label" width={90} tick={{ fontSize: 10, fill: '#64748b' }} />
+                    <RechartsTooltip formatter={(val: number) => moneyLabel(val)} />
+                    <Bar dataKey="value" fill="#0f766e" radius={[0, 8, 8, 0]} barSize={18} />
+                  </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
           </div>
 
-          {/* Category Breakdown */}
-          <div className="card-premium p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <PieChartIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Despesas por Categoria
-                </h2>
-              </div>
-              <div className="flex gap-1 bg-muted/50 p-1 rounded-lg">
-                <button
-                  onClick={() => setBreakdownType('EXPENSE')}
-                  className={`text-[10px] font-bold px-2 py-1 rounded transition-smooth ${breakdownType === 'EXPENSE' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  DESPESAS
-                </button>
-                <button
-                  onClick={() => setBreakdownType('INCOME')}
-                  className={`text-[10px] font-bold px-2 py-1 rounded transition-smooth ${breakdownType === 'INCOME' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  RECEITAS
-                </button>
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                  Débito, crédito e pix
+                </p>
+                <h2 className="text-sm font-bold text-slate-900">Por canal</h2>
               </div>
             </div>
-            <div className="h-[250px] w-full flex items-center justify-center text-xs">
-              {breakdownData.length === 0 ? (
-                <p className="text-muted-foreground">Sem dados neste período.</p>
+            <div className="h-[260px] px-3 py-3">
+              {charts.byChannel.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-xs text-slate-500">
+                  Sem dados neste período.
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
-                      data={breakdownData}
-                      dataKey="amount"
-                      nameKey="category"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={2}
-                    >
-                      {(breakdownData as { color?: string }[]).map((entry, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color || '#8884d8'} />
+                    <Pie data={charts.byChannel} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={48} outerRadius={82} paddingAngle={2}>
+                      {charts.byChannel.map((entry) => (
+                        <Cell
+                          key={entry.label}
+                          fill={
+                            entry.label === 'Pix'
+                              ? '#0ea5e9'
+                              : entry.label === 'Débito'
+                                ? '#64748b'
+                                : entry.label === 'Crédito'
+                                  ? '#14b8a6'
+                                  : '#94a3b8'
+                          }
+                        />
                       ))}
                     </Pie>
-                    <RechartsTooltip formatter={(val: number) => formatBrl(val)} />
+                    <RechartsTooltip formatter={(val: number) => moneyLabel(val)} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
             </div>
           </div>
 
-          {/* Transações recentes */}
-          <div className="card-premium overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Atividade Recente
-              </h2>
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                  Gasto por categoria
+                </p>
+                <h2 className="text-sm font-bold text-slate-900">Onde foi consumido</h2>
+              </div>
+            </div>
+            <div className="h-[260px] px-3 py-3">
+              {charts.byCategory.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-xs text-slate-500">
+                  Sem dados neste período.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={charts.byCategory} layout="vertical" margin={{ left: 8, right: 8 }}>
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="label" width={100} tick={{ fontSize: 10, fill: '#64748b' }} />
+                    <RechartsTooltip formatter={(val: number) => moneyLabel(val)} />
+                    <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={18}>
+                      {charts.byCategory.map((entry) => (
+                        <Cell key={entry.label} fill={entry.color ?? '#0f766e'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-4">
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                  Atividade recente
+                </p>
+                <h2 className="text-sm font-bold text-slate-900">Últimos lançamentos</h2>
+              </div>
               <button
                 onClick={() => void navigate({ to: '/activity/transactions' })}
-                className="text-[10px] font-bold text-primary hover:underline"
+                className="wallet-sci-button px-3 py-2 text-[10px]"
               >
-                Ver tudo →
+                Ver tudo
+                <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-slate-200/70">
               {data.recentTransactions.length === 0 ? (
-                <p className="center py-8 text-xs text-muted-foreground text-center">
-                  Nenhuma transação recente.
-                </p>
+                <p className="py-8 text-center text-xs text-slate-500">Nenhuma transação recente.</p>
               ) : (
-                data.recentTransactions.map((t) => (
+                data.recentTransactions.slice(0, 6).map((t) => (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
+                    className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-white/70 transition-smooth"
                   >
-                    <div>
-                      <p className="text-sm font-medium leading-tight">{t.description}</p>
-                      <p className="text-[10px] text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900">{t.description}</p>
+                      <p className="truncate text-[10px] text-slate-500">
                         {t.category?.name ?? '—'} · {new Date(t.date).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                     <PrivacyAmount
                       value={t.type === 'INCOME' ? t.amount : -t.amount}
                       showSign
-                      className={`text-sm font-bold ${t.type === 'INCOME' ? 'text-emerald-500' : 'text-foreground'}`}
+                      className={`shrink-0 text-sm font-bold ${
+                        t.type === 'INCOME' ? 'text-emerald-600' : 'text-slate-900'
+                      }`}
                     />
                   </div>
                 ))
               )}
             </div>
           </div>
-        </div>
 
-        {/* Direita: Contas */}
-        <div className="flex flex-col gap-4 h-fit">
-          <div className="card-premium overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                <Wallet className="w-3.5 h-3.5" />
-                Suas Contas
-              </h2>
+          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden h-fit">
+            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                  Contas
+                </p>
+                <h2 className="text-sm font-bold text-slate-900">Saldo consolidado</h2>
+              </div>
               <button
                 onClick={() => void navigate({ to: '/wallet/accounts' })}
-                className="text-[10px] font-bold text-primary hover:underline"
+                className="wallet-sci-button px-3 py-2 text-[10px]"
               >
-                Gerenciar →
+                Gerenciar
+                <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-            <div className="divide-y divide-border">
-              {data.accounts.map((acc, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-muted/20 transition-smooth cursor-pointer"
-                >
-                  <p className="text-sm font-medium">{acc.name}</p>
-                  <PrivacyAmount value={acc.balance} className="text-sm font-bold" />
+            <div className="divide-y divide-slate-200/70">
+              {data.accounts.map((acc) => (
+                <div key={acc.id} className="flex items-center justify-between px-4 py-3">
+                  <p className="truncate text-sm font-semibold text-slate-900">{acc.name}</p>
+                  <PrivacyAmount value={acc.balance} className="shrink-0 text-sm font-bold text-slate-900" />
                 </div>
               ))}
             </div>
-            <div className="px-4 py-3 border-t border-border bg-muted/20">
+            <div className="border-t border-slate-200/80 bg-white/70 px-4 py-3">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Total
-                </p>
-                <PrivacyAmount value={data.totalBalance} className="text-sm font-bold" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">Total</p>
+                <PrivacyAmount value={data.totalBalance} className="text-sm font-bold text-slate-900" />
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      </div>
+        </section>
 
-      {/* FAB mobile — Nova Transação */}
-      <Fab
-        label="Nova transação"
-        onClick={() => void navigate({ to: '/activity/transactions/crud-transactions', search: { transactionId: undefined } })}
-      />
-    </div>
+        <Fab
+          label="Nova transação"
+          onClick={() =>
+            void navigate({
+              to: '/activity/transactions/crud-transactions',
+              search: { transactionId: undefined },
+            })
+          }
+        />
+      </div>
+    </SectionShell>
   );
 }

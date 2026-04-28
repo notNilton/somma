@@ -104,6 +104,11 @@ function formatTransferDate(date: string) {
   return new Date(date).toLocaleDateString('pt-BR');
 }
 
+function formatPeriodLabel(fromMonth: string, toMonth: string) {
+  if (fromMonth === toMonth) return formatMonthLabelPtBr(toMonth);
+  return `${formatMonthLabelPtBr(fromMonth)} a ${formatMonthLabelPtBr(toMonth)}`;
+}
+
 function getSafeTransferDate(transfer: Pick<Transfer, 'date'> & Partial<{ createdAt: string }>) {
   return transfer.date || transfer.createdAt || '';
 }
@@ -142,31 +147,29 @@ function TransferRow({
   onDelete: (id: string) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/20 transition-smooth">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-          <ArrowLeftRight className="w-4 h-4" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-bold truncate">
-            {transfer.fromAccount?.name ?? '—'} <span className="text-muted-foreground mx-1">→</span>{' '}
-            {transfer.toAccount?.name ?? '—'}
-          </p>
-          <p className="text-[11px] text-muted-foreground truncate">
-            {transfer.description
-              ? `${transfer.description} · ${formatTransferDate(transfer.date)}`
-              : formatTransferDate(transfer.date)}
-          </p>
-        </div>
+    <div className="group grid grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3.5 border-b border-slate-200/70 last:border-b-0 hover:bg-white/70 transition-smooth">
+      <div className="w-8 h-8 rounded-full bg-sky-500/10 text-sky-700 flex items-center justify-center shrink-0">
+        <ArrowLeftRight className="w-4 h-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold truncate text-slate-900">
+          {transfer.fromAccount?.name ?? '—'} <span className="text-slate-400 mx-1">→</span>{' '}
+          {transfer.toAccount?.name ?? '—'}
+        </p>
+        <p className="text-[10px] text-slate-500 truncate">
+          {transfer.description
+            ? `${transfer.description} · ${formatTransferDate(transfer.date)}`
+            : formatTransferDate(transfer.date)}
+        </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <PrivacyAmount value={Number(transfer.amount)} className="text-sm font-bold text-primary" />
+        <PrivacyAmount value={Number(transfer.amount)} className="text-sm font-bold text-sky-700" />
         <button
           type="button"
           onClick={() => onDelete(transfer.id)}
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-smooth"
+          className="p-1.5 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-smooth opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -501,7 +504,11 @@ function TransactionsPage() {
   const canGoPrev = activeIndex < availableMonths.length - 1;
   const canGoNext = activeIndex > 0;
 
-  const tableTransactions = transactions.filter((t) => t.date.slice(0, 7) === activeMonth);
+  const periodStartMonth = availableMonths[availableMonths.length - 1] ?? activeMonth;
+  const tableTransactions = transactions.filter((t) => {
+    const monthKey = t.date.slice(0, 7);
+    return monthKey >= periodStartMonth && monthKey <= activeMonth;
+  });
 
   const summaryDebit = sumDebitExpenses(tableTransactions);
   const summaryCredit = sumCreditExpenses(tableTransactions);
@@ -598,7 +605,7 @@ function TransactionsPage() {
   };
 
   return (
-    <ActivityShell>
+    <ActivityShell starfield contentClassName="gap-5">
       {/* Dialogs */}
       <ConfirmDialog
         isOpen={confirmDeleteOpen}
@@ -695,44 +702,53 @@ function TransactionsPage() {
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-display font-bold">Transações</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsImportOpen(true)}
-            className="p-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted transition-smooth"
-            title="Importar extrato"
-          >
-            <FileUp className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setIsExportOpen(true)}
-            className="p-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted transition-smooth"
-            title="Exportar CSV"
-          >
-            <FileDown className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleFuelCreate}
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-smooth"
-          >
-            <Fuel className="w-3.5 h-3.5" />
-            Abastecimento
-          </button>
-          <button
-            onClick={() => setShowTransferModal(true)}
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-smooth"
-          >
-            <ArrowLeftRight className="w-3.5 h-3.5" />
-            Transferência
-          </button>
-          <button
-            onClick={handleCreate}
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-smooth"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Nova Transação
-          </button>
+      <div className="card-premium wallet-panel-surface p-4 sm:p-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="max-w-2xl">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-slate-900">
+              Transações
+            </h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Acompanhe entradas, saídas e transferências em uma leitura limpa.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setIsImportOpen(true)}
+              className="wallet-sci-button h-10 px-3"
+              title="Importar extrato"
+            >
+              <FileUp className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setIsExportOpen(true)}
+              className="wallet-sci-button h-10 px-3"
+              title="Exportar CSV"
+            >
+              <FileDown className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleFuelCreate}
+              className="wallet-sci-button h-10 px-4 hidden sm:flex items-center gap-1.5"
+            >
+              <Fuel className="w-3.5 h-3.5" />
+              Abastecimento
+            </button>
+            <button
+              onClick={() => setShowTransferModal(true)}
+              className="wallet-sci-button h-10 px-4 hidden sm:flex items-center gap-1.5"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5" />
+              Transferência
+            </button>
+            <button
+              onClick={handleCreate}
+              className="wallet-sci-button h-10 px-4 hidden sm:flex items-center gap-1.5 bg-sky-700 text-white border-sky-700 hover:text-white"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Nova Transação
+            </button>
+          </div>
         </div>
       </div>
 
@@ -789,40 +805,43 @@ function TransactionsPage() {
       )}
 
       {/* Resumo + seletor de mês */}
-      <div className="card-premium p-3 sm:p-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
+      <div className="card-premium wallet-panel-surface p-4 sm:p-5 flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             disabled={!canGoPrev}
             onClick={() => setSelectedMonth(availableMonths[activeIndex + 1] ?? activeMonth)}
-            className="p-2 rounded-lg hover:bg-muted transition-smooth disabled:opacity-30"
+            className="wallet-sci-button p-2"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <select
-            value={activeMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-transparent border-none text-sm font-bold outline-none cursor-pointer text-center"
-          >
-            {availableMonths.map((key) => (
-              <option key={key} value={key}>
-                {formatMonthLabelPtBr(key)}
-              </option>
-            ))}
-          </select>
+          <div className="text-center min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">Período</p>
+            <select
+              value={activeMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="bg-transparent border-none text-sm font-bold outline-none cursor-pointer text-center text-slate-900"
+            >
+              {availableMonths.map((key) => (
+                <option key={key} value={key}>
+                  {formatMonthLabelPtBr(key)}
+                </option>
+              ))}
+            </select>
+          </div>
           <button
             type="button"
             disabled={!canGoNext}
             onClick={() => setSelectedMonth(availableMonths[activeIndex - 1] ?? activeMonth)}
-            className="p-2 rounded-lg hover:bg-muted transition-smooth disabled:opacity-30"
+            className="wallet-sci-button p-2"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 border-t border-border pt-3">
-          <div className="text-center">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="rounded-lg border border-slate-300/80 bg-white/70 px-3 py-3 text-center">
+            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-1">
               Déb / Pix
             </p>
             <PrivacyAmount
@@ -830,17 +849,17 @@ function TransactionsPage() {
               className="text-sm sm:text-base font-bold font-display text-rose-500 block"
             />
           </div>
-          <div className="text-center">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+          <div className="rounded-lg border border-slate-300/80 bg-white/70 px-3 py-3 text-center">
+            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-1">
               Crédito
             </p>
             <PrivacyAmount
               value={-summaryCredit}
-              className="text-sm sm:text-base font-bold font-display text-purple-500 block"
+              className="text-sm sm:text-base font-bold font-display text-violet-500 block"
             />
           </div>
-          <div className="text-center">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+          <div className="rounded-lg border border-slate-300/80 bg-white/70 px-3 py-3 text-center">
+            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-1">
               Fatura paga
             </p>
             <PrivacyAmount
@@ -848,8 +867,8 @@ function TransactionsPage() {
               className="text-sm sm:text-base font-bold font-display text-amber-500 block"
             />
           </div>
-          <div className="text-center sm:border-l sm:border-border sm:pl-2">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+          <div className="rounded-lg border border-slate-300/80 bg-white/70 px-3 py-3 text-center">
+            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-1">
               Gastos
             </p>
             <PrivacyAmount
@@ -857,8 +876,8 @@ function TransactionsPage() {
               className="text-sm sm:text-base font-bold font-display text-rose-500 block"
             />
           </div>
-          <div className="text-center sm:border-l sm:border-border sm:pl-2">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">
+          <div className="rounded-lg border border-slate-300/80 bg-white/70 px-3 py-3 text-center">
+            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-1">
               Receitas
             </p>
             <PrivacyAmount
@@ -870,7 +889,7 @@ function TransactionsPage() {
       </div>
 
       {/* Barra de busca + filtros */}
-      <div className="flex flex-col gap-2">
+      <div className="card-premium wallet-panel-surface p-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -879,13 +898,13 @@ function TransactionsPage() {
               placeholder="Buscar transação..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+              className="w-full pl-9 pr-3 py-2.5 bg-white/75 border border-slate-300/80 rounded-xl text-sm focus:ring-2 focus:ring-sky-500/20 outline-none"
             />
           </div>
           <button
             type="button"
             onClick={() => setShowFilters((v) => !v)}
-            className={`p-2.5 rounded-xl border transition-smooth ${showFilters || isAnyFilterActive ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-muted'}`}
+            className={`wallet-sci-button p-2.5 ${showFilters || isAnyFilterActive ? 'text-sky-700 border-sky-700/30 bg-sky-700/10' : ''}`}
             title="Filtros"
           >
             <SlidersHorizontal className="w-4 h-4" />
@@ -894,12 +913,12 @@ function TransactionsPage() {
 
         {/* Painel de filtros expandível */}
         {showFilters && (
-          <div className="card-premium p-3 flex flex-col gap-2">
+          <div className="wallet-panel-surface border border-slate-300/80 p-3 flex flex-col gap-2">
             <div className="grid grid-cols-2 gap-2">
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as 'all' | 'INCOME' | 'EXPENSE')}
-                className="px-3 py-2 bg-muted/40 border border-border rounded-lg text-xs font-medium outline-none cursor-pointer"
+                className="px-3 py-2 bg-white/75 border border-slate-300/80 rounded-lg text-xs font-medium outline-none cursor-pointer"
               >
                 <option value="all">Todos os tipos</option>
                 <option value="INCOME">Entradas</option>
@@ -908,7 +927,7 @@ function TransactionsPage() {
               <select
                 value={selectedAccount}
                 onChange={(e) => setSelectedAccount(e.target.value)}
-                className="px-3 py-2 bg-muted/40 border border-border rounded-lg text-xs font-medium outline-none cursor-pointer"
+                className="px-3 py-2 bg-white/75 border border-slate-300/80 rounded-lg text-xs font-medium outline-none cursor-pointer"
               >
                 <option value="all">Todas as contas</option>
                 {accounts.map((acc) => (
@@ -922,7 +941,7 @@ function TransactionsPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 bg-muted/40 border border-border rounded-lg text-xs font-medium outline-none cursor-pointer"
+                className="px-3 py-2 bg-white/75 border border-slate-300/80 rounded-lg text-xs font-medium outline-none cursor-pointer"
               >
                 <option value="all">Todas as categorias</option>
                 {categories.map((cat) => (
@@ -934,7 +953,7 @@ function TransactionsPage() {
               <select
                 value={selectedClassification}
                 onChange={(e) => setSelectedClassification(e.target.value)}
-                className="px-3 py-2 bg-muted/40 border border-border rounded-lg text-xs font-medium outline-none cursor-pointer"
+                className="px-3 py-2 bg-white/75 border border-slate-300/80 rounded-lg text-xs font-medium outline-none cursor-pointer"
               >
                 <option value="all">Todas as classificações</option>
                 <option value="COMMON">Comuns</option>
@@ -959,7 +978,7 @@ function TransactionsPage() {
 
       {/* Barra de seleção em massa */}
       {selectedCount > 0 && (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-xl">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-sky-700/5 border border-sky-700/20 rounded-xl">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
@@ -978,7 +997,7 @@ function TransactionsPage() {
               }}
               className="h-4 w-4 accent-primary cursor-pointer"
             />
-            <span className="text-xs font-bold text-primary">
+            <span className="text-xs font-bold text-sky-700">
               {selectedCount} selecionada{selectedCount !== 1 ? 's' : ''}
             </span>
           </div>
@@ -1004,7 +1023,26 @@ function TransactionsPage() {
       )}
 
       {/* Lista de transações */}
-      <div className="card-premium overflow-hidden">
+      <div className="card-premium wallet-panel-surface overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
+              Transações do período
+            </p>
+            <h2 className="text-sm font-bold text-slate-900">
+              {formatPeriodLabel(periodStartMonth, activeMonth)} · {tableTransactions.length} lançamento
+              {tableTransactions.length !== 1 ? 's' : ''}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={handleCreate}
+            className="wallet-sci-button px-3 py-2 text-xs sm:hidden"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Nova
+          </button>
+        </div>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-2">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
@@ -1012,7 +1050,7 @@ function TransactionsPage() {
           </div>
         ) : tableTransactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-2">
-            <p className="text-xs text-muted-foreground">Nenhuma transação neste mês.</p>
+            <p className="text-xs text-muted-foreground">Nenhuma transação neste período.</p>
             <button
               onClick={handleCreate}
               className="text-xs font-bold text-primary hover:underline"
@@ -1034,8 +1072,8 @@ function TransactionsPage() {
             return (
               <div key={day}>
                 {/* Separador de dia */}
-                <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 border-b border-border">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground capitalize">
+                <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50/70 border-b border-slate-200/70">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500 capitalize">
                      {dayLabel}
                   </span>
                 </div>
@@ -1051,7 +1089,7 @@ function TransactionsPage() {
                     <div
                       key={t.id}
                       onClick={() => handleEdit(t)}
-                      className="flex items-center gap-3 px-4 py-3.5 min-h-[60px] border-b border-border last:border-b-0 hover:bg-muted/20 active:bg-muted/30 transition-smooth cursor-pointer group"
+                      className="flex items-center gap-3 px-4 py-3.5 min-h-[60px] border-b border-slate-200/70 last:border-b-0 hover:bg-white/70 active:bg-slate-50 transition-smooth cursor-pointer group"
                     >
                       {/* Checkbox */}
                       <input
@@ -1073,8 +1111,8 @@ function TransactionsPage() {
                       <div
                         className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center ${
                           isIncome
-                            ? 'bg-emerald-500/10 text-emerald-500'
-                            : 'bg-rose-500/10 text-rose-500'
+                            ? 'bg-emerald-500/10 text-emerald-600'
+                            : 'bg-rose-500/10 text-rose-600'
                         }`}
                       >
                         {isIncome ? (
@@ -1087,17 +1125,17 @@ function TransactionsPage() {
                       {/* Descrição + meta */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-sm font-medium truncate leading-tight">
+                          <span className="text-sm font-semibold truncate leading-tight text-slate-900">
                             {t.description ?? '—'}
                           </span>
                           {t.isRecurring && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 shrink-0">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-700 border border-sky-500/20 shrink-0">
                               <RefreshCw className="w-2.5 h-2.5" />
                               rec
                             </span>
                           )}
                           {t.installmentNum != null && t.totalInstallments != null && (
-                            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-violet-500/10 text-violet-500 border border-violet-500/20 shrink-0">
+                            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-violet-500/10 text-violet-600 border border-violet-500/20 shrink-0">
                               {t.installmentNum}/{t.totalInstallments}
                             </span>
                           )}
@@ -1107,17 +1145,17 @@ function TransactionsPage() {
                             </span>
                           )}
                           {classificationLabel && t.classification !== 'COMMON' && (
-                            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-primary/10 text-primary border border-primary/20 shrink-0">
+                            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-sky-700/10 text-sky-700 border border-sky-700/20 shrink-0">
                               {classificationLabel}
                             </span>
                           )}
                           {t.planningPlan?.name && (
-                            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-600 border border-sky-500/20 shrink-0">
+                            <span className="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-500/10 text-slate-700 border border-slate-400/20 shrink-0">
                               {t.planningPlan.name}
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                        <p className="text-[11px] text-slate-500 mt-0.5 truncate">
                           {[t.account?.name, t.category?.name, channelLabel]
                             .filter(Boolean)
                             .join(' · ')}
@@ -1136,7 +1174,7 @@ function TransactionsPage() {
                               }}
                               disabled={markPaidMutation.isPending}
                               title="Marcar como pago"
-                              className="p-1.5 rounded-lg hover:bg-emerald-500/10 text-muted-foreground hover:text-emerald-500 transition-smooth disabled:opacity-40"
+                              className="p-1.5 rounded-md hover:bg-emerald-500/10 text-slate-400 hover:text-emerald-600 transition-smooth disabled:opacity-40"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
                             </button>
@@ -1147,7 +1185,7 @@ function TransactionsPage() {
                               handleDelete(t);
                             }}
                             disabled={deleteMutation.isPending}
-                            className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth disabled:opacity-40"
+                            className="p-1.5 rounded-md hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-smooth disabled:opacity-40"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1156,14 +1194,14 @@ function TransactionsPage() {
                               e.stopPropagation();
                               handleEdit(t);
                             }}
-                            className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-smooth"
+                            className="p-1.5 rounded-md hover:bg-sky-700/10 text-slate-400 hover:text-sky-700 transition-smooth"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
 
                         <div
-                          className={`text-right ${isIncome ? 'text-emerald-500' : 'text-foreground'}`}
+                          className={`text-right ${isIncome ? 'text-emerald-600' : 'text-slate-900'}`}
                         >
                           <PrivacyAmount value={value} className="text-sm font-bold block" />
                         </div>
@@ -1178,18 +1216,18 @@ function TransactionsPage() {
       </div>
 
       {/* Lista de transferências */}
-      <div className="card-premium overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="card-premium wallet-panel-surface overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">
               Transferências
             </p>
-            <h2 className="text-sm font-bold">Movimentações entre contas</h2>
+            <h2 className="text-sm font-bold text-slate-900">Movimentações entre contas</h2>
           </div>
           <button
             type="button"
             onClick={() => setShowTransferModal(true)}
-            className="text-xs font-bold text-primary hover:underline"
+            className="wallet-sci-button px-3 py-2 text-xs"
           >
             Nova transferência
           </button>

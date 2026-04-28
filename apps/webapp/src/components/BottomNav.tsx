@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import ThemeToggle from './ThemeToggle';
 import { navigationItems } from '../lib/navigation';
 
 const MOBILE_NAV_ITEMS = navigationItems.filter((item) => !item.desktopOnly);
@@ -62,10 +61,6 @@ export default function BottomNav() {
             <span className="truncate w-full text-center px-1">{shortLabel ?? label}</span>
           </Link>
         ))}
-        <div className="flex flex-col items-center justify-center min-w-[72px] min-h-[56px] snap-center">
-          <ThemeToggle />
-          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">Tema</span>
-        </div>
       </div>
     </nav>
   );

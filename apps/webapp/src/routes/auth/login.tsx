@@ -43,7 +43,7 @@ function LoginPage() {
             <ShieldCheck className="w-7 h-7" />
           </div>
           <h1 className="text-2xl font-display font-bold tracking-tight">Bem-vindo de volta</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Acesse sua conta Mirante.</p>
+          <p className="text-muted-foreground mt-1 text-sm">Acesse sua conta AureaFlow.</p>
         </div>
 
         <div className="card-premium p-6 flex flex-col gap-5">

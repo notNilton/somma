@@ -3,8 +3,6 @@
 
 @plugin "tailwindcss-animate";
 
-@custom-variant dark (&:is(.dark *));
-
 body {
   @apply m-0;
   font-family:
@@ -20,57 +18,7 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-/* Modern Fintech Dark Theme */
 :root {
-  --background: oklch(0.1 0.02 240);
-  --foreground: oklch(0.98 0.01 240);
-
-  /* Slate for cards - More neutral and flat */
-  --card: oklch(0.12 0.01 240);
-  --card-foreground: oklch(0.98 0.01 240);
-
-  /* Professional Indigo - Slightly more muted */
-  --primary: oklch(0.55 0.12 250);
-  --primary-foreground: white;
-
-  /* Muted tones - Even more subtle */
-  --muted: oklch(0.15 0.02 240);
-  --muted-foreground: oklch(0.6 0.02 240);
-
-  /* Borders - Subtle and clean */
-  --border: oklch(0.18 0.02 240);
-  --input: oklch(0.15 0.02 240);
-  --ring: oklch(0.55 0.12 250);
-
-  /* Chart colors - Muted Palette */
-  --chart-1: oklch(0.55 0.12 250);
-  --chart-2: oklch(0.6 0.08 210);
-  --chart-3: oklch(0.65 0.06 280);
-
-  --radius: 0.5rem;
-
-  /* Popover */
-  --popover: oklch(0.14 0.03 240);
-  --popover-foreground: oklch(0.98 0.01 240);
-
-  /* Sidebar */
-  --sidebar: oklch(0.12 0.02 240);
-  --sidebar-foreground: oklch(0.98 0.01 240);
-  --sidebar-primary: oklch(0.6 0.18 250);
-  --sidebar-primary-foreground: white;
-  --sidebar-accent: oklch(0.2 0.04 240);
-  --sidebar-accent-foreground: oklch(0.98 0.01 240);
-  --sidebar-border: oklch(0.25 0.04 240);
-  --sidebar-ring: oklch(0.6 0.18 250);
-}
-
-.dark {
-  --background: oklch(0.1 0.02 240);
-  --foreground: oklch(0.98 0.01 240);
-}
-
-[data-theme='light'],
-.light {
   --background: oklch(0.99 0.005 240);
   --foreground: oklch(0.15 0.01 240);
 
@@ -80,11 +28,41 @@ code {
   --primary: oklch(0.5 0.12 250);
   --primary-foreground: white;
 
+  --secondary: oklch(0.96 0.01 240);
+  --secondary-foreground: oklch(0.2 0.02 240);
+
   --muted: oklch(0.96 0.01 240);
   --muted-foreground: oklch(0.45 0.02 240);
 
+  --accent: oklch(0.96 0.01 240);
+  --accent-foreground: oklch(0.2 0.02 240);
+
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: white;
+
   --border: oklch(0.92 0.01 240);
   --input: oklch(0.92 0.01 240);
+  --ring: oklch(0.5 0.12 250);
+
+  --chart-1: oklch(0.5 0.12 250);
+  --chart-2: oklch(0.6 0.08 210);
+  --chart-3: oklch(0.65 0.06 280);
+  --chart-4: oklch(0.7 0.12 140);
+  --chart-5: oklch(0.72 0.14 85);
+
+  --radius: 0.5rem;
+
+  --popover: white;
+  --popover-foreground: oklch(0.15 0.01 240);
+
+  --sidebar: white;
+  --sidebar-foreground: oklch(0.15 0.01 240);
+  --sidebar-primary: oklch(0.5 0.12 250);
+  --sidebar-primary-foreground: white;
+  --sidebar-accent: oklch(0.96 0.01 240);
+  --sidebar-accent-foreground: oklch(0.2 0.02 240);
+  --sidebar-border: oklch(0.92 0.01 240);
+  --sidebar-ring: oklch(0.5 0.12 250);
 }
 
 @theme inline {
