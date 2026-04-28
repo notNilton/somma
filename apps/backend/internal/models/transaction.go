@@ -30,6 +30,7 @@ type Transaction struct {
 
 type TransactionWithCategory struct {
 	Transaction
-	CategoryName     *string
-	CategoryColor    *string
+	CategoryName  *string
+	CategoryColor *string
+	AccountName   *string
 }

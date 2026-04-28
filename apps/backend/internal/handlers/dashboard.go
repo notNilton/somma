@@ -71,17 +71,19 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 	// Contas resumidas
 	var accounts []any
 	accountRows, err := h.db.Query(r.Context(), `
-		SELECT name, balance_cents FROM accounts
+		SELECT id, name, balance_cents FROM accounts
 		WHERE user_id = $1 AND is_active = true
 		ORDER BY created_at ASC
 	`, claims.UserID)
 	if err == nil {
 		defer accountRows.Close()
 		for accountRows.Next() {
+			var id string
 			var name string
 			var balanceCents int64
-			accountRows.Scan(&name, &balanceCents)
+			accountRows.Scan(&id, &name, &balanceCents)
 			accounts = append(accounts, map[string]any{
+				"id":      id,
 				"name":    name,
 				"balance": money.ToReais(balanceCents),
 			})

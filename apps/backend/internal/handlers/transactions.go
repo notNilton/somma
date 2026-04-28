@@ -127,8 +127,10 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 		page = 1
 	}
 	limit, _ := strconv.Atoi(q.Get("limit"))
-	if limit < 1 || limit > 100 {
+	if limit < 1 {
 		limit = 20
+	} else if limit > 5000 {
+		limit = 5000
 	}
 	offset := (page - 1) * limit
 
@@ -139,9 +141,11 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
 		       t.date, t.description, t.notes, t.currency_code, t.affects_account,
 		       t.is_active, t.deleted_at, t.created_at, t.updated_at,
-		       c.name AS category_name, c.color AS category_color
+		       c.name AS category_name, c.color AS category_color,
+		       a.name AS account_name
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
+		LEFT JOIN accounts a ON a.id = t.account_id
 		WHERE %s
 		ORDER BY t.date DESC
 		LIMIT $%d OFFSET $%d
@@ -164,7 +168,7 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 			&t.IsRecurring, &t.AmountCents, &t.TotalInstallments, &t.PaidInstallments,
 			&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.AffectsAccount,
 			&t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
-			&t.CategoryName, &t.CategoryColor,
+			&t.CategoryName, &t.CategoryColor, &t.AccountName,
 		); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
@@ -190,9 +194,11 @@ func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
 		       t.date, t.description, t.notes, t.currency_code, t.affects_account,
 		       t.is_active, t.deleted_at, t.created_at, t.updated_at,
-		       c.name AS category_name, c.color AS category_color
+		       c.name AS category_name, c.color AS category_color,
+		       a.name AS account_name
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
+		LEFT JOIN accounts a ON a.id = t.account_id
 		WHERE t.id = $1 AND t.user_id = $2 AND t.is_active = true
 	`, id, claims.UserID).Scan(
 		&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID,
@@ -200,7 +206,7 @@ func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 		&t.IsRecurring, &t.AmountCents, &t.TotalInstallments, &t.PaidInstallments,
 		&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.AffectsAccount,
 		&t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
-		&t.CategoryName, &t.CategoryColor,
+		&t.CategoryName, &t.CategoryColor, &t.AccountName,
 	)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "transaction not found")
@@ -503,9 +509,11 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
 		       t.date, t.description, t.notes, t.currency_code, t.affects_account,
 		       t.is_active, t.deleted_at, t.created_at, t.updated_at,
-		       c.name AS category_name, c.color AS category_color
+		       c.name AS category_name, c.color AS category_color,
+		       a.name AS account_name
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
+		LEFT JOIN accounts a ON a.id = t.account_id
 		WHERE t.user_id = $1
 		  AND t.is_active = true
 		  AND (t.date > NOW() OR t.is_recurring = true)
@@ -526,7 +534,7 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 			&t.IsRecurring, &t.AmountCents, &t.TotalInstallments, &t.PaidInstallments,
 			&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.AffectsAccount,
 			&t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
-			&t.CategoryName, &t.CategoryColor,
+			&t.CategoryName, &t.CategoryColor, &t.AccountName,
 		); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
@@ -643,6 +651,11 @@ func transactionResponse(t models.TransactionWithCategory) map[string]any {
 		r["category"] = map[string]any{
 			"name":  t.CategoryName,
 			"color": t.CategoryColor,
+		}
+	}
+	if t.AccountName != nil {
+		r["account"] = map[string]any{
+			"name": t.AccountName,
 		}
 	}
 	return r
