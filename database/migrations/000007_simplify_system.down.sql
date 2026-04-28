@@ -1,0 +1,3 @@
+-- This is a simplification migration, going back is complex as it involves recreating schemas from previous migrations.
+-- In a real scenario, we'd copy the definitions from 000004, 000005, and 000006.
+-- For now, we'll leave it empty or just as a placeholder.
