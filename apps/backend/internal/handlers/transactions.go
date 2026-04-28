@@ -183,7 +183,8 @@ func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	var t models.TransactionWithCategory
-	err := h.db.QueryRow(r.Context(), `
+	var err error
+	err = h.db.QueryRow(r.Context(), `
 		SELECT t.id, t.account_id, t.user_id, t.category_id, t.card_id,
 		       t.type, t.classification, t.payment_method, t.channel, t.status,
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
@@ -314,6 +315,10 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid json")
 		return
 	}
+	if err := dto.validate(); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	var amountCents *int64
 	if dto.Amount > 0 {
@@ -321,22 +326,74 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		amountCents = &c
 	}
 
+	if len(dto.Date) < 10 {
+		writeError(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+	parsedDate, err := time.Parse("2006-01-02", dto.Date[:10])
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+	txDate := time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 12, 0, 0, 0, time.UTC)
+
+	classification := models.TransactionClassificationCOMMON
+	if dto.Classification != nil {
+		classification = *dto.Classification
+	}
+	paymentMethod := models.PaymentMethodDEBIT
+	if dto.PaymentMethod != nil {
+		paymentMethod = *dto.PaymentMethod
+	}
+	channel := models.ChannelBANK
+	if dto.Channel != nil {
+		channel = *dto.Channel
+	}
+	status := models.TransactionStatusCOMPLETED
+	if dto.Status != nil {
+		status = *dto.Status
+	}
+	isRecurring := false
+	if dto.IsRecurring != nil {
+		isRecurring = *dto.IsRecurring
+	}
+	currency := "BRL"
+	if dto.CurrencyCode != nil {
+		currency = *dto.CurrencyCode
+	}
+	affectsAccount := paymentMethod != models.PaymentMethodCREDIT
+
 	var t models.Transaction
-	err := h.db.QueryRow(r.Context(), `
+	err = h.db.QueryRow(r.Context(), `
 		UPDATE transactions SET
-			category_id         = CASE WHEN $1 = '' THEN NULL ELSE COALESCE($1, category_id) END,
-			status              = COALESCE(NULLIF($2,''), status),
-			amount_cents        = COALESCE($3, amount_cents),
-			description         = COALESCE(NULLIF($4,''), description),
-			notes               = COALESCE($5, notes),
-			updated_at         = NOW()
-		WHERE id = $6 AND user_id = $7 AND is_active = true
+			account_id          = COALESCE($1, account_id),
+			category_id         = COALESCE($2, category_id),
+			card_id             = COALESCE($3, card_id),
+			type                = COALESCE(NULLIF($4,''), type),
+			classification      = COALESCE(NULLIF($5,''), classification),
+			payment_method      = COALESCE(NULLIF($6,''), payment_method),
+			channel             = COALESCE(NULLIF($7,''), channel),
+			status              = COALESCE(NULLIF($8,''), status),
+			is_recurring        = COALESCE($9, is_recurring),
+			amount_cents        = COALESCE($10, amount_cents),
+			total_installments  = COALESCE($11, total_installments),
+			paid_installments   = COALESCE($12, paid_installments),
+			date                = COALESCE($13, date),
+			description         = COALESCE(NULLIF($14,''), description),
+			notes               = COALESCE($15, notes),
+			currency_code       = COALESCE(NULLIF($16,''), currency_code),
+			affects_account     = $17,
+			updated_at          = NOW()
+		WHERE id = $18 AND user_id = $19 AND is_active = true
 		RETURNING id, account_id, user_id, category_id, card_id, type, classification,
 		          payment_method, channel, status, is_recurring, amount_cents,
 		          total_installments, paid_installments, date, description, notes,
 		          currency_code, affects_account, is_active, deleted_at, created_at, updated_at
 	`,
-		dto.CategoryID, dto.Status, amountCents, dto.Description, dto.Notes, id, claims.UserID,
+		dto.AccountID, dto.CategoryID, dto.CardID, dto.Type, classification,
+		paymentMethod, channel, status, isRecurring, amountCents,
+		dto.TotalInstallments, dto.PaidInstallments, txDate, dto.Description, dto.Notes,
+		currency, affectsAccount, id, claims.UserID,
 	).Scan(
 		&t.ID, &t.AccountID, &t.UserID, &t.CategoryID, &t.CardID, &t.Type, &t.Classification,
 		&t.PaymentMethod, &t.Channel, &t.Status, &t.IsRecurring, &t.AmountCents,
@@ -346,6 +403,25 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusNotFound, "transaction not found")
 		return
+	}
+
+	if classification == models.TransactionClassificationFUEL && dto.VehicleID != nil {
+		_, _ = h.db.Exec(r.Context(), `
+			INSERT INTO refueling_logs (
+				vehicle_id, transaction_id, station, fuel_type, current_km, liters, price_per_liter_cents, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+			ON CONFLICT (transaction_id) DO UPDATE SET
+				vehicle_id = EXCLUDED.vehicle_id,
+				station = EXCLUDED.station,
+				fuel_type = EXCLUDED.fuel_type,
+				current_km = EXCLUDED.current_km,
+				liters = EXCLUDED.liters,
+				price_per_liter_cents = EXCLUDED.price_per_liter_cents,
+				updated_at = NOW()
+		`, dto.VehicleID, t.ID, dto.Station, dto.FuelType, dto.CurrentKm,
+			dto.Liters, money.ToCentsPtr(dto.PricePerLiter))
+	} else {
+		_, _ = h.db.Exec(r.Context(), `DELETE FROM refueling_logs WHERE transaction_id = $1`, t.ID)
 	}
 
 	h.cache.DeletePrefix(cache.DashboardPrefix(claims.UserID))
@@ -365,6 +441,8 @@ func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "transaction not found")
 		return
 	}
+
+	_, _ = h.db.Exec(r.Context(), `DELETE FROM refueling_logs WHERE transaction_id = $1`, id)
 
 	h.cache.DeletePrefix(cache.DashboardPrefix(claims.UserID))
 	w.WriteHeader(http.StatusNoContent)
