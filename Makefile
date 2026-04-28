@@ -31,13 +31,14 @@ REMOVE_VOLUME ?= 0
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed install test lint clean
+.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed install test lint clean
 
 help:
 	@printf '%s\n' 'Mirante local dev'
 	@printf '\n%s\n' 'Fluxo principal:'
-	@printf '  make up              Sobe Postgres, cria .env, roda migrations e inicia backend + webapp\n'
+	@printf '  make up              Sobe Postgres, cria .env, migra, semeia e inicia backend + webapp\n'
 	@printf '  make dev             Inicia backend + webapp, assumindo dependencias locais no ar\n'
+	@printf '  make db-setup        Sobe o banco, aplica migrations e insere dados iniciais (seeds)\n'
 	@printf '  make deps-up         Sobe dependencias locais: Postgres e MinIO se ENABLE_MINIO=1\n'
 	@printf '  make deps-down       Para dependencias locais\n'
 	@printf '  make deps-reset      Para dependencias locais e remove volumes locais\n'
@@ -59,7 +60,7 @@ help:
 	@printf '  make minio-up        Sobe MinIO manualmente\n'
 	@printf '  ENABLE_MINIO=1 make up inclui MinIO nas dependencias locais\n'
 
-up: deps-up env migrate-up dev
+up: db-setup dev
 
 dev:
 	@set -euo pipefail; \
@@ -100,7 +101,7 @@ db-up:
 			-e POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)" \
 			-e POSTGRES_DB="$(POSTGRES_DB)" \
 			-p "$(POSTGRES_PORT):5432" \
-			-v "$(POSTGRES_VOLUME):/var/lib/postgresql/data" \
+			-v "$(POSTGRES_VOLUME):/var/lib/postgresql" \
 			--health-cmd="pg_isready -U $(POSTGRES_USER) -d $(POSTGRES_DB)" \
 			--health-interval=5s \
 			--health-timeout=3s \
@@ -133,6 +134,8 @@ db-reset:
 	@$(CONTAINER_ENGINE) rm -f "$(POSTGRES_CONTAINER)" >/dev/null 2>&1 || true
 	@$(CONTAINER_ENGINE) volume rm "$(POSTGRES_VOLUME)" >/dev/null 2>&1 || true
 	@$(MAKE) --no-print-directory db-up
+
+db-setup: db-up env migrate-up seed
 
 minio-up:
 	@set -euo pipefail; \
@@ -170,10 +173,11 @@ backend: env
 	@set -euo pipefail; \
 	cd apps/backend; \
 	if command -v air >/dev/null 2>&1; then \
-		PORT="$(BACKEND_PORT)" DATABASE_URL="$(DATABASE_URL)" JWT_SECRET="$(JWT_SECRET)" WEBAPP_URL="$(WEBAPP_URL)" ENV="$(ENV)" air; \
+		AIR_CMD=air; \
 	else \
-		PORT="$(BACKEND_PORT)" DATABASE_URL="$(DATABASE_URL)" JWT_SECRET="$(JWT_SECRET)" WEBAPP_URL="$(WEBAPP_URL)" ENV="$(ENV)" go run ./cmd/api; \
-	fi
+		AIR_CMD='go run github.com/air-verse/air@latest'; \
+	fi; \
+	PORT="$(BACKEND_PORT)" DATABASE_URL="$(DATABASE_URL)" JWT_SECRET="$(JWT_SECRET)" WEBAPP_URL="$(WEBAPP_URL)" ENV="$(ENV)" $$AIR_CMD -c .air.toml
 
 webapp:
 	@set -euo pipefail; \

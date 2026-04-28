@@ -1,22 +1,18 @@
-# Air — live reload para desenvolvimento
-# https://github.com/air-verse/air
-
 root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -o ./tmp/main.exe ./cmd/api"
-  bin = "./tmp/main.exe"
-  full_bin = "./tmp/main.exe"
-  include_ext = ["go", "env"]
-  exclude_dir = ["tmp", "vendor"]
-  delay = 1000
+cmd = "go build -o ./tmp/backend ./cmd/api"
+entrypoint = ["./tmp/backend"]
+include_ext = ["go", "tpl", "tmpl", "html", "yml", "yaml", "toml", "env"]
+exclude_dir = ["tmp", "vendor"]
+delay = 1000
+stop_on_error = true
+send_interrupt = true
+kill_delay = 500
 
 [log]
-  time = true
+time = true
 
-[color]
-  main = "yellow"
-  watcher = "cyan"
-  build = "green"
-  runner = "magenta"
+[misc]
+clean_on_exit = true
