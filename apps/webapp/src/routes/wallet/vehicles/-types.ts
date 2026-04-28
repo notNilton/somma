@@ -24,23 +24,8 @@ export interface RefuelingLog {
   createdAt: string;
 }
 
-export interface VehicleMaintenanceLog {
-  id: string;
-  vehicleId: string;
-  transactionId?: string;
-  maintenanceType: string;
-  provider?: string;
-  createdAt: string;
-}
-
 export interface VehicleStats {
   avgConsumption: number;
   avgCost: number;
   autonomy: number;
-}
-
-export interface VehicleExpenseStats {
-  totalFuel: number;
-  totalMaintenance: number;
-  total: number;
 }
