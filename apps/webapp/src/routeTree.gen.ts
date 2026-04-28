@@ -10,16 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WalletIndexRouteImport } from './routes/wallet/index'
+import { Route as TransactionsIndexRouteImport } from './routes/transactions/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as ActivityIndexRouteImport } from './routes/activity/index'
 import { Route as WalletVehiclesRouteImport } from './routes/wallet/vehicles'
 import { Route as WalletCardsRouteImport } from './routes/wallet/cards'
 import { Route as WalletAccountsRouteImport } from './routes/wallet/accounts'
+import { Route as TransactionsCrudTransactionsRouteImport } from './routes/transactions/crud-transactions'
+import { Route as TransactionsCrudFuelingRouteImport } from './routes/transactions/crud-fueling'
 import { Route as SettingsVehiclesRouteImport } from './routes/settings/vehicles'
 import { Route as SettingsPersonalInfoRouteImport } from './routes/settings/personal-info'
 import { Route as SettingsDataPrivacyRouteImport } from './routes/settings/data-privacy'
@@ -39,6 +43,11 @@ import { Route as ActivityTransactionsCrudFuelingRouteImport } from './routes/ac
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransactionsRoute = TransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -66,6 +75,11 @@ const WalletIndexRoute = WalletIndexRouteImport.update({
   path: '/',
   getParentRoute: () => WalletRoute,
 } as any)
+const TransactionsIndexRoute = TransactionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TransactionsRoute,
+} as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -90,6 +104,17 @@ const WalletAccountsRoute = WalletAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
   getParentRoute: () => WalletRoute,
+} as any)
+const TransactionsCrudTransactionsRoute =
+  TransactionsCrudTransactionsRouteImport.update({
+    id: '/crud-transactions',
+    path: '/crud-transactions',
+    getParentRoute: () => TransactionsRoute,
+  } as any)
+const TransactionsCrudFuelingRoute = TransactionsCrudFuelingRouteImport.update({
+  id: '/crud-fueling',
+  path: '/crud-fueling',
+  getParentRoute: () => TransactionsRoute,
 } as any)
 const SettingsVehiclesRoute = SettingsVehiclesRouteImport.update({
   id: '/vehicles',
@@ -177,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/activity': typeof ActivityRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/transactions': typeof TransactionsRouteWithChildren
   '/wallet': typeof WalletRouteWithChildren
   '/activity/transactions': typeof ActivityTransactionsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
@@ -185,11 +211,14 @@ export interface FileRoutesByFullPath {
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
+  '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/wallet/accounts': typeof WalletAccountsRouteWithChildren
   '/wallet/cards': typeof WalletCardsRouteWithChildren
   '/wallet/vehicles': typeof WalletVehiclesRouteWithChildren
   '/activity/': typeof ActivityIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/transactions/': typeof TransactionsIndexRoute
   '/wallet/': typeof WalletIndexRoute
   '/activity/transactions/crud-fueling': typeof ActivityTransactionsCrudFuelingRoute
   '/activity/transactions/crud-transactions': typeof ActivityTransactionsCrudTransactionsRoute
@@ -209,8 +238,11 @@ export interface FileRoutesByTo {
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
+  '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/activity': typeof ActivityIndexRoute
   '/settings': typeof SettingsIndexRoute
+  '/transactions': typeof TransactionsIndexRoute
   '/wallet': typeof WalletIndexRoute
   '/activity/transactions/crud-fueling': typeof ActivityTransactionsCrudFuelingRoute
   '/activity/transactions/crud-transactions': typeof ActivityTransactionsCrudTransactionsRoute
@@ -227,6 +259,7 @@ export interface FileRoutesById {
   '/activity': typeof ActivityRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/settings': typeof SettingsRouteWithChildren
+  '/transactions': typeof TransactionsRouteWithChildren
   '/wallet': typeof WalletRouteWithChildren
   '/activity/transactions': typeof ActivityTransactionsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
@@ -235,11 +268,14 @@ export interface FileRoutesById {
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
+  '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
+  '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/wallet/accounts': typeof WalletAccountsRouteWithChildren
   '/wallet/cards': typeof WalletCardsRouteWithChildren
   '/wallet/vehicles': typeof WalletVehiclesRouteWithChildren
   '/activity/': typeof ActivityIndexRoute
   '/settings/': typeof SettingsIndexRoute
+  '/transactions/': typeof TransactionsIndexRoute
   '/wallet/': typeof WalletIndexRoute
   '/activity/transactions/crud-fueling': typeof ActivityTransactionsCrudFuelingRoute
   '/activity/transactions/crud-transactions': typeof ActivityTransactionsCrudTransactionsRoute
@@ -257,6 +293,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/auth'
     | '/settings'
+    | '/transactions'
     | '/wallet'
     | '/activity/transactions'
     | '/auth/login'
@@ -265,11 +302,14 @@ export interface FileRouteTypes {
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
+    | '/transactions/crud-fueling'
+    | '/transactions/crud-transactions'
     | '/wallet/accounts'
     | '/wallet/cards'
     | '/wallet/vehicles'
     | '/activity/'
     | '/settings/'
+    | '/transactions/'
     | '/wallet/'
     | '/activity/transactions/crud-fueling'
     | '/activity/transactions/crud-transactions'
@@ -289,8 +329,11 @@ export interface FileRouteTypes {
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
+    | '/transactions/crud-fueling'
+    | '/transactions/crud-transactions'
     | '/activity'
     | '/settings'
+    | '/transactions'
     | '/wallet'
     | '/activity/transactions/crud-fueling'
     | '/activity/transactions/crud-transactions'
@@ -306,6 +349,7 @@ export interface FileRouteTypes {
     | '/activity'
     | '/auth'
     | '/settings'
+    | '/transactions'
     | '/wallet'
     | '/activity/transactions'
     | '/auth/login'
@@ -314,11 +358,14 @@ export interface FileRouteTypes {
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
+    | '/transactions/crud-fueling'
+    | '/transactions/crud-transactions'
     | '/wallet/accounts'
     | '/wallet/cards'
     | '/wallet/vehicles'
     | '/activity/'
     | '/settings/'
+    | '/transactions/'
     | '/wallet/'
     | '/activity/transactions/crud-fueling'
     | '/activity/transactions/crud-transactions'
@@ -335,6 +382,7 @@ export interface RootRouteChildren {
   ActivityRoute: typeof ActivityRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   SettingsRoute: typeof SettingsRouteWithChildren
+  TransactionsRoute: typeof TransactionsRouteWithChildren
   WalletRoute: typeof WalletRouteWithChildren
 }
 
@@ -345,6 +393,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transactions': {
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -382,6 +437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WalletIndexRouteImport
       parentRoute: typeof WalletRoute
     }
+    '/transactions/': {
+      id: '/transactions/'
+      path: '/'
+      fullPath: '/transactions/'
+      preLoaderRoute: typeof TransactionsIndexRouteImport
+      parentRoute: typeof TransactionsRoute
+    }
     '/settings/': {
       id: '/settings/'
       path: '/'
@@ -416,6 +478,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/wallet/accounts'
       preLoaderRoute: typeof WalletAccountsRouteImport
       parentRoute: typeof WalletRoute
+    }
+    '/transactions/crud-transactions': {
+      id: '/transactions/crud-transactions'
+      path: '/crud-transactions'
+      fullPath: '/transactions/crud-transactions'
+      preLoaderRoute: typeof TransactionsCrudTransactionsRouteImport
+      parentRoute: typeof TransactionsRoute
+    }
+    '/transactions/crud-fueling': {
+      id: '/transactions/crud-fueling'
+      path: '/crud-fueling'
+      fullPath: '/transactions/crud-fueling'
+      preLoaderRoute: typeof TransactionsCrudFuelingRouteImport
+      parentRoute: typeof TransactionsRoute
     }
     '/settings/vehicles': {
       id: '/settings/vehicles'
@@ -587,6 +663,22 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
   SettingsRouteChildren,
 )
 
+interface TransactionsRouteChildren {
+  TransactionsCrudFuelingRoute: typeof TransactionsCrudFuelingRoute
+  TransactionsCrudTransactionsRoute: typeof TransactionsCrudTransactionsRoute
+  TransactionsIndexRoute: typeof TransactionsIndexRoute
+}
+
+const TransactionsRouteChildren: TransactionsRouteChildren = {
+  TransactionsCrudFuelingRoute: TransactionsCrudFuelingRoute,
+  TransactionsCrudTransactionsRoute: TransactionsCrudTransactionsRoute,
+  TransactionsIndexRoute: TransactionsIndexRoute,
+}
+
+const TransactionsRouteWithChildren = TransactionsRoute._addFileChildren(
+  TransactionsRouteChildren,
+)
+
 interface WalletAccountsRouteChildren {
   WalletAccountsCrudAccountsRoute: typeof WalletAccountsCrudAccountsRoute
   WalletAccountsIndexRoute: typeof WalletAccountsIndexRoute
@@ -649,6 +741,7 @@ const rootRouteChildren: RootRouteChildren = {
   ActivityRoute: ActivityRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   SettingsRoute: SettingsRouteWithChildren,
+  TransactionsRoute: TransactionsRouteWithChildren,
   WalletRoute: WalletRouteWithChildren,
 }
 export const routeTree = rootRouteImport
