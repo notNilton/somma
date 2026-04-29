@@ -98,8 +98,6 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Transactions
-ALTER TABLE transactions DISABLE TRIGGER trg_update_account_balance;
-
 INSERT INTO transactions (
     id,
     user_id,
@@ -121,17 +119,32 @@ INSERT INTO transactions (
     currency_code
 )
 VALUES
-    ('tra-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-3',  'INCOME',  'COMMON', 'DEBIT',  'PIX',  'COMPLETED', FALSE, 1200000, NULL, NULL, TIMESTAMPTZ '2026-04-01 09:00:00-04', 'Salario Mirante',      'Competencia abril',             TRUE,  TRUE, 'BRL'),
-    ('tra-2', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-12', 'INCOME',  'COMMON', 'DEBIT',  'PIX',  'COMPLETED', FALSE,  275000, NULL, NULL, TIMESTAMPTZ '2026-04-03 16:30:00-04', 'Freelance pago',       'Projeto entregue',              TRUE,  TRUE, 'BRL'),
-    ('tra-3', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-11', 'EXPENSE', 'COMMON', 'DEBIT',  'PIX',  'COMPLETED', FALSE,    4850, NULL, NULL, TIMESTAMPTZ '2026-04-02 12:15:00-04', 'Almoco executivo',     NULL,                            TRUE,  TRUE, 'BRL'),
-    ('tra-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7',  'EXPENSE', 'COMMON', 'CREDIT', 'CARD_CREDIT', 'COMPLETED', TRUE, 5590, NULL, NULL, TIMESTAMPTZ '2026-04-02 20:00:00-04', 'Netflix',              'Assinatura mensal',             FALSE, TRUE, 'BRL'),
-    ('tra-5', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2',  'EXPENSE', 'FUEL',   'DEBIT',  'BANK', 'COMPLETED', FALSE,   22490, NULL, NULL, TIMESTAMPTZ '2026-04-04 07:30:00-04', 'Abastecimento',        'Tanque quase completo',         TRUE,  TRUE, 'BRL'),
-    ('tra-6', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-10', 'EXPENSE', 'COMMON', 'DEBIT',  'BANK', 'COMPLETED', FALSE,   18640, NULL, NULL, TIMESTAMPTZ '2026-04-03 19:40:00-04', 'Mercado',              'Compras para casa',             TRUE,  TRUE, 'BRL'),
-    ('tra-7', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-15', 'INCOME',  'COMMON', 'DEBIT',  'BANK', 'COMPLETED', FALSE,    8750, NULL, NULL, TIMESTAMPTZ '2026-04-08 09:00:00-04', 'Rendimento',           'Credito automatico',            TRUE,  TRUE, 'BRL'),
-    ('tra-8', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-13', 'EXPENSE', 'COMMON', 'DEBIT',  'BANK', 'PENDING',   TRUE,   68000, NULL, NULL, TIMESTAMPTZ '2026-04-12 08:00:00-04', 'Conta de energia',     'Agendada para debito automatico', TRUE, TRUE, 'BRL')
+    ('tra-1',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-3',  'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE, 1200000, NULL, NULL, TIMESTAMPTZ '2026-04-01 09:00:00-04', 'Salario Mirante',        'Competencia abril',                 TRUE,  TRUE, 'BRL'),
+    ('tra-2',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-12', 'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,  275000, NULL, NULL, TIMESTAMPTZ '2026-04-03 16:30:00-04', 'Freelance pago',         'Projeto entregue',                  TRUE,  TRUE, 'BRL'),
+    ('tra-3',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-11', 'EXPENSE', 'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,    4850, NULL, NULL, TIMESTAMPTZ '2026-04-02 12:15:00-04', 'Almoco executivo',       NULL,                                TRUE,  TRUE, 'BRL'),
+    ('tra-4',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7',  'EXPENSE', 'COMMON',      'CREDIT', 'CARD_CREDIT','COMPLETED', TRUE,     5590, NULL, NULL, TIMESTAMPTZ '2026-04-02 20:00:00-04', 'Netflix',                'Assinatura mensal',                 FALSE, TRUE, 'BRL'),
+    ('tra-5',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2',  'EXPENSE', 'FUEL',        'DEBIT',  'BANK',       'COMPLETED', FALSE,   22490, NULL, NULL, TIMESTAMPTZ '2026-04-04 07:30:00-04', 'Abastecimento',          'Tanque quase completo',             TRUE,  TRUE, 'BRL'),
+    ('tra-6',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-10', 'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   18640, NULL, NULL, TIMESTAMPTZ '2026-04-03 19:40:00-04', 'Mercado',                'Compras para casa',                 TRUE,  TRUE, 'BRL'),
+    ('tra-7',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-16', 'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   48000, NULL, NULL, TIMESTAMPTZ '2026-04-05 10:00:00-04', 'Bonus trimestral',       'Premio por meta batida',            TRUE,  TRUE, 'BRL'),
+    ('tra-8',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-8',  'EXPENSE', 'MAINTENANCE', 'DEBIT',  'BANK',       'COMPLETED', FALSE,  127500, NULL, NULL, TIMESTAMPTZ '2026-04-06 14:10:00-04', 'Revisao do carro',       'Troca de oleo e filtros',           TRUE,  TRUE, 'BRL'),
+    ('tra-9',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-19', 'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,   32900, NULL, NULL, TIMESTAMPTZ '2026-04-07 11:20:00-04', 'Reembolso',              'Despesa devolvida pelo fornecedor', TRUE, TRUE, 'BRL'),
+    ('tra-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-6',  'EXPENSE', 'COMMON',      'DEBIT',  'CARD_DEBIT', 'COMPLETED', FALSE,    8990, NULL, NULL, TIMESTAMPTZ '2026-04-08 09:15:00-04', 'Curso online',           'Assinatura anual',                  TRUE,  TRUE, 'BRL'),
+    ('tra-11', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5',  'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   21640, NULL, NULL, TIMESTAMPTZ '2026-04-09 18:25:00-04', 'Farmacia',               'Medicamentos e itens basicos',      TRUE,  TRUE, 'BRL'),
+    ('tra-12', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-15', 'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   15750, NULL, NULL, TIMESTAMPTZ '2026-04-10 08:00:00-04', 'Rendimento financeiro',  'Aplicacao de curto prazo',          TRUE,  TRUE, 'BRL'),
+    ('tra-13', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-14', 'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'PENDING',   TRUE,   14990, NULL, NULL, TIMESTAMPTZ '2026-04-11 08:00:00-04', 'Internet e celular',     'Fatura agendada',                   TRUE,  TRUE, 'BRL'),
+    ('tra-14', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4',  'EXPENSE', 'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,    7200, NULL, NULL, TIMESTAMPTZ '2026-04-12 21:00:00-04', 'Cinema',                 'Saida no fim de semana',            TRUE,  TRUE, 'BRL'),
+    ('tra-15', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-18', 'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,   92000, NULL, NULL, TIMESTAMPTZ '2026-04-14 17:45:00-04', 'Venda de equipamento',   'Equipamento parado no estoque',     TRUE,  TRUE, 'BRL'),
+    ('tra-16', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-13', 'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'COMPLETED', TRUE,   68000, NULL, NULL, TIMESTAMPTZ '2026-04-15 08:00:00-04', 'Conta de energia',       'Agendada para debito automatico',   TRUE,  TRUE, 'BRL')
 ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE transactions ENABLE TRIGGER trg_update_account_balance;
+UPDATE accounts
+SET balance_cents = CASE id
+        WHEN 'acc-1' THEN 1075570
+        WHEN 'acc-4' THEN 430750
+        ELSE balance_cents
+    END,
+    updated_at = NOW()
+WHERE id IN ('acc-1', 'acc-4');
 
 -- Refueling logs
 INSERT INTO refueling_logs (
@@ -149,6 +162,10 @@ VALUES
     ('tra-4', 'tag-4'),
     ('tra-5', 'tag-5'),
     ('tra-6', 'tag-6'),
+    ('tra-8', 'tag-5'),
+    ('tra-10', 'tag-6'),
+    ('tra-11', 'tag-1'),
+    ('tra-13', 'tag-2'),
     ('tra-8', 'tag-1')
 ON CONFLICT DO NOTHING;
 
