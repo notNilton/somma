@@ -91,8 +91,8 @@ function yearToDateRange(monthValue: string) {
 }
 
 function aggregateTransactions(list: Tx[]) {
-  const expenses = list.filter((t) => t.type === 'EXPENSE' && t.classification !== 'TRANSFER');
-  const income = list.filter((t) => t.type === 'INCOME' && t.classification !== 'TRANSFER');
+  const expenses = list.filter((t) => t.type === 'EXPENSE');
+  const income = list.filter((t) => t.type === 'INCOME');
 
   const byChannel = new Map<string, number>();
   const byCategory = new Map<string, { value: number; color?: string }>();

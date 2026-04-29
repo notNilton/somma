@@ -9,11 +9,6 @@ export interface TxCategory {
   color?: string;
 }
 
-export interface TxAccount {
-  id: string;
-  name: string;
-}
-
 export interface TxCard {
   id: string;
   name: string;
@@ -36,11 +31,9 @@ export interface Tx {
   installmentNum?: number;
   totalInstallments?: number;
   categoryId?: string;
-  accountId?: string;
   cardId?: string | null;
   vehicleId?: string;
   category?: TxCategory;
-  account?: TxAccount;
   card?: TxCard | null;
 }
 
@@ -67,7 +60,6 @@ export function buildTxParams(opts: {
   search: string;
   filterType: 'all' | 'INCOME' | 'EXPENSE';
   selectedCategory: string;
-  selectedAccount?: string;
   selectedStatus?: string;
   selectedClassification?: string;
   extra?: Record<string, string>;
@@ -76,9 +68,6 @@ export function buildTxParams(opts: {
   if (opts.search) params.set('search', opts.search);
   if (opts.filterType !== 'all') params.set('type', opts.filterType);
   if (opts.selectedCategory !== 'all') params.set('categoryId', opts.selectedCategory);
-  if (opts.selectedAccount && opts.selectedAccount !== 'all') {
-    params.set('accountId', opts.selectedAccount);
-  }
   if (opts.selectedStatus && opts.selectedStatus !== 'all') {
     params.set('status', opts.selectedStatus);
   }
@@ -137,7 +126,6 @@ export function useTransactionsList(opts: {
   search: string;
   filterType: 'all' | 'INCOME' | 'EXPENSE';
   selectedCategory: string;
-  selectedAccount?: string;
   selectedStatus?: string;
   selectedClassification?: string;
 }) {
@@ -147,7 +135,6 @@ export function useTransactionsList(opts: {
       opts.search,
       opts.filterType,
       opts.selectedCategory,
-      opts.selectedAccount,
       opts.selectedStatus,
       opts.selectedClassification,
     ],
