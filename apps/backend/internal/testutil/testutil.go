@@ -8,7 +8,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
+	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nilbyte/mirante/backend/internal/cache"
@@ -17,6 +22,9 @@ import (
 )
 
 var JWTKey = []byte("test-secret-key")
+
+var migrateOnce sync.Once
+var migrateErr error
 
 // Setup conecta no banco de teste e retorna pool + handler + mux.
 // Usa DATABASE_URL quando disponível. Sem DATABASE_URL, tenta o DSN local padrão.
@@ -27,8 +35,9 @@ func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 	dsn := os.Getenv("DATABASE_URL")
 	usingDefaultDSN := dsn == ""
 	if dsn == "" {
-		dsn = "postgres://postgres:postgres@localhost:5454/mirante_test"
+		dsn = "postgres://postgres:postgres@localhost:5454/mirante_test?sslmode=disable"
 	}
+	dsn = normalizeDSN(dsn)
 
 	pool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
@@ -41,6 +50,10 @@ func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 			t.Skipf("testutil: banco de integração indisponível em %s; suba o banco de teste ou defina DATABASE_URL: %v", dsn, err)
 		}
 		t.Fatalf("testutil: ping db: %v", err)
+	}
+
+	if err := ensureMigrations(dsn); err != nil {
+		t.Fatalf("testutil: migrate db: %v", err)
 	}
 
 	t.Cleanup(func() { pool.Close() })
@@ -133,4 +146,34 @@ func DecodeJSON(t *testing.T, rec *httptest.ResponseRecorder, v any) {
 // NewHandler cria um Handler isolado para testes que precisam injetar deps direto.
 func NewHandler(pool *pgxpool.Pool) *handlers.Handler {
 	return handlers.New(pool, JWTKey, cache.New())
+}
+
+func ensureMigrations(dsn string) error {
+	migrateOnce.Do(func() {
+		_, filename, _, ok := runtime.Caller(0)
+		if !ok {
+			migrateErr = fmt.Errorf("runtime caller failed")
+			return
+		}
+
+		root := filepath.Clean(filepath.Join(filepath.Dir(filename), "..", "..", "..", ".."))
+		cmd := exec.Command("go", "run", "./cmd/migrate", "up")
+		cmd.Dir = filepath.Join(root, "database")
+		cmd.Env = append(os.Environ(), "DATABASE_URL="+dsn)
+
+		if out, err := cmd.CombinedOutput(); err != nil {
+			migrateErr = fmt.Errorf("%v: %s", err, string(out))
+		}
+	})
+	return migrateErr
+}
+
+func normalizeDSN(dsn string) string {
+	if strings.Contains(dsn, "sslmode=") {
+		return dsn
+	}
+	if strings.Contains(dsn, "?") {
+		return dsn + "&sslmode=disable"
+	}
+	return dsn + "?sslmode=disable"
 }
