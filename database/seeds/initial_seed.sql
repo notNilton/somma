@@ -1,6 +1,8 @@
 -- Seed data for Mirante
 -- Versao minima coerente com o sistema simplificado atual.
 
+BEGIN;
+
 TRUNCATE TABLE
     transaction_tags,
     refueling_logs,
@@ -44,13 +46,13 @@ SET
 -- Accounts
 INSERT INTO accounts (
     id, user_id, name, type, ownership, bank_name, bank_code, bank_agency,
-    bank_account_number, cpf, cnpj, color, icon, currency_code,
+    cpf, cnpj, color, icon, currency_code,
     balance_cents, credit_limit_cents, has_debit, has_pix, has_credit,
     include_in_total, closing_day, due_day, is_active
 )
 VALUES
-    ('acc-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CPF',  'CHECKING', 'PERSONAL', 'Nubank', '0260', '0001', '51839807-8', '123.456.789-00', NULL, '#8A05BE', 'bank', 'BRL',  50000, 830000, TRUE, TRUE, TRUE, TRUE,  7, 15, TRUE),
-    ('acc-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CNPJ', 'CHECKING', 'BUSINESS', 'Nubank', '0260', '0001', '600500205-0', NULL, '12.345.678/0001-90', '#5E35B1', 'briefcase', 'BRL', 0, 320000, TRUE, TRUE, TRUE, TRUE, 10, 20, TRUE)
+    ('acc-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CPF',  'CHECKING', 'PERSONAL', 'Nubank', '0260', '0001', '123.456.789-00', NULL, '#8A05BE', 'bank', 'BRL',  50000, 830000, TRUE, TRUE, TRUE, TRUE,  7, 15, TRUE),
+    ('acc-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CNPJ', 'CHECKING', 'BUSINESS', 'Nubank', '0260', '0001', NULL, '12.345.678/0001-90', '#5E35B1', 'briefcase', 'BRL', 0, 320000, TRUE, TRUE, TRUE, TRUE, 10, 20, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- Vehicles
@@ -96,6 +98,8 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Transactions
+ALTER TABLE transactions DISABLE TRIGGER trg_update_account_balance;
+
 INSERT INTO transactions (
     id,
     user_id,
@@ -127,6 +131,8 @@ VALUES
     ('tra-8', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-13', 'EXPENSE', 'COMMON', 'DEBIT',  'BANK', 'PENDING',   TRUE,   68000, NULL, NULL, TIMESTAMPTZ '2026-04-12 08:00:00-04', 'Conta de energia',     'Agendada para debito automatico', TRUE, TRUE, 'BRL')
 ON CONFLICT (id) DO NOTHING;
 
+ALTER TABLE transactions ENABLE TRIGGER trg_update_account_balance;
+
 -- Refueling logs
 INSERT INTO refueling_logs (
     id, vehicle_id, transaction_id, station, fuel_type, current_km, liters, price_per_liter_cents
@@ -145,3 +151,5 @@ VALUES
     ('tra-6', 'tag-6'),
     ('tra-8', 'tag-1')
 ON CONFLICT DO NOTHING;
+
+COMMIT;

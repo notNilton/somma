@@ -33,6 +33,8 @@ Para popular apenas o cenário mínimo com usuário, contas e veículo:
 go run ./database/cmd/migrate seed-barebones
 ```
 
+No `Makefile`, `make seed` é um atalho para o seed completo.
+
 ## Desenvolvimento
 
 Para criar uma nova migration:

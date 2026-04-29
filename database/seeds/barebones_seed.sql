@@ -51,7 +51,6 @@ INSERT INTO accounts (
     bank_name,
     bank_code,
     bank_agency,
-    bank_account_number,
     cpf,
     cnpj,
     color,
@@ -68,8 +67,8 @@ INSERT INTO accounts (
     is_active
 )
 VALUES
-    ('acc-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CPF',        'CHECKING', 'PERSONAL', 'Nubank', '0260', '0001', '51839807-8', '123.456.789-00', NULL, '#8A05BE', 'bank',      'BRL',  50000, 830000, TRUE, TRUE,  TRUE,  TRUE,  7, 15, TRUE),
-    ('acc-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CNPJ',       'CHECKING', 'BUSINESS', 'Nubank', '0260', '0001', '600500205-0', NULL, '12.345.678/0001-90', '#5E35B1', 'briefcase', 'BRL',      0, 320000, TRUE, TRUE,  TRUE,  TRUE, 10, 20, TRUE)
+    ('acc-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CPF',        'CHECKING', 'PERSONAL', 'Nubank', '0260', '0001', '123.456.789-00', NULL, '#8A05BE', 'bank',      'BRL',  50000, 830000, TRUE, TRUE,  TRUE,  TRUE,  7, 15, TRUE),
+    ('acc-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank CNPJ',       'CHECKING', 'BUSINESS', 'Nubank', '0260', '0001', NULL, '12.345.678/0001-90', '#5E35B1', 'briefcase', 'BRL',      0, 320000, TRUE, TRUE,  TRUE,  TRUE, 10, 20, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 -- 3. Veiculos

@@ -80,8 +80,10 @@ make db-reset
 Para popular o banco com dados iniciais completos:
 
 ```bash
-make seed-complete
+make seed
 ```
+
+`make seed` é um atalho para `make seed-complete`.
 
 O seed SQL usado hoje está em [database/seeds/initial_seed.sql](/var/home/notNilton/Workspace/nilbyte-studios/mirante/database/seeds/initial_seed.sql).
 
@@ -97,7 +99,7 @@ make seed-barebones
 make deps-reset
 make env
 make migrate-up
-make seed-complete
+make seed
 make dev
 ```
 
