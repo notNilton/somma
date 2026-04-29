@@ -117,22 +117,28 @@ func TestListFutureTransactions(t *testing.T) {
 	tok := testutil.RegisterUser(t, mux, "txfuture@example.com", "secret123")
 
 	// transação passada
-	testutil.Do(t, mux, "POST", "/api/v1/transactions", map[string]any{
+	recPast := testutil.Do(t, mux, "POST", "/api/v1/transactions", map[string]any{
 		"type":        "EXPENSE",
 		"amount":      10.00,
 		"date":        "2020-01-01",
 		"description": "Passada",
-		"status":      "PAID",
+		"status":      "COMPLETED",
 	}, tok)
+	if recPast.Code != http.StatusCreated {
+		t.Fatalf("expected past transaction to be created, got %d: %s", recPast.Code, recPast.Body.String())
+	}
 
 	// transação futura pendente
-	testutil.Do(t, mux, "POST", "/api/v1/transactions", map[string]any{
+	recFuture := testutil.Do(t, mux, "POST", "/api/v1/transactions", map[string]any{
 		"type":        "EXPENSE",
 		"amount":      20.00,
 		"date":        "2030-12-31",
 		"description": "Futura",
 		"status":      "PENDING",
 	}, tok)
+	if recFuture.Code != http.StatusCreated {
+		t.Fatalf("expected future transaction to be created, got %d: %s", recFuture.Code, recFuture.Body.String())
+	}
 
 	rec := testutil.Do(t, mux, "GET", "/api/v1/transactions/future", nil, tok)
 	if rec.Code != http.StatusOK {

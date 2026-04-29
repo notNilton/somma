@@ -39,7 +39,7 @@ func TestGetDashboard_WithTransactions(t *testing.T) {
 		"amount":      1000.00,
 		"date":        "2026-03-01",
 		"description": "Salário",
-		"status":      "PAID",
+		"status":      "COMPLETED",
 	}, tok)
 
 	// expense
@@ -48,7 +48,7 @@ func TestGetDashboard_WithTransactions(t *testing.T) {
 		"amount":      300.00,
 		"date":        "2026-03-10",
 		"description": "Aluguel",
-		"status":      "PAID",
+		"status":      "COMPLETED",
 	}, tok)
 
 	rec := testutil.Do(t, mux, "GET", "/api/v1/dashboard", nil, tok)
