@@ -11,7 +11,7 @@ POSTGRES_PASSWORD ?= postgres
 POSTGRES_DB ?= mirante
 POSTGRES_PORT ?= 5454
 
-BACKEND_PORT ?= 3300
+BACKEND_PORT ?= 3000
 WEBAPP_PORT ?= 3400
 ENV ?= development
 JWT_SECRET ?= dev-secret-change-in-production
@@ -31,7 +31,7 @@ REMOVE_VOLUME ?= 0
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed-complete seed-barebones install test lint clean
+.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed seed-complete seed-barebones install test lint clean
 
 help:
 	@printf '%s\n' 'Mirante local dev'
@@ -49,6 +49,7 @@ help:
 	@printf '  make migrate-up      Aplica migrations\n'
 	@printf '  make migrate-down    Reverte uma migration\n'
 	@printf '  make migrate-version Mostra a versao atual\n'
+	@printf '  make seed            Alias para o seed completo com transacoes\n'
 	@printf '  make seed-complete   Aplica o seed completo com transacoes\n'
 	@printf '  make seed-barebones  Aplica o seed basico com usuario, contas e veiculo\n'
 	@printf '\n%s\n' 'App:'
@@ -195,10 +196,12 @@ migrate-down:
 migrate-version:
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate version
 
-seed-complete:
+seed: seed-complete
+
+seed-complete: migrate-up
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate seed-complete
 
-seed-barebones:
+seed-barebones: migrate-up
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate seed-barebones
 
 install:

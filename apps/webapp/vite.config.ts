@@ -8,9 +8,9 @@ const config = defineConfig({
   server: {
     port: 3400,
     proxy: {
-      '/api': 'http://localhost:3300',
-      '/users': 'http://localhost:3300',
-      '/health': 'http://localhost:3300',
+      '/api': 'http://localhost:3000',
+      '/users': 'http://localhost:3000',
+      '/health': 'http://localhost:3000',
     },
   },
   plugins: [
