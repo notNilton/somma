@@ -22,7 +22,6 @@ func (h *Handler) GetMonthlyEvolution(w http.ResponseWriter, r *http.Request) {
 		  AND is_active = true
 		  AND affects_account = true
 		  AND type IN ('INCOME', 'EXPENSE')
-		  AND classification != 'TRANSFER'
 		  AND date >= DATE_TRUNC('month', NOW()) - INTERVAL '5 months'
 		GROUP BY month, type
 		ORDER BY month ASC
@@ -105,7 +104,6 @@ func (h *Handler) GetCategoryBreakdown(w http.ResponseWriter, r *http.Request) {
 		WHERE t.user_id = $1
 		  AND t.is_active = true
 		  AND t.affects_account = true
-		  AND t.classification != 'TRANSFER'
 		  AND DATE_TRUNC('month', t.date) = DATE_TRUNC('month', $2::date)
 		  AND t.type = $3
 		GROUP BY c.id, c.name, c.color, t.type
@@ -166,7 +164,6 @@ func (h *Handler) GetAnnualEvolution(w http.ResponseWriter, r *http.Request) {
 		  AND is_active = true
 		  AND affects_account = true
 		  AND type IN ('INCOME', 'EXPENSE')
-		  AND classification != 'TRANSFER'
 		  AND EXTRACT(YEAR FROM date) = $2
 		GROUP BY month, type
 		ORDER BY month ASC
@@ -223,4 +220,3 @@ func (h *Handler) GetAnnualEvolution(w http.ResponseWriter, r *http.Request) {
 		"data": result,
 	})
 }
-

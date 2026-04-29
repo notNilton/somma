@@ -16,7 +16,6 @@ func (s *Scheduler) checkBudgetAlerts() {
 			WHERE is_active = true
 			  AND affects_account = true
 			  AND type = 'EXPENSE'
-			  AND classification != 'TRANSFER'
 			  AND DATE_TRUNC('month', date) = DATE_TRUNC('month', $1::date)
 			GROUP BY category_id
 		)

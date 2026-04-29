@@ -57,7 +57,6 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		  AND is_active = true
 		  AND affects_account = true
 		  AND type IN ('INCOME', 'EXPENSE')
-		  AND classification != 'TRANSFER'
 		  AND DATE_TRUNC('month', date) = DATE_TRUNC('month', $2::date)
 		GROUP BY type
 	`, claims.UserID, monthDate)
