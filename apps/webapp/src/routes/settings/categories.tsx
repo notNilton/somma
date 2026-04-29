@@ -7,6 +7,7 @@ import { SectionEmptyState, SectionLoadingState } from '../../components/Section
 import SectionPageHeader from '../../components/SectionPageHeader';
 import { api } from '../../lib/api';
 import { CategoryModal } from '../../components/CategoryModal';
+import { flattenCategories } from '../../lib/categories';
 
 interface Category {
   id: string;
@@ -35,28 +36,30 @@ function CategoriesSettingsPage() {
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
+  const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
+
   const incomeCategories = useMemo(
     () =>
-      categories.filter(
+      flatCategories.filter(
         (c) =>
           c.type === 'INCOME' &&
           (!normalizedSearch ||
             c.name.toLowerCase().includes(normalizedSearch) ||
             (c.description ?? '').toLowerCase().includes(normalizedSearch)),
       ),
-    [categories, normalizedSearch],
+    [flatCategories, normalizedSearch],
   );
 
   const expenseCategories = useMemo(
     () =>
-      categories.filter(
+      flatCategories.filter(
         (c) =>
           c.type === 'EXPENSE' &&
           (!normalizedSearch ||
             c.name.toLowerCase().includes(normalizedSearch) ||
             (c.description ?? '').toLowerCase().includes(normalizedSearch)),
       ),
-    [categories, normalizedSearch],
+    [flatCategories, normalizedSearch],
   );
 
   const deleteCategoryMutation = useMutation({

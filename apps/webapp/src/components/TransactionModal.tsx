@@ -3,6 +3,7 @@ import { Loader2, X, ArrowDownLeft, ArrowUpRight, Fuel } from 'lucide-react';
 import { api } from '../lib/api';
 import { cleanNumeric, formatCurrency, formatKm } from '../lib/formatters';
 import CustomSelect from './ui/CustomSelect';
+import { flattenCategories } from '../lib/categories';
 
 export type TransactionCreateMode = 'expense' | 'income' | 'fuel';
 type Method = 'normal' | 'debit' | 'credit' | 'pix';
@@ -42,6 +43,12 @@ function methodToPayload(method: Method) {
   }
 }
 
+function defaultDescriptionForMode(mode: TransactionCreateMode) {
+  if (mode === 'income') return 'Receita';
+  if (mode === 'fuel') return 'Abastecimento';
+  return 'Despesa';
+}
+
 export function TransactionModal({
   isOpen,
   mode,
@@ -76,13 +83,16 @@ export function TransactionModal({
   }, [isOpen, mode]);
 
   const filteredCategories = useMemo(() => {
-    return categories.filter((c) => c.type === (activeMode === 'income' ? 'INCOME' : 'EXPENSE'));
+    return flattenCategories(categories).filter(
+      (c) => c.type === (activeMode === 'income' ? 'INCOME' : 'EXPENSE'),
+    );
   }, [activeMode, categories]);
 
   const canSubmit =
     Number(amount) > 0 &&
     date !== '' &&
     (activeMode !== 'fuel' || vehicleId !== '');
+  const showPaymentMethod = activeMode !== 'income';
 
   if (!isOpen) return null;
 
@@ -92,18 +102,19 @@ export function TransactionModal({
     setError(null);
 
     try {
-      const methodPayload = methodToPayload(method);
       const payload: Record<string, unknown> = {
         type: activeMode === 'income' ? 'INCOME' : 'EXPENSE',
         classification: activeMode === 'fuel' ? 'FUEL' : 'COMMON',
         amount: Number(amount) / 100,
         date,
         description:
-          description.trim() ||
-          (activeMode === 'income' ? 'Receita' : activeMode === 'fuel' ? 'Abastecimento' : 'Despesa'),
+          description.trim() || defaultDescriptionForMode(activeMode),
         categoryId: categoryId || undefined,
-        ...methodPayload,
       };
+
+      if (showPaymentMethod) {
+        Object.assign(payload, methodToPayload(method));
+      }
 
       if (activeMode === 'fuel') {
         payload.vehicleId = vehicleId;
@@ -152,8 +163,8 @@ export function TransactionModal({
 
         <div className="grid grid-cols-3 gap-0 border-b border-slate-300/70">
           {[
-            { key: 'expense' as const, label: 'Despesa', Icon: ArrowDownLeft },
             { key: 'income' as const, label: 'Receita', Icon: ArrowUpRight },
+            { key: 'expense' as const, label: 'Despesa', Icon: ArrowDownLeft },
             { key: 'fuel' as const, label: 'Abastecimento', Icon: Fuel },
           ].map(({ key, label, Icon }) => {
             const selected = activeMode === key;
@@ -240,43 +251,49 @@ export function TransactionModal({
             />
           </div>
 
-          <div className="sm:col-span-2">
-            <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-              Forma
-            </label>
-            <div className="grid grid-cols-4 border border-slate-300/80 bg-white">
-              {[
-                { key: 'normal' as const, label: 'Normal' },
-                { key: 'debit' as const, label: 'Débito' },
-                { key: 'credit' as const, label: 'Crédito' },
-                { key: 'pix' as const, label: 'Pix' },
-              ].map(({ key, label }) => {
-                const selected = method === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setMethod(key)}
-                    className={`border-r border-slate-300/80 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-smooth last:border-r-0 ${
-                      selected
-                        ? key === 'credit'
-                          ? 'semantic-credit-solid'
-                          : key === 'pix'
-                            ? 'semantic-pix-solid'
-                            : 'semantic-debit-solid'
-                        : key === 'credit'
-                          ? 'text-slate-700 hover:bg-amber-500/10 hover:text-amber-600'
-                          : key === 'pix'
-                            ? 'text-slate-700 hover:bg-sky-500/10 hover:text-sky-600'
-                            : 'text-slate-700 hover:bg-orange-500/10 hover:text-orange-600'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+          {showPaymentMethod ? (
+            <div className="sm:col-span-2">
+              <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                Forma
+              </label>
+              <div className="grid grid-cols-4 border border-slate-300/80 bg-white">
+                {[
+                  { key: 'normal' as const, label: 'Normal' },
+                  { key: 'debit' as const, label: 'Débito' },
+                  { key: 'credit' as const, label: 'Crédito' },
+                  { key: 'pix' as const, label: 'Pix' },
+                ].map(({ key, label }) => {
+                  const selected = method === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setMethod(key)}
+                      className={`border-r border-slate-300/80 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-smooth last:border-r-0 ${
+                        selected
+                          ? key === 'credit'
+                            ? 'semantic-credit-solid'
+                            : key === 'pix'
+                              ? 'semantic-pix-solid'
+                              : 'semantic-debit-solid'
+                          : key === 'credit'
+                            ? 'text-slate-700 hover:bg-amber-500/10 hover:text-amber-600'
+                            : key === 'pix'
+                              ? 'text-slate-700 hover:bg-sky-500/10 hover:text-sky-600'
+                              : 'text-slate-700 hover:bg-orange-500/10 hover:text-orange-600'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="sm:col-span-2 rounded-none border border-slate-300/70 bg-white/70 px-3 py-2 text-xs uppercase tracking-[0.22em] text-slate-500">
+              Receita é apenas uma entrada. Sem forma de pagamento.
+            </div>
+          )}
 
           {activeMode === 'fuel' ? (
             <>

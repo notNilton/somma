@@ -11,6 +11,7 @@ import {
 import { api } from '../../lib/api';
 import { formatCurrency, cleanNumeric, formatKm } from '../../lib/formatters';
 import CustomSelect from '../../components/ui/CustomSelect';
+import { flattenCategories } from '../../lib/categories';
 
 export const Route = createFileRoute('/transactions/crud-transactions')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -50,7 +51,6 @@ interface Transaction {
   channel?: string;
   isRecurring?: boolean;
   categoryId?: string;
-  accountId?: string;
   vehicleId?: string;
   currentKm?: number;
 }
@@ -141,7 +141,7 @@ function CrudTransactionsPage() {
   }, [activeTab]);
 
   const isExpense = activeTab === 'expense';
-  const filteredCategories = allCategories.filter(
+  const filteredCategories = flattenCategories(allCategories).filter(
     (c) => c.type === (isExpense ? 'EXPENSE' : 'INCOME'),
   );
 
