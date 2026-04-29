@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useId } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -24,6 +24,9 @@ export const Route = createFileRoute('/transactions/crud-transactions')({
         ? search.mode
         : undefined,
   }),
+  beforeLoad: () => {
+    throw redirect({ to: '/' });
+  },
   component: CrudTransactionsPage,
 });
 
@@ -145,7 +148,7 @@ function CrudTransactionsPage() {
     (c) => c.type === (isExpense ? 'EXPENSE' : 'INCOME'),
   );
 
-  const goBack = () => void navigate({ to: '/transactions' });
+  const goBack = () => void navigate({ to: '/' });
 
   const isSubmitDisabled = Number(amount) <= 0 || !date;
 

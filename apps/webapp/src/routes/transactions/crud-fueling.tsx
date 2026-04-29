@@ -5,14 +5,9 @@ export const Route = createFileRoute('/transactions/crud-fueling')({
     transactionId: typeof search.transactionId === 'string' ? search.transactionId : undefined,
     vehicleId: typeof search.vehicleId === 'string' ? search.vehicleId : undefined,
   }),
-  beforeLoad: ({ search }) => {
+  beforeLoad: () => {
     throw redirect({
-      to: '/transactions/crud-transactions',
-      search: {
-        transactionId: search.transactionId,
-        vehicleId: search.vehicleId,
-        mode: 'fuel',
-      },
+      to: '/',
     });
   },
 });

@@ -13,7 +13,6 @@ import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TransactionsIndexRouteImport } from './routes/transactions/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as TransactionsCrudTransactionsRouteImport } from './routes/transactions/crud-transactions'
 import { Route as TransactionsCrudFuelingRouteImport } from './routes/transactions/crud-fueling'
@@ -43,11 +42,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const TransactionsIndexRoute = TransactionsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => TransactionsRoute,
 } as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
   id: '/',
@@ -110,11 +104,11 @@ export interface FileRoutesByFullPath {
   '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/settings/': typeof SettingsIndexRoute
-  '/transactions/': typeof TransactionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/transactions': typeof TransactionsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/settings/categories': typeof SettingsCategoriesRoute
@@ -124,7 +118,6 @@ export interface FileRoutesByTo {
   '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/settings': typeof SettingsIndexRoute
-  '/transactions': typeof TransactionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,7 +134,6 @@ export interface FileRoutesById {
   '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/settings/': typeof SettingsIndexRoute
-  '/transactions/': typeof TransactionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,11 +151,11 @@ export interface FileRouteTypes {
     | '/transactions/crud-fueling'
     | '/transactions/crud-transactions'
     | '/settings/'
-    | '/transactions/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/transactions'
     | '/auth/login'
     | '/auth/register'
     | '/settings/categories'
@@ -173,7 +165,6 @@ export interface FileRouteTypes {
     | '/transactions/crud-fueling'
     | '/transactions/crud-transactions'
     | '/settings'
-    | '/transactions'
   id:
     | '__root__'
     | '/'
@@ -189,7 +180,6 @@ export interface FileRouteTypes {
     | '/transactions/crud-fueling'
     | '/transactions/crud-transactions'
     | '/settings/'
-    | '/transactions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -228,13 +218,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/transactions/': {
-      id: '/transactions/'
-      path: '/'
-      fullPath: '/transactions/'
-      preLoaderRoute: typeof TransactionsIndexRouteImport
-      parentRoute: typeof TransactionsRoute
     }
     '/settings/': {
       id: '/settings/'
@@ -337,13 +320,11 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
 interface TransactionsRouteChildren {
   TransactionsCrudFuelingRoute: typeof TransactionsCrudFuelingRoute
   TransactionsCrudTransactionsRoute: typeof TransactionsCrudTransactionsRoute
-  TransactionsIndexRoute: typeof TransactionsIndexRoute
 }
 
 const TransactionsRouteChildren: TransactionsRouteChildren = {
   TransactionsCrudFuelingRoute: TransactionsCrudFuelingRoute,
   TransactionsCrudTransactionsRoute: TransactionsCrudTransactionsRoute,
-  TransactionsIndexRoute: TransactionsIndexRoute,
 }
 
 const TransactionsRouteWithChildren = TransactionsRoute._addFileChildren(
