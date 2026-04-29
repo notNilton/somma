@@ -41,10 +41,10 @@ function SettingsPage() {
     <SettingsShell>
       <SectionPageHeader
         title="Config"
-        description="Perfil e saída da sessão."
+        description="Perfil, saída da sessão e atalhos de organização."
       />
 
-      <div className="settings-panel overflow-hidden p-4 sm:p-5 flex flex-col gap-4">
+      <div className="settings-panel flex flex-col gap-4 overflow-hidden p-4 sm:p-5">
         {isLoading ? (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-muted animate-pulse shrink-0" />
@@ -55,7 +55,7 @@ function SettingsPage() {
           </div>
         ) : profile ? (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
                   {profile.avatarUrl ? (
@@ -76,7 +76,7 @@ function SettingsPage() {
               <button
                 type="button"
                 onClick={() => auth.logout()}
-                className="inline-flex items-center gap-2 border border-border px-3 py-2 text-xs font-bold uppercase tracking-widest text-rose-500 hover:bg-rose-500/5 transition-smooth"
+                className="inline-flex w-full items-center justify-center gap-2 border border-border px-3 py-2 text-xs font-bold uppercase tracking-widest text-rose-500 transition-smooth hover:bg-rose-500/5 sm:w-auto"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 Sair
@@ -86,7 +86,7 @@ function SettingsPage() {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Link
                 to="/settings/vehicles"
-                className="settings-card group flex items-center justify-between gap-4 border border-slate-300/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(242,246,250,0.84))] px-4 py-4 transition-smooth hover:border-primary/40"
+                className="settings-card group flex items-center justify-between gap-3 border border-slate-300/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(242,246,250,0.84))] px-4 py-4 transition-smooth hover:border-primary/40 sm:gap-4"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="settings-card-icon flex h-11 w-11 shrink-0 items-center justify-center border border-slate-300/80 bg-white/80 text-slate-700">
@@ -107,7 +107,7 @@ function SettingsPage() {
 
               <Link
                 to="/settings/categories"
-                className="settings-card group flex items-center justify-between gap-4 border border-slate-300/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(242,246,250,0.84))] px-4 py-4 transition-smooth hover:border-primary/40"
+                className="settings-card group flex items-center justify-between gap-3 border border-slate-300/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(242,246,250,0.84))] px-4 py-4 transition-smooth hover:border-primary/40 sm:gap-4"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="settings-card-icon flex h-11 w-11 shrink-0 items-center justify-center border border-slate-300/80 bg-white/80 text-slate-700">
