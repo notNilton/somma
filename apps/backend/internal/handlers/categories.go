@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sort"
 
 	"github.com/nilbyte/mirante/backend/internal/middleware"
 	"github.com/nilbyte/mirante/backend/internal/models"
@@ -76,8 +77,11 @@ func (h *Handler) ListCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var result []any
+	sort.Slice(roots, func(i, j int) bool {
+		return roots[i].Name < roots[j].Name
+	})
 	for _, r := range roots {
-		result = append(result, r)
+		result = append(result, categoryWithChildrenResponse(r))
 	}
 	writeJSON(w, http.StatusOK, result)
 }
@@ -189,6 +193,30 @@ func categoryResponse(c models.Category) map[string]any {
 		"description": c.Description,
 		"color":       c.Color,
 		"parentId":    c.ParentID,
+		"createdAt":   c.CreatedAt,
+		"updatedAt":   c.UpdatedAt,
+	}
+}
+
+func categoryWithChildrenResponse(c *models.CategoryWithChildren) map[string]any {
+	sort.Slice(c.Children, func(i, j int) bool {
+		return c.Children[i].Name < c.Children[j].Name
+	})
+
+	children := make([]map[string]any, 0, len(c.Children))
+	for _, child := range c.Children {
+		children = append(children, categoryResponse(child))
+	}
+
+	return map[string]any{
+		"id":          c.ID,
+		"userId":      c.UserID,
+		"name":        c.Name,
+		"type":        c.Type,
+		"description": c.Description,
+		"color":       c.Color,
+		"parentId":    c.ParentID,
+		"children":    children,
 		"createdAt":   c.CreatedAt,
 		"updatedAt":   c.UpdatedAt,
 	}

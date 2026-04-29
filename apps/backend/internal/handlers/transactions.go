@@ -273,7 +273,7 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 			payment_method, channel, status, is_recurring, amount_cents,
 			total_installments, paid_installments, date, description, notes,
 			currency_code, affects_account
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
 		RETURNING id, user_id, category_id, type, classification,
 		          payment_method, channel, status, is_recurring, amount_cents,
 		          total_installments, paid_installments, date, description, notes,
