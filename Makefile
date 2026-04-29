@@ -31,7 +31,7 @@ REMOVE_VOLUME ?= 0
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed seed-complete seed-barebones install test lint clean
+.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones install test lint clean
 
 help:
 	@printf '%s\n' 'Mirante local dev'
@@ -49,9 +49,8 @@ help:
 	@printf '  make migrate-up      Aplica migrations\n'
 	@printf '  make migrate-down    Reverte uma migration\n'
 	@printf '  make migrate-version Mostra a versao atual\n'
-	@printf '  make seed            Alias para o seed completo com transacoes\n'
-	@printf '  make seed-complete   Aplica o seed completo com transacoes\n'
-	@printf '  make seed-barebones  Aplica o seed basico com usuario, contas e veiculo\n'
+	@printf '  make db-seed-complete Aplica o seed completo com transacoes\n'
+	@printf '  make db-seed-barebones Aplica o seed basico com usuario, contas e veiculo\n'
 	@printf '\n%s\n' 'App:'
 	@printf '  make backend         Roda a API Go em localhost:%s\n' '$(BACKEND_PORT)'
 	@printf '  make webapp          Roda o Vite em localhost:%s\n' '$(WEBAPP_PORT)'
@@ -116,10 +115,15 @@ db-wait:
 	@set -euo pipefail; \
 	printf 'Waiting for Postgres at localhost:%s' "$(POSTGRES_PORT)"; \
 	for _ in {1..60}; do \
-		status="$$($(CONTAINER_ENGINE) inspect -f '{{.State.Health.Status}}' "$(POSTGRES_CONTAINER)" 2>/dev/null || true)"; \
+		status="$$($(CONTAINER_ENGINE) inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$(POSTGRES_CONTAINER)" 2>/dev/null || true)"; \
 		if [ "$$status" = "healthy" ]; then \
 			printf '\nPostgres is ready.\n'; \
 			exit 0; \
+		elif [ -z "$$status" ]; then \
+			if $(CONTAINER_ENGINE) exec "$(POSTGRES_CONTAINER)" pg_isready -U "$(POSTGRES_USER)" -d "$(POSTGRES_DB)" >/dev/null 2>&1; then \
+				printf '\nPostgres is ready.\n'; \
+				exit 0; \
+			fi; \
 		fi; \
 		printf '.'; \
 		sleep 1; \
@@ -137,7 +141,7 @@ db-reset:
 	@$(CONTAINER_ENGINE) volume rm "$(POSTGRES_VOLUME)" >/dev/null 2>&1 || true
 	@$(MAKE) --no-print-directory db-up
 
-db-setup: db-up env migrate-up seed-complete
+db-setup: db-up env migrate-up db-seed-complete
 
 minio-up:
 	@set -euo pipefail; \
@@ -196,13 +200,17 @@ migrate-down:
 migrate-version:
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate version
 
-seed: seed-complete
+seed: db-seed-complete
 
-seed-complete: migrate-up
+db-seed-complete: migrate-up
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate seed-complete
 
-seed-barebones: migrate-up
+db-seed-barebones: migrate-up
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate seed-barebones
+
+# aliases legacy
+seed-complete: db-seed-complete
+seed-barebones: db-seed-barebones
 
 install:
 	@cd apps/webapp && npm install
