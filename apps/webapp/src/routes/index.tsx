@@ -51,9 +51,9 @@ function StatCard({
   icon: typeof Wallet;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-4 backdrop-blur-sm">
+    <div className="dashboard-stat border border-slate-300/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(241,245,249,0.86))] px-4 py-4 backdrop-blur-md">
       <div className="flex items-center justify-between">
-        <div className="rounded-lg border border-slate-200/80 bg-white/80 p-2 text-slate-500">
+        <div className="dashboard-stat-icon border border-slate-300/80 bg-white/80 p-2 text-slate-600">
           <Icon className="w-4 h-4" />
         </div>
         <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500">
@@ -135,6 +135,13 @@ function aggregateTransactions(list: Tx[]) {
   };
 }
 
+function channelFill(label: string) {
+  if (label === 'Pix') return '#0ea5e9';
+  if (label === 'Débito') return '#f97316';
+  if (label === 'Crédito') return '#f59e0b';
+  return '#94a3b8';
+}
+
 function UserDashboard() {
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -173,9 +180,9 @@ function UserDashboard() {
   if (isLoading) {
     return (
       <SectionShell
-        backgroundClassName="bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),transparent_35%),radial-gradient(circle_at_20%_12%,rgba(125,211,252,0.14),transparent_18%),radial-gradient(circle_at_bottom_right,rgba(148,163,184,0.12),transparent_28%),linear-gradient(180deg,rgba(248,250,252,0.98),rgba(226,232,240,0.94))]"
+        backgroundClassName="transactions-bg-starfield"
         decorations={[]}
-        contentClassName="wallet-starfield"
+        contentClassName="dashboard-starfield"
       >
         <div className="flex min-h-[60vh] items-center justify-center">
           <div className="flex flex-col items-center gap-3">
@@ -191,9 +198,9 @@ function UserDashboard() {
 
   return (
     <SectionShell
-      backgroundClassName="bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),transparent_35%),radial-gradient(circle_at_20%_12%,rgba(125,211,252,0.14),transparent_18%),radial-gradient(circle_at_bottom_right,rgba(148,163,184,0.12),transparent_28%),linear-gradient(180deg,rgba(248,250,252,0.98),rgba(226,232,240,0.94))]"
+      backgroundClassName="transactions-bg-starfield"
       decorations={[]}
-      contentClassName="wallet-starfield"
+      contentClassName="dashboard-starfield"
     >
       <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 sm:p-6">
         <section className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -204,12 +211,12 @@ function UserDashboard() {
           />
           <StatCard
             title="Receitas"
-            value={<PrivacyAmount value={charts.income} className="font-display text-emerald-600" />}
+            value={<PrivacyAmount value={charts.income} className="font-display semantic-income-text" />}
             icon={ArrowUpRight}
           />
           <StatCard
             title="Despesas"
-            value={<PrivacyAmount value={charts.expenses} className="font-display text-slate-900" />}
+            value={<PrivacyAmount value={charts.expenses} className="font-display semantic-expense-text" />}
             icon={ArrowDownLeft}
           />
           <StatCard
@@ -217,7 +224,7 @@ function UserDashboard() {
             value={
               <PrivacyAmount
                 value={Math.max(data.totalBalance - charts.expenses, 0)}
-                className="font-display text-emerald-600"
+                className="font-display semantic-income-text"
               />
             }
             icon={ShieldCheck}
@@ -225,8 +232,8 @@ function UserDashboard() {
         </section>
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
+          <div className="dashboard-panel overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-300/80 px-4 py-3">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
                   Débito, crédito e pix
@@ -246,15 +253,7 @@ function UserDashboard() {
                       {charts.byChannel.map((entry) => (
                         <Cell
                           key={entry.label}
-                          fill={
-                            entry.label === 'Pix'
-                              ? '#0ea5e9'
-                              : entry.label === 'Débito'
-                                ? '#64748b'
-                                : entry.label === 'Crédito'
-                                  ? '#14b8a6'
-                                  : '#94a3b8'
-                          }
+                          fill={channelFill(entry.label)}
                         />
                       ))}
                     </Pie>
@@ -265,8 +264,8 @@ function UserDashboard() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-white/75 backdrop-blur-sm overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3">
+          <div className="dashboard-panel overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-300/80 px-4 py-3">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
                   Gasto por categoria
@@ -285,7 +284,7 @@ function UserDashboard() {
                     <XAxis type="number" hide />
                     <YAxis type="category" dataKey="label" width={100} tick={{ fontSize: 10, fill: '#64748b' }} />
                     <RechartsTooltip formatter={(val: number) => moneyLabel(val)} />
-                    <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={18}>
+                    <Bar dataKey="value" radius={0} barSize={18}>
                       {charts.byCategory.map((entry) => (
                         <Cell key={entry.label} fill={entry.color ?? '#0f766e'} />
                       ))}
