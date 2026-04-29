@@ -136,20 +136,22 @@ export function TransactionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-sm px-4 py-6"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/45 backdrop-blur-sm px-0 py-0 sm:items-center sm:px-4 sm:py-6"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="transactions-surface transactions-modal w-full max-w-2xl border border-slate-300/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(241,245,249,0.9))] shadow-2xl"
+        className="transactions-surface transactions-modal flex h-[100dvh] w-full flex-col overflow-hidden border border-slate-300/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(241,245,249,0.9))] shadow-2xl sm:h-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-2xl sm:rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-300/70 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-slate-300/70 px-4 py-3 sm:px-5 sm:py-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">Transaction entry</p>
-            <h2 className="mt-1 text-xl font-bold text-slate-900">{title}</h2>
+            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500 sm:text-[10px] sm:tracking-[0.35em]">
+              Transaction entry
+            </p>
+            <h2 className="mt-1 text-lg font-bold text-slate-900 sm:text-xl">{title}</h2>
           </div>
           <button
             type="button"
@@ -173,7 +175,7 @@ export function TransactionModal({
                 key={key}
                 type="button"
                 onClick={() => setActiveMode(key)}
-                className={`flex items-center justify-center gap-2 border-r border-slate-300/70 px-4 py-3 text-sm font-bold uppercase tracking-[0.2em] transition-smooth last:border-r-0 ${
+                className={`flex items-center justify-center gap-1.5 border-r border-slate-300/70 px-2 py-2.5 text-[10px] font-bold uppercase leading-none tracking-[0.12em] transition-smooth last:border-r-0 sm:gap-2 sm:px-4 sm:py-3 sm:text-sm sm:tracking-[0.2em] ${
                   selected
                     ? key === 'income'
                       ? 'semantic-income-solid'
@@ -190,8 +192,9 @@ export function TransactionModal({
           })}
         </div>
 
-        <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid gap-4 px-4 py-4 sm:grid-cols-2 sm:px-5 sm:py-5">
+            <div className="sm:col-span-2">
             <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
               Valor
             </label>
@@ -205,139 +208,140 @@ export function TransactionModal({
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-              Data
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="transactions-input w-full border border-slate-300/80 bg-white px-3 py-2 text-sm outline-none"
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                Data
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="transactions-input w-full border border-slate-300/80 bg-white px-3 py-2 text-sm outline-none"
+              />
+            </div>
 
-          {activeMode !== 'fuel' ? (
+            {activeMode !== 'fuel' ? (
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                  Categoria
+                </label>
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="transactions-input w-full border border-slate-300/80 bg-white px-3 py-2 text-sm outline-none"
+                >
+                  <option value="">Sem categoria</option>
+                  {filteredCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.description ?? category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+
             <div className="sm:col-span-2">
               <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-                Categoria
+                Descrição
               </label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+              <input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 className="transactions-input w-full border border-slate-300/80 bg-white px-3 py-2 text-sm outline-none"
-              >
-                <option value="">Sem categoria</option>
-                {filteredCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.description ?? category.name}
-                  </option>
-                ))}
-              </select>
+                type="text"
+                placeholder={title}
+                maxLength={255}
+              />
             </div>
-          ) : null}
 
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-              Descrição
-            </label>
-            <input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="transactions-input w-full border border-slate-300/80 bg-white px-3 py-2 text-sm outline-none"
-              type="text"
-              placeholder={title}
-              maxLength={255}
-            />
+            {showPaymentMethod ? (
+              <div className="sm:col-span-2">
+                <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                  Forma
+                </label>
+                <div className="grid grid-cols-4 border border-slate-300/80 bg-white">
+                  {[
+                    { key: 'normal' as const, label: 'Normal' },
+                    { key: 'debit' as const, label: 'Débito' },
+                    { key: 'credit' as const, label: 'Crédito' },
+                    { key: 'pix' as const, label: 'Pix' },
+                  ].map(({ key, label }) => {
+                    const selected = method === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setMethod(key)}
+                        className={`border-r border-slate-300/80 px-2 py-2 text-[10px] font-bold uppercase tracking-[0.12em] transition-smooth last:border-r-0 sm:px-3 sm:py-2 sm:text-xs sm:tracking-[0.18em] ${
+                          selected
+                            ? key === 'credit'
+                              ? 'semantic-credit-solid'
+                              : key === 'pix'
+                                ? 'semantic-pix-solid'
+                                : 'semantic-debit-solid'
+                            : key === 'credit'
+                              ? 'text-slate-700 hover:bg-amber-500/10 hover:text-amber-600'
+                              : key === 'pix'
+                                ? 'text-slate-700 hover:bg-sky-500/10 hover:text-sky-600'
+                                : 'text-slate-700 hover:bg-orange-500/10 hover:text-orange-600'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="sm:col-span-2 rounded-none border border-slate-300/70 bg-white/70 px-3 py-2 text-xs uppercase tracking-[0.22em] text-slate-500">
+                Receita é apenas uma entrada. Sem forma de pagamento.
+              </div>
+            )}
+
+            {activeMode === 'fuel' ? (
+              <>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                    Veículo
+                  </label>
+                  <CustomSelect
+                    value={vehicleId}
+                    onChange={setVehicleId}
+                    options={vehicles.map((vehicle) => ({
+                      value: vehicle.id,
+                      label: vehicle.name,
+                    }))}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
+                    Km atual
+                  </label>
+                  <input
+                    value={formatKm(currentKm)}
+                    onChange={(e) => setCurrentKm(cleanNumeric(e.target.value))}
+                    className="transactions-input w-full border border-slate-300/80 bg-white px-3 py-2 text-sm outline-none"
+                    inputMode="numeric"
+                    type="text"
+                    placeholder="0"
+                  />
+                </div>
+              </>
+            ) : null}
           </div>
-
-          {showPaymentMethod ? (
-            <div className="sm:col-span-2">
-              <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-                Forma
-              </label>
-              <div className="grid grid-cols-4 border border-slate-300/80 bg-white">
-                {[
-                  { key: 'normal' as const, label: 'Normal' },
-                  { key: 'debit' as const, label: 'Débito' },
-                  { key: 'credit' as const, label: 'Crédito' },
-                  { key: 'pix' as const, label: 'Pix' },
-                ].map(({ key, label }) => {
-                  const selected = method === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setMethod(key)}
-                      className={`border-r border-slate-300/80 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-smooth last:border-r-0 ${
-                        selected
-                          ? key === 'credit'
-                            ? 'semantic-credit-solid'
-                            : key === 'pix'
-                              ? 'semantic-pix-solid'
-                              : 'semantic-debit-solid'
-                          : key === 'credit'
-                            ? 'text-slate-700 hover:bg-amber-500/10 hover:text-amber-600'
-                            : key === 'pix'
-                              ? 'text-slate-700 hover:bg-sky-500/10 hover:text-sky-600'
-                              : 'text-slate-700 hover:bg-orange-500/10 hover:text-orange-600'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="sm:col-span-2 rounded-none border border-slate-300/70 bg-white/70 px-3 py-2 text-xs uppercase tracking-[0.22em] text-slate-500">
-              Receita é apenas uma entrada. Sem forma de pagamento.
-            </div>
-          )}
-
-          {activeMode === 'fuel' ? (
-            <>
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-                  Veículo
-                </label>
-                <CustomSelect
-                  value={vehicleId}
-                  onChange={setVehicleId}
-                  options={vehicles.map((vehicle) => ({
-                    value: vehicle.id,
-                    label: vehicle.name,
-                  }))}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
-                  Km atual
-                </label>
-                <input
-                  value={formatKm(currentKm)}
-                  onChange={(e) => setCurrentKm(cleanNumeric(e.target.value))}
-                  className="transactions-input w-full border border-slate-300/80 bg-white px-3 py-2 text-sm outline-none"
-                  inputMode="numeric"
-                  type="text"
-                  placeholder="0"
-                />
-              </div>
-            </>
-          ) : null}
         </div>
 
         {error ? (
-          <div className="mx-5 mb-5 semantic-expense px-3 py-2 text-sm">
+          <div className="mx-4 mb-4 semantic-expense px-3 py-2 text-sm sm:mx-5 sm:mb-5">
             {error}
           </div>
         ) : null}
 
-        <div className="flex items-center justify-end gap-3 border-t border-slate-300/70 px-5 py-4">
+        <div className="flex flex-col gap-2 border-t border-slate-300/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-5 sm:py-4">
           <button
             type="button"
             onClick={onClose}
-            className="transactions-action px-4 py-2 text-sm font-semibold"
+            className="transactions-action w-full px-4 py-3 text-sm font-semibold sm:w-auto sm:py-2"
           >
             Cancelar
           </button>
@@ -345,7 +349,7 @@ export function TransactionModal({
             type="button"
             onClick={submit}
             disabled={!canSubmit || isLoading}
-            className="transactions-primary inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold disabled:opacity-60"
+            className="transactions-primary inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-semibold disabled:opacity-60 sm:w-auto sm:py-2"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Salvar
