@@ -105,22 +105,11 @@ jobs:
 
       - name: Login to Gitea registry
         run: |
-          GITEA_IP=$(docker network inspect nilbyte-git \
-            --format '{{range .Containers}}{{if eq .Name "gitea"}}{{.IPv4Address}}{{end}}{{end}}' \
-            | cut -d/ -f1)
-          echo "Gitea IP: $GITEA_IP"
-          REGISTRY="${GITEA_IP}:3000"
+          REGISTRY="gitea.nilbyte.com.br"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
 
-          # Fix Host DNS timeout for dockerd without sed -i (which breaks on bind mounts)
-          CF_IP=$(getent hosts gitea.nilbyte.com.br | awk '{print $1}' | head -n 1)
-          if [ -n "$CF_IP" ]; then
-            docker run --rm -v /etc/hosts:/host_hosts alpine sh -c "grep -v 'gitea.nilbyte.com.br' /host_hosts > /tmp/h || true; echo '$CF_IP gitea.nilbyte.com.br' >> /tmp/h; cat /tmp/h > /host_hosts"
-          fi
-
           sudo chmod 666 /var/run/docker.sock
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login --insecure-registry "$REGISTRY" -u notNilton --password-stdin
-
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
       - name: Build and push Backend image
         run: |
           docker build -f apps/backend/Dockerfile \
@@ -161,22 +150,11 @@ jobs:
 
       - name: Login to Gitea registry
         run: |
-          GITEA_IP=$(docker network inspect nilbyte-git \
-            --format '{{range .Containers}}{{if eq .Name "gitea"}}{{.IPv4Address}}{{end}}{{end}}' \
-            | cut -d/ -f1)
-          echo "Gitea IP: $GITEA_IP"
-          REGISTRY="${GITEA_IP}:3000"
+          REGISTRY="gitea.nilbyte.com.br"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
 
-          # Fix Host DNS timeout for dockerd without sed -i (which breaks on bind mounts)
-          CF_IP=$(getent hosts gitea.nilbyte.com.br | awk '{print $1}' | head -n 1)
-          if [ -n "$CF_IP" ]; then
-            docker run --rm -v /etc/hosts:/host_hosts alpine sh -c "grep -v 'gitea.nilbyte.com.br' /host_hosts > /tmp/h || true; echo '$CF_IP gitea.nilbyte.com.br' >> /tmp/h; cat /tmp/h > /host_hosts"
-          fi
-
           sudo chmod 666 /var/run/docker.sock
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login --insecure-registry "$REGISTRY" -u notNilton --password-stdin
-
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
       - name: Build and push Database/Migrate image
         run: |
           docker build -f database/Dockerfile \
@@ -205,22 +183,11 @@ jobs:
 
       - name: Login to Gitea registry
         run: |
-          GITEA_IP=$(docker network inspect nilbyte-git \
-            --format '{{range .Containers}}{{if eq .Name "gitea"}}{{.IPv4Address}}{{end}}{{end}}' \
-            | cut -d/ -f1)
-          echo "Gitea IP: $GITEA_IP"
-          REGISTRY="${GITEA_IP}:3000"
+          REGISTRY="gitea.nilbyte.com.br"
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
 
-          # Fix Host DNS timeout for dockerd without sed -i (which breaks on bind mounts)
-          CF_IP=$(getent hosts gitea.nilbyte.com.br | awk '{print $1}' | head -n 1)
-          if [ -n "$CF_IP" ]; then
-            docker run --rm -v /etc/hosts:/host_hosts alpine sh -c "grep -v 'gitea.nilbyte.com.br' /host_hosts > /tmp/h || true; echo '$CF_IP gitea.nilbyte.com.br' >> /tmp/h; cat /tmp/h > /host_hosts"
-          fi
-
           sudo chmod 666 /var/run/docker.sock
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login --insecure-registry "$REGISTRY" -u notNilton --password-stdin
-
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
       - name: Build and push Webapp image
         run: |
           docker build -f apps/webapp/Dockerfile \
