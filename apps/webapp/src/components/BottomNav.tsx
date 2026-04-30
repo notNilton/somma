@@ -6,7 +6,7 @@ const MOBILE_NAV_ITEMS = navigationItems;
 export default function BottomNav() {
   return (
     <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-lg">
-      <div className="grid grid-cols-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="grid grid-cols-3" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {MOBILE_NAV_ITEMS.map(({ id, to, icon: Icon, label, shortLabel }) => (
           <Link
             key={id}

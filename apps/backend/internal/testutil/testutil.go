@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"testing"
 	"sync"
+	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nilbyte/mirante/backend/internal/cache"
@@ -68,11 +68,12 @@ func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 func CleanTables(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	tables := []string{
-		"vehicle_maintenances",
 		"refueling_logs",
 		"vehicles",
 		"transaction_tags",
 		"transactions",
+		"budget_items",
+		"budgets",
 		"tags",
 		"categories",
 		"accounts",
@@ -157,15 +158,44 @@ func ensureMigrations(dsn string) error {
 		}
 
 		root := filepath.Clean(filepath.Join(filepath.Dir(filename), "..", "..", "..", ".."))
-		cmd := exec.Command("go", "run", "./cmd/migrate", "up")
-		cmd.Dir = filepath.Join(root, "database")
-		cmd.Env = append(os.Environ(), "DATABASE_URL="+dsn)
+		if err := resetTestDatabase(dsn); err != nil {
+			migrateErr = fmt.Errorf("reset test db: %v", err)
+			return
+		}
 
-		if out, err := cmd.CombinedOutput(); err != nil {
-			migrateErr = fmt.Errorf("%v: %s", err, string(out))
+		run := func() ([]byte, error) {
+			cmd := exec.Command("go", "run", "./cmd/migrate", "up")
+			cmd.Dir = filepath.Join(root, "database")
+			cmd.Env = append(os.Environ(), "DATABASE_URL="+dsn)
+			return cmd.CombinedOutput()
+		}
+
+		if out, err := run(); err != nil {
+			if err != nil {
+				migrateErr = fmt.Errorf("%v: %s", err, string(out))
+			}
 		}
 	})
 	return migrateErr
+}
+
+func resetTestDatabase(dsn string) error {
+	pool, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	for _, stmt := range []string{
+		`DROP SCHEMA IF EXISTS public CASCADE`,
+		`CREATE SCHEMA public`,
+		`GRANT ALL ON SCHEMA public TO public`,
+	} {
+		if _, err := pool.Exec(context.Background(), stmt); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func normalizeDSN(dsn string) string {

@@ -84,6 +84,11 @@ export const api = {
   // --- Dashboard & Analytics ---
   getDashboard: <T>(month?: string) =>
     apiFetch<T>(`/api/v1/dashboard${month ? `?month=${month}` : ''}`),
+  getBudgets: <T>() => apiFetch<T>('/api/v1/budgets'),
+  postBudgets: <T>(body: unknown) => apiFetch<T>('/api/v1/budgets', { method: 'POST', body: JSON.stringify(body) }),
+  patchBudgets: <T>(id: string, body: unknown) =>
+    apiFetch<T>(`/api/v1/budgets/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteBudgets: <T>(id: string) => apiFetch<T>(`/api/v1/budgets/${id}`, { method: 'DELETE' }),
   getMonthlyEvolution: <T>() => apiFetch<T>('/api/v1/dashboard/monthly-evolution'),
   getAnnualEvolution: <T>(year?: number) =>
     apiFetch<T>(`/api/v1/analytics/annual-evolution${year ? `?year=${year}` : ''}`),

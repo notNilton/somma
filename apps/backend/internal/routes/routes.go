@@ -48,6 +48,12 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("PATCH /api/v1/transactions/{id}", auth(h.UpdateTransaction))
 	mux.HandleFunc("DELETE /api/v1/transactions/{id}", auth(h.DeleteTransaction))
 
+	// Budgets
+	mux.HandleFunc("GET /api/v1/budgets", auth(h.ListBudgets))
+	mux.HandleFunc("POST /api/v1/budgets", auth(h.CreateBudget))
+	mux.HandleFunc("PATCH /api/v1/budgets/{id}", auth(h.UpdateBudget))
+	mux.HandleFunc("DELETE /api/v1/budgets/{id}", auth(h.DeleteBudget))
+
 	// Vehicles
 	mux.HandleFunc("GET /api/v1/vehicles", auth(h.ListVehicles))
 	mux.HandleFunc("GET /api/v1/vehicles/{id}", auth(h.GetVehicle))

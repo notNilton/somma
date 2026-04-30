@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -220,6 +221,16 @@ func (h *Handler) GetVehicleMaintenances(w http.ResponseWriter, r *http.Request)
 	claims := middleware.ClaimsFromContext(r.Context())
 	id := r.PathValue("id")
 
+	exists, err := h.tableExists(r.Context(), "public.vehicle_maintenances")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	if !exists {
+		writeJSON(w, http.StatusOK, []any{})
+		return
+	}
+
 	rows, err := h.db.Query(r.Context(), `
 		SELECT vm.id, vm.vehicle_id, vm.transaction_id, vm.maintenance_type, vm.provider, vm.created_at, vm.updated_at
 		FROM vehicle_maintenances vm
@@ -286,27 +297,42 @@ func (h *Handler) GetVehicleExpenseStats(w http.ResponseWriter, r *http.Request)
 	}
 
 	var totalMaintenanceCents int64
-	err = h.db.QueryRow(r.Context(), `
-		SELECT COALESCE(SUM(t.amount_cents), 0)
-		FROM vehicle_maintenances vm
-		JOIN vehicles v ON v.id = vm.vehicle_id
-		JOIN transactions t ON t.id = vm.transaction_id
-		WHERE vm.vehicle_id = $1
-		  AND v.user_id = $2
-		  AND t.is_active = true
-	`, id, claims.UserID).Scan(&totalMaintenanceCents)
+	exists, err := h.tableExists(r.Context(), "public.vehicle_maintenances")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
+	}
+	if exists {
+		err = h.db.QueryRow(r.Context(), `
+			SELECT COALESCE(SUM(t.amount_cents), 0)
+			FROM vehicle_maintenances vm
+			JOIN vehicles v ON v.id = vm.vehicle_id
+			JOIN transactions t ON t.id = vm.transaction_id
+			WHERE vm.vehicle_id = $1
+			  AND v.user_id = $2
+			  AND t.is_active = true
+		`, id, claims.UserID).Scan(&totalMaintenanceCents)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
 	}
 
 	totalFuel := money.ToReais(totalFuelCents)
 	totalMaintenance := money.ToReais(totalMaintenanceCents)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"totalFuel":       totalFuel,
+		"totalFuel":        totalFuel,
 		"totalMaintenance": totalMaintenance,
-		"total":           totalFuel + totalMaintenance,
+		"total":            totalFuel + totalMaintenance,
 	})
+}
+
+func (h *Handler) tableExists(ctx context.Context, name string) (bool, error) {
+	var exists bool
+	if err := h.db.QueryRow(ctx, `SELECT to_regclass($1) IS NOT NULL`, name).Scan(&exists); err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 func vehicleResponse(v models.Vehicle) map[string]any {

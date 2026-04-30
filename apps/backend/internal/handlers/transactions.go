@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +19,8 @@ import (
 
 type createTransactionDto struct {
 	CategoryID        *string `json:"categoryId"`
+	BudgetID          *string `json:"budgetId"`
+	BudgetItemID      *string `json:"budgetItemId"`
 	Type              string  `json:"type"`
 	Classification    *string `json:"classification"`
 	PaymentMethod     *string `json:"paymentMethod"`
@@ -57,6 +60,49 @@ func (d *createTransactionDto) validate() error {
 		return errors.New("totalInstallments must be 1-21")
 	}
 	return nil
+}
+
+func (h *Handler) resolveBudgetLink(ctx context.Context, userID string, dto createTransactionDto) (*string, *string, error) {
+	if dto.BudgetItemID == nil {
+		if dto.BudgetID == nil {
+			return nil, nil, nil
+		}
+		var exists string
+		if err := h.db.QueryRow(ctx, `
+			SELECT id
+			FROM budgets
+			WHERE id = $1 AND user_id = $2 AND is_active = true
+		`, *dto.BudgetID, userID).Scan(&exists); err != nil {
+			return nil, nil, errors.New("budget not found")
+		}
+		return dto.BudgetID, nil, nil
+	}
+
+	var resolvedBudgetID string
+	if dto.BudgetID != nil {
+		if err := h.db.QueryRow(ctx, `
+			SELECT budget_id
+			FROM budget_items i
+			JOIN budgets b ON b.id = i.budget_id
+			WHERE i.id = $1 AND i.is_active = true AND b.user_id = $2 AND b.is_active = true
+		`, *dto.BudgetItemID, userID).Scan(&resolvedBudgetID); err != nil {
+			return nil, nil, errors.New("budget item not found")
+		}
+		if resolvedBudgetID != *dto.BudgetID {
+			return nil, nil, errors.New("budget item does not belong to selected budget")
+		}
+		return dto.BudgetID, dto.BudgetItemID, nil
+	}
+
+	if err := h.db.QueryRow(ctx, `
+		SELECT budget_id
+		FROM budget_items i
+		JOIN budgets b ON b.id = i.budget_id
+		WHERE i.id = $1 AND i.is_active = true AND b.user_id = $2 AND b.is_active = true
+	`, *dto.BudgetItemID, userID).Scan(&resolvedBudgetID); err != nil {
+		return nil, nil, errors.New("budget item not found")
+	}
+	return &resolvedBudgetID, dto.BudgetItemID, nil
 }
 
 func fallbackTransactionDescription(dto createTransactionDto) string {
@@ -135,6 +181,7 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 	where, args, i := h.buildTransactionsFilter(q, claims.UserID)
 	query := fmt.Sprintf(`
 		SELECT t.id, t.user_id, t.category_id,
+		       t.budget_id, t.budget_item_id,
 		       t.type, t.classification, t.payment_method, t.channel, t.status,
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
 		       t.date, t.description, t.notes, t.currency_code, t.affects_account,
@@ -159,7 +206,7 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var t models.TransactionWithCategory
 		if err := rows.Scan(
-			&t.ID, &t.UserID, &t.CategoryID,
+			&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID, &t.BudgetItemID,
 			&t.Type, &t.Classification, &t.PaymentMethod, &t.Channel, &t.Status,
 			&t.IsRecurring, &t.AmountCents, &t.TotalInstallments, &t.PaidInstallments,
 			&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.AffectsAccount,
@@ -186,6 +233,7 @@ func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 	var err error
 	err = h.db.QueryRow(r.Context(), `
 		SELECT t.id, t.user_id, t.category_id,
+		       t.budget_id, t.budget_item_id,
 		       t.type, t.classification, t.payment_method, t.channel, t.status,
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
 		       t.date, t.description, t.notes, t.currency_code, t.affects_account,
@@ -195,7 +243,7 @@ func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN categories c ON c.id = t.category_id
 		WHERE t.id = $1 AND t.user_id = $2 AND t.is_active = true
 	`, id, claims.UserID).Scan(
-		&t.ID, &t.UserID, &t.CategoryID,
+		&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID, &t.BudgetItemID,
 		&t.Type, &t.Classification, &t.PaymentMethod, &t.Channel, &t.Status,
 		&t.IsRecurring, &t.AmountCents, &t.TotalInstallments, &t.PaidInstallments,
 		&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.AffectsAccount,
@@ -247,6 +295,11 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	if dto.CurrencyCode != nil {
 		currency = *dto.CurrencyCode
 	}
+	budgetID, budgetItemID, err := h.resolveBudgetLink(r.Context(), claims.UserID, dto)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	// UTC 12:00 para evitar problemas de fuso
 	if len(dto.Date) < 10 {
@@ -269,22 +322,22 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	var t models.Transaction
 	err = h.db.QueryRow(r.Context(), `
 		INSERT INTO transactions (
-			user_id, category_id, type, classification,
+			user_id, category_id, budget_id, budget_item_id, type, classification,
 			payment_method, channel, status, is_recurring, amount_cents,
 			total_installments, paid_installments, date, description, notes,
 			currency_code, affects_account
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
-		RETURNING id, user_id, category_id, type, classification,
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+		RETURNING id, user_id, category_id, budget_id, budget_item_id, type, classification,
 		          payment_method, channel, status, is_recurring, amount_cents,
 		          total_installments, paid_installments, date, description, notes,
 		          currency_code, affects_account, is_active, deleted_at, created_at, updated_at
 	`,
-		claims.UserID, dto.CategoryID, dto.Type, classification,
+		claims.UserID, dto.CategoryID, budgetID, budgetItemID, dto.Type, classification,
 		paymentMethod, channel, status, isRecurring, amountCents,
 		dto.TotalInstallments, dto.PaidInstallments, txDate, description, dto.Notes,
 		currency, affectsAccount,
 	).Scan(
-		&t.ID, &t.UserID, &t.CategoryID, &t.Type, &t.Classification,
+		&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID, &t.BudgetItemID, &t.Type, &t.Classification,
 		&t.PaymentMethod, &t.Channel, &t.Status, &t.IsRecurring, &t.AmountCents,
 		&t.TotalInstallments, &t.PaidInstallments, &t.Date, &t.Description, &t.Notes,
 		&t.CurrencyCode, &t.AffectsAccount, &t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
@@ -362,39 +415,49 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 	if dto.CurrencyCode != nil {
 		currency = *dto.CurrencyCode
 	}
+	budgetID, budgetItemID, err := h.resolveBudgetLink(r.Context(), claims.UserID, dto)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	affectsAccount := paymentMethod != models.PaymentMethodCREDIT
 
 	var t models.Transaction
 	err = h.db.QueryRow(r.Context(), `
 		UPDATE transactions SET
 			category_id         = COALESCE($1, category_id),
-			type                = COALESCE(NULLIF($2,''), type),
-			classification      = COALESCE(NULLIF($3,''), classification),
-			payment_method      = COALESCE(NULLIF($4,''), payment_method),
-			channel             = COALESCE(NULLIF($5,''), channel),
-			status              = COALESCE(NULLIF($6,''), status),
-			is_recurring        = COALESCE($7, is_recurring),
-			amount_cents        = COALESCE($8, amount_cents),
-			total_installments   = COALESCE($9, total_installments),
-			paid_installments    = COALESCE($10, paid_installments),
-			date                = COALESCE($11, date),
-			description         = COALESCE(NULLIF($12,''), description),
-			notes               = COALESCE($13, notes),
-			currency_code       = COALESCE(NULLIF($14,''), currency_code),
-			affects_account     = $15,
+			budget_id           = COALESCE($2, budget_id),
+			budget_item_id      = CASE
+				WHEN $2 IS NOT NULL AND $3 IS NULL THEN NULL
+				ELSE COALESCE($3, budget_item_id)
+			END,
+			type                = COALESCE(NULLIF($4,''), type),
+			classification      = COALESCE(NULLIF($5,''), classification),
+			payment_method      = COALESCE(NULLIF($6,''), payment_method),
+			channel             = COALESCE(NULLIF($7,''), channel),
+			status              = COALESCE(NULLIF($8,''), status),
+			is_recurring        = COALESCE($9, is_recurring),
+			amount_cents        = COALESCE($10, amount_cents),
+			total_installments   = COALESCE($11, total_installments),
+			paid_installments    = COALESCE($12, paid_installments),
+			date                = COALESCE($13, date),
+			description         = COALESCE(NULLIF($14,''), description),
+			notes               = COALESCE($15, notes),
+			currency_code       = COALESCE(NULLIF($16,''), currency_code),
+			affects_account     = $17,
 			updated_at          = NOW()
-		WHERE id = $16 AND user_id = $17 AND is_active = true
-		RETURNING id, user_id, category_id, type, classification,
+		WHERE id = $18 AND user_id = $19 AND is_active = true
+		RETURNING id, user_id, category_id, budget_id, budget_item_id, type, classification,
 		          payment_method, channel, status, is_recurring, amount_cents,
 		          total_installments, paid_installments, date, description, notes,
 		          currency_code, affects_account, is_active, deleted_at, created_at, updated_at
 	`,
-		dto.CategoryID, dto.Type, classification,
+		dto.CategoryID, budgetID, budgetItemID, dto.Type, classification,
 		paymentMethod, channel, status, isRecurring, amountCents,
 		dto.TotalInstallments, dto.PaidInstallments, txDate, dto.Description, dto.Notes,
 		currency, affectsAccount, id, claims.UserID,
 	).Scan(
-		&t.ID, &t.UserID, &t.CategoryID, &t.Type, &t.Classification,
+		&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID, &t.BudgetItemID, &t.Type, &t.Classification,
 		&t.PaymentMethod, &t.Channel, &t.Status, &t.IsRecurring, &t.AmountCents,
 		&t.TotalInstallments, &t.PaidInstallments, &t.Date, &t.Description, &t.Notes,
 		&t.CurrencyCode, &t.AffectsAccount, &t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
@@ -452,6 +515,7 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 
 	rows, err := h.db.Query(r.Context(), `
 		SELECT t.id, t.user_id, t.category_id,
+		       t.budget_id, t.budget_item_id,
 		       t.type, t.classification, t.payment_method, t.channel, t.status,
 		       t.is_recurring, t.amount_cents, t.total_installments, t.paid_installments,
 		       t.date, t.description, t.notes, t.currency_code, t.affects_account,
@@ -474,7 +538,7 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 	for rows.Next() {
 		var t models.TransactionWithCategory
 		if err := rows.Scan(
-			&t.ID, &t.UserID, &t.CategoryID,
+			&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID, &t.BudgetItemID,
 			&t.Type, &t.Classification, &t.PaymentMethod, &t.Channel, &t.Status,
 			&t.IsRecurring, &t.AmountCents, &t.TotalInstallments, &t.PaidInstallments,
 			&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.AffectsAccount,
@@ -498,6 +562,8 @@ func transactionResponse(t models.TransactionWithCategory) map[string]any {
 		"id":                t.ID,
 		"userId":            t.UserID,
 		"categoryId":        t.CategoryID,
+		"budgetId":          t.BudgetID,
+		"budgetItemId":      t.BudgetItemID,
 		"type":              t.Type,
 		"classification":    t.Classification,
 		"paymentMethod":     t.PaymentMethod,

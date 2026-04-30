@@ -6,6 +6,8 @@ type Transaction struct {
 	ID                string
 	UserID            string
 	CategoryID        *string
+	BudgetID          *string
+	BudgetItemID      *string
 	Type              string
 	Classification    string
 	PaymentMethod     string
