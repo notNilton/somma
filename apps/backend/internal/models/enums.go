@@ -1,25 +1,8 @@
 package models
 
 const (
-	AccountTypeCHECKING   = "CHECKING"
-	AccountTypeSAVINGS    = "SAVINGS"
-	AccountTypeCASH       = "CASH"
-	AccountTypeWALLET     = "WALLET"
-	AccountTypeINVESTMENT = "INVESTMENT"
-
-	AccountOwnershipPERSONAL = "PERSONAL"
-	AccountOwnershipBUSINESS = "BUSINESS"
-
-	CardTypeCREDIT = "CREDIT"
-	CardTypeDEBIT  = "DEBIT"
-
-	AccessRoleEDITOR = "EDITOR"
-	AccessRoleVIEWER = "VIEWER"
-
-	TransactionTypeINCOME     = "INCOME"
-	TransactionTypeEXPENSE    = "EXPENSE"
-	TransactionTypeTRANSFER   = "TRANSFER"
-	TransactionTypeADJUSTMENT = "ADJUSTMENT"
+	TransactionTypeINCOME  = "INCOME"
+	TransactionTypeEXPENSE = "EXPENSE"
 
 	TransactionStatusPENDING   = "PENDING"
 	TransactionStatusCOMPLETED = "COMPLETED"
@@ -28,10 +11,6 @@ const (
 	TransactionClassificationCOMMON      = "COMMON"
 	TransactionClassificationFUEL        = "FUEL"
 	TransactionClassificationMAINTENANCE = "MAINTENANCE"
-	TransactionClassificationTRANSFER    = "TRANSFER"
-
-	PaymentMethodDEBIT  = "DEBIT"
-	PaymentMethodCREDIT = "CREDIT"
 
 	ChannelCARD_CREDIT = "CARD_CREDIT"
 	ChannelCARD_DEBIT  = "CARD_DEBIT"
@@ -52,22 +31,12 @@ const (
 	FuelTypeGNV                = "GNV"
 )
 
-var ValidAccountTypes = map[string]bool{
-	AccountTypeCHECKING: true, AccountTypeSAVINGS: true,
-	AccountTypeCASH: true, AccountTypeWALLET: true, AccountTypeINVESTMENT: true,
-}
-
 var ValidTransactionTypes = map[string]bool{
 	TransactionTypeINCOME: true, TransactionTypeEXPENSE: true,
-	TransactionTypeTRANSFER: true, TransactionTypeADJUSTMENT: true,
 }
 
 var ValidTransactionStatuses = map[string]bool{
 	TransactionStatusPENDING: true, TransactionStatusCOMPLETED: true, TransactionStatusCANCELED: true,
-}
-
-var ValidCardTypes = map[string]bool{
-	CardTypeCREDIT: true, CardTypeDEBIT: true,
 }
 
 var ValidFuelTypes = map[string]bool{
