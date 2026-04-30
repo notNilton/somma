@@ -12,7 +12,7 @@ jobs:
   # 1. Bumpa versões, commita e cria tags (sempre)
   # ========================================================
   bump-versions:
-    runs-on: ubuntu-latest
+    runs-on: deploy
     outputs:
       BACKEND_VERSION: ${{ steps.bump.outputs.BACKEND_VERSION }}
       WEBAPP_VERSION: ${{ steps.bump.outputs.WEBAPP_VERSION }}
@@ -73,7 +73,7 @@ jobs:
   # ========================================================
   build-backend:
     needs: bump-versions
-    runs-on: ubuntu-latest
+    runs-on: go
     steps:
       - name: Check out repository code
         run: |
@@ -121,7 +121,7 @@ jobs:
 
   build-database:
     needs: bump-versions
-    runs-on: ubuntu-latest
+    runs-on: go
     steps:
       - name: Check out repository code
         run: |
@@ -164,7 +164,7 @@ jobs:
 
   build-webapp:
     needs: bump-versions
-    runs-on: ubuntu-latest
+    runs-on: react
     steps:
       - name: Check out repository code
         run: |

@@ -4,6 +4,71 @@ Pipeline de integração e entrega contínua do Mirante, rodando no act_runner h
 
 ---
 
+# Gitea Runner Pools
+
+Este repositório usa runners separados por tipo de build para reduzir contenção no VPS de produção.
+
+## Objetivo
+
+- `go` para pipelines de backend em Go.
+- `react` para pipelines de frontend em React.
+- `deploy` para rotinas de publicação, bump de versão e validação de infra.
+- Cada runner executa um job por vez.
+- Cada runner tem limites próprios de CPU, RAM e PIDs.
+- Os runners não entram na rede de produção; ficam apenas na rede do Gitea.
+
+## Como o workflow escolhe o runner
+
+O seletor é o `runs-on` do job.
+
+### Backend Go
+
+```yaml
+jobs:
+  build:
+    runs-on: go
+```
+
+### Frontend React
+
+```yaml
+jobs:
+  build:
+    runs-on: react
+```
+
+### Deploy / Infra
+
+```yaml
+jobs:
+  publish:
+    runs-on: deploy
+```
+
+## O que não fazer
+
+- Não use o mesmo label para Go e React.
+- Não use `ubuntu-latest` como label genérico para build de produção.
+- Não dependa de `deploy.resources` no compose para limitar runner local; em `docker compose` comum isso não segura o host.
+- Não conecte runner de build à rede `nilbyte-prod` sem necessidade.
+
+## Limites atuais
+
+Os runners atuais foram configurados com:
+
+- `capacity: 1`
+- `cpus: 1.50`
+- `mem_limit: 1536m`
+- `pids_limit: 256`
+
+Isso reduz a chance de um build derrubar o Gitea, mas não elimina totalmente impacto de CPU e I/O no mesmo host.
+
+## Próximo passo recomendado
+
+Se quiser isolar ainda mais produção, o passo seguinte é criar um terceiro runner, com label `deploy`, apenas para rotinas de publicação e restart. Assim build e deploy deixam de competir entre si. (Nota: Já configuramos os workflows para usar este label em tarefas de orquestração).
+
+---
+
 ## Visão geral
 
 | Workflow | Trigger | Propósito |

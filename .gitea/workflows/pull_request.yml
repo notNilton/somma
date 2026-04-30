@@ -10,7 +10,7 @@ jobs:
   # Build e teste do backend (compilação)
   # ========================================================
   build-backend:
-    runs-on: ubuntu-latest
+    runs-on: go
     steps:
       - name: Check out repository code
         run: |
@@ -44,7 +44,7 @@ jobs:
   # Build da webapp (npm)
   # ========================================================
   build-webapp:
-    runs-on: ubuntu-latest
+    runs-on: react
     steps:
       - name: Check out repository code
         run: |
@@ -64,7 +64,7 @@ jobs:
   # Valida arquivos docker-compose
   # ========================================================
   validate-compose:
-    runs-on: ubuntu-latest
+    runs-on: deploy
     steps:
       - name: Check out repository code
         run: |
