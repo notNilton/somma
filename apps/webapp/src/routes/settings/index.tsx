@@ -1,13 +1,13 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { CarFront, ChevronRight, LogOut, Tag } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
-import SettingsShell from '../../components/SettingsShell';
-import SectionPageHeader from '../../components/SectionPageHeader';
-import { api } from '../../lib/api';
-import { auth } from '../../lib/auth';
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { CarFront, ChevronRight, LogOut, Tag } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import SettingsShell from "../../components/SettingsShell";
+import SectionPageHeader from "../../components/SectionPageHeader";
+import { api } from "../../lib/api";
+import { auth } from "../../lib/auth";
 
-export const Route = createFileRoute('/settings/')({
+export const Route = createFileRoute("/settings/")({
   component: SettingsPage,
 });
 
@@ -21,19 +21,19 @@ interface UserProfile {
 function getInitials(name?: string, email?: string): string {
   if (name) {
     return name
-      .split(' ')
+      .split(" ")
       .slice(0, 2)
       .map((w) => w[0])
-      .join('')
+      .join("")
       .toUpperCase();
   }
-  return (email?.[0] ?? 'U').toUpperCase();
+  return (email?.[0] ?? "U").toUpperCase();
 }
 
 function SettingsPage() {
   const { data: profile, isLoading } = useQuery({
-    queryKey: ['settings-profile'],
-    queryFn: () => api.get<UserProfile>('/api/v1/settings/profile'),
+    queryKey: ["settings-profile"],
+    queryFn: () => api.get<UserProfile>("/api/v1/settings/profile"),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -44,7 +44,7 @@ function SettingsPage() {
         description="Perfil, saída da sessão e atalhos de organização."
       />
 
-      <div className="settings-panel flex flex-col gap-4 overflow-hidden p-4 sm:p-5">
+      <div className="settings-panel flex flex-col gap-4 overflow-hidden px-2 py-4 sm:p-5">
         {isLoading ? (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-muted animate-pulse shrink-0" />
@@ -69,8 +69,12 @@ function SettingsPage() {
                   )}
                 </div>
                 <div>
-                  <p className="font-bold text-sm leading-tight">{profile.name ?? 'Usuário'}</p>
-                  <p className="text-[10px] text-muted-foreground">{profile.email}</p>
+                  <p className="font-bold text-sm leading-tight">
+                    {profile.name ?? "Usuário"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {profile.email}
+                  </p>
                 </div>
               </div>
               <button
@@ -96,7 +100,9 @@ function SettingsPage() {
                     <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
                       Frota
                     </p>
-                    <h2 className="mt-1 text-sm font-bold text-slate-900">Gerenciar carros</h2>
+                    <h2 className="mt-1 text-sm font-bold text-slate-900">
+                      Gerenciar carros
+                    </h2>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       Cadastre, edite e acompanhe seus veículos.
                     </p>
@@ -117,7 +123,9 @@ function SettingsPage() {
                     <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
                       Categorias
                     </p>
-                    <h2 className="mt-1 text-sm font-bold text-slate-900">Gerenciar categorias</h2>
+                    <h2 className="mt-1 text-sm font-bold text-slate-900">
+                      Gerenciar categorias
+                    </h2>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       Organize receitas e despesas com mais clareza.
                     </p>

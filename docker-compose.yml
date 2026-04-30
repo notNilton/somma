@@ -1,33 +1,14 @@
 services:
-  db:
-    image: postgres:18-alpine
-    container_name: mirante-db
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-mirante}
-    ports:
-      - '5454:5432'
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   migrate:
     build:
       context: .
       dockerfile: database/Dockerfile
     container_name: mirante-migrate
-    restart: no
+    restart: "no"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-mirante}?sslmode=disable
-    depends_on:
-      db:
-        condition: service_healthy
+      # A URL deve ser injetada pelo ambiente de deploy
+      # Formato: postgresql://mirante:<senha>@nilbyte_postgres_prod:5432/mirante?sslmode=disable
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
 
   backend:
     build:
@@ -36,16 +17,16 @@ services:
     container_name: mirante-backend
     restart: always
     ports:
-      - '3000:3000'
+      - "3000:3000"
     environment:
       ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-mirante}?sslmode=disable
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       WEBAPP_URL: ${WEBAPP_URL:-http://localhost:3400}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
   webapp:
     build:
@@ -54,9 +35,6 @@ services:
     container_name: mirante-webapp
     restart: always
     ports:
-      - '3400:80'
+      - "3400:80"
     depends_on:
       - backend
-
-volumes:
-  postgres_data:

@@ -12,6 +12,9 @@ const (
 	TransactionClassificationFUEL        = "FUEL"
 	TransactionClassificationMAINTENANCE = "MAINTENANCE"
 
+	PaymentMethodDEBIT  = "DEBIT"
+	PaymentMethodCREDIT = "CREDIT"
+
 	ChannelCARD_CREDIT = "CARD_CREDIT"
 	ChannelCARD_DEBIT  = "CARD_DEBIT"
 	ChannelPIX         = "PIX"

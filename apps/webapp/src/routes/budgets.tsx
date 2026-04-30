@@ -215,7 +215,7 @@ function BudgetsPage() {
       backgroundClassName="transactions-bg-starfield"
       decorations={[]}
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-3 sm:gap-5 sm:p-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-2 py-3 sm:gap-5 sm:p-6">
         <BudgetModal
           isOpen={showModal}
           onClose={closeModal}

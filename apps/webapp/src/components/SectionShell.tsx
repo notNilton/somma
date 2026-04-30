@@ -1,5 +1,5 @@
-import type { LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 type Decoration = {
   Icon: LucideIcon;
@@ -8,13 +8,13 @@ type Decoration = {
 };
 
 const shellContentClassName =
-  'mx-auto flex w-full max-w-6xl flex-col gap-4 px-3 py-4 sm:gap-6 sm:px-6 sm:py-7';
+  "mx-auto flex w-full max-w-6xl flex-col gap-4 px-2 py-4 sm:gap-6 sm:px-6 sm:py-7";
 
 export default function SectionShell({
   children,
   backgroundClassName,
   decorations,
-  contentClassName = '',
+  contentClassName = "",
 }: {
   children: ReactNode;
   backgroundClassName: string;
@@ -26,14 +26,19 @@ export default function SectionShell({
       <div className="pointer-events-none absolute inset-0">
         <div className={`absolute inset-0 ${backgroundClassName}`} />
         {decorations.map(({ Icon, className, iconClassName }, index) => (
-          <div key={`${Icon.displayName ?? Icon.name}-${index}`} className={className}>
+          <div
+            key={`${Icon.displayName ?? Icon.name}-${index}`}
+            className={className}
+          >
             <Icon className={iconClassName} />
           </div>
         ))}
       </div>
 
       <div className="relative flex min-h-full w-full flex-1">
-        <div className={`${shellContentClassName} ${contentClassName}`.trim()}>{children}</div>
+        <div className={`${shellContentClassName} ${contentClassName}`.trim()}>
+          {children}
+        </div>
       </div>
     </div>
   );
