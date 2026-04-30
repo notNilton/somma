@@ -119,7 +119,7 @@ jobs:
           fi
 
           sudo chmod 666 /var/run/docker.sock
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login --insecure-registry "$REGISTRY" -u notNilton --password-stdin
 
       - name: Build and push Backend image
         run: |
@@ -175,7 +175,7 @@ jobs:
           fi
 
           sudo chmod 666 /var/run/docker.sock
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login --insecure-registry "$REGISTRY" -u notNilton --password-stdin
 
       - name: Build and push Database/Migrate image
         run: |
@@ -219,7 +219,7 @@ jobs:
           fi
 
           sudo chmod 666 /var/run/docker.sock
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login --insecure-registry "$REGISTRY" -u notNilton --password-stdin
 
       - name: Build and push Webapp image
         run: |
