@@ -1,0 +1,1 @@
+ALTER TABLE budget_items ADD COLUMN amount_cents BIGINT NOT NULL DEFAULT 0;
