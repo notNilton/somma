@@ -7,6 +7,8 @@ TRUNCATE TABLE
     transaction_tags,
     refueling_logs,
     transactions,
+    budget_items,
+    budgets,
     categories,
     tags,
     accounts,
@@ -86,6 +88,52 @@ VALUES
     ('cat-19', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Reembolsos', 'INCOME', 'Valores devolvidos ou estornos', '#5C6BC0', NULL)
 ON CONFLICT (user_id, name, type) DO NOTHING;
 
+-- Future budgets
+INSERT INTO budgets (
+    id, user_id, name, target_date, notes, is_active
+)
+VALUES
+    (
+        'bud-1',
+        'd290f1ee-6c54-4b01-90e6-d701748f0851',
+        'Viagem para São Paulo',
+        DATE '2026-07-15',
+        'Reserva para viagem de lazer com comida, transporte e hospedagem.',
+        TRUE
+    ),
+    (
+        'bud-2',
+        'd290f1ee-6c54-4b01-90e6-d701748f0851',
+        'Manutenção do carro',
+        DATE '2026-05-20',
+        'Separar dinheiro para revisão, combustível e imprevistos do veículo.',
+        TRUE
+    ),
+    (
+        'bud-3',
+        'd290f1ee-6c54-4b01-90e6-d701748f0851',
+        'Viagem de férias',
+        DATE '2026-08-10',
+        'Reserva para viagem futura com hospedagem, passeios e alimentação.',
+        TRUE
+    )
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO budget_items (
+    id, budget_id, category_id, name, sort_order, is_active
+)
+VALUES
+    ('bitem-1', 'bud-1', 'cat-11', 'Alimentação', 1, TRUE),
+    ('bitem-2', 'bud-1', 'cat-4',  'Passeios',    2, TRUE),
+    ('bitem-3', 'bud-1', 'cat-13', 'Hospedagem',  0, TRUE),
+    ('bitem-4', 'bud-1', 'cat-2',  'Transporte',  3, TRUE),
+    ('bitem-5', 'bud-2', 'cat-2',  'Combustível', 0, TRUE),
+    ('bitem-6', 'bud-2', 'cat-8',  'Revisão',     1, TRUE),
+    ('bitem-7', 'bud-3', 'cat-13', 'Hospedagem',  0, TRUE),
+    ('bitem-8', 'bud-3', 'cat-11', 'Alimentação', 1, TRUE),
+    ('bitem-9', 'bud-3', 'cat-4',  'Passeios',    2, TRUE)
+ON CONFLICT (id) DO NOTHING;
+
 -- Tags
 INSERT INTO tags (id, name, color)
 VALUES
@@ -102,6 +150,8 @@ INSERT INTO transactions (
     id,
     user_id,
     category_id,
+    budget_id,
+    budget_item_id,
     type,
     classification,
     payment_method,
@@ -119,22 +169,36 @@ INSERT INTO transactions (
     currency_code
 )
 VALUES
-    ('tra-1',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-3',  'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE, 1200000, NULL, NULL, TIMESTAMPTZ '2026-04-01 09:00:00-04', 'Salario Mirante',        'Competencia abril',                 TRUE,  TRUE, 'BRL'),
-    ('tra-2',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-12', 'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,  275000, NULL, NULL, TIMESTAMPTZ '2026-04-03 16:30:00-04', 'Freelance pago',         'Projeto entregue',                  TRUE,  TRUE, 'BRL'),
-    ('tra-3',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-11', 'EXPENSE', 'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,    4850, NULL, NULL, TIMESTAMPTZ '2026-04-02 12:15:00-04', 'Almoco executivo',       NULL,                                TRUE,  TRUE, 'BRL'),
-    ('tra-4',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7',  'EXPENSE', 'COMMON',      'CREDIT', 'CARD_CREDIT','COMPLETED', TRUE,     5590, NULL, NULL, TIMESTAMPTZ '2026-04-02 20:00:00-04', 'Netflix',                'Assinatura mensal',                 FALSE, TRUE, 'BRL'),
-    ('tra-5',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2',  'EXPENSE', 'FUEL',        'DEBIT',  'BANK',       'COMPLETED', FALSE,   22490, NULL, NULL, TIMESTAMPTZ '2026-04-04 07:30:00-04', 'Abastecimento',          'Tanque quase completo',             TRUE,  TRUE, 'BRL'),
-    ('tra-6',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-10', 'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   18640, NULL, NULL, TIMESTAMPTZ '2026-04-03 19:40:00-04', 'Mercado',                'Compras para casa',                 TRUE,  TRUE, 'BRL'),
-    ('tra-7',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-16', 'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   48000, NULL, NULL, TIMESTAMPTZ '2026-04-05 10:00:00-04', 'Bonus trimestral',       'Premio por meta batida',            TRUE,  TRUE, 'BRL'),
-    ('tra-8',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-8',  'EXPENSE', 'MAINTENANCE', 'DEBIT',  'BANK',       'COMPLETED', FALSE,  127500, NULL, NULL, TIMESTAMPTZ '2026-04-06 14:10:00-04', 'Revisao do carro',       'Troca de oleo e filtros',           TRUE,  TRUE, 'BRL'),
-    ('tra-9',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-19', 'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,   32900, NULL, NULL, TIMESTAMPTZ '2026-04-07 11:20:00-04', 'Reembolso',              'Despesa devolvida pelo fornecedor', TRUE, TRUE, 'BRL'),
-    ('tra-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-6',  'EXPENSE', 'COMMON',      'DEBIT',  'CARD_DEBIT', 'COMPLETED', FALSE,    8990, NULL, NULL, TIMESTAMPTZ '2026-04-08 09:15:00-04', 'Curso online',           'Assinatura anual',                  TRUE,  TRUE, 'BRL'),
-    ('tra-11', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5',  'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   21640, NULL, NULL, TIMESTAMPTZ '2026-04-09 18:25:00-04', 'Farmacia',               'Medicamentos e itens basicos',      TRUE,  TRUE, 'BRL'),
-    ('tra-12', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-15', 'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   15750, NULL, NULL, TIMESTAMPTZ '2026-04-10 08:00:00-04', 'Rendimento financeiro',  'Aplicacao de curto prazo',          TRUE,  TRUE, 'BRL'),
-    ('tra-13', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-14', 'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'PENDING',   TRUE,   14990, NULL, NULL, TIMESTAMPTZ '2026-04-11 08:00:00-04', 'Internet e celular',     'Fatura agendada',                   TRUE,  TRUE, 'BRL'),
-    ('tra-14', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4',  'EXPENSE', 'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,    7200, NULL, NULL, TIMESTAMPTZ '2026-04-12 21:00:00-04', 'Cinema',                 'Saida no fim de semana',            TRUE,  TRUE, 'BRL'),
-    ('tra-15', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-18', 'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,   92000, NULL, NULL, TIMESTAMPTZ '2026-04-14 17:45:00-04', 'Venda de equipamento',   'Equipamento parado no estoque',     TRUE,  TRUE, 'BRL'),
-    ('tra-16', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-13', 'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'COMPLETED', TRUE,   68000, NULL, NULL, TIMESTAMPTZ '2026-04-15 08:00:00-04', 'Conta de energia',       'Agendada para debito automatico',   TRUE,  TRUE, 'BRL')
+    -- Alocações de Orçamento (INCOME vinculado ao budget_item)
+    ('tra-b1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-1', 'bitem-1', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 45000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Alimentação', NULL, FALSE, TRUE, 'BRL'),
+    ('tra-b2', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-1', 'bitem-2', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 25000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Passeios', NULL, FALSE, TRUE, 'BRL'),
+    ('tra-b3', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-1', 'bitem-3', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 120000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Hospedagem', NULL, FALSE, TRUE, 'BRL'),
+    ('tra-b4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-1', 'bitem-4', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 30000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Transporte', NULL, FALSE, TRUE, 'BRL'),
+    ('tra-b5', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-2', 'bitem-5', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 18000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Combustível', NULL, FALSE, TRUE, 'BRL'),
+    ('tra-b6', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-2', 'bitem-6', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 25000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Revisão', NULL, FALSE, TRUE, 'BRL'),
+    ('tra-b7', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-3', 'bitem-7', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 98000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Hospedagem', NULL, FALSE, TRUE, 'BRL'),
+    ('tra-b8', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-3', 'bitem-8', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 36000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Alimentação', NULL, FALSE, TRUE, 'BRL'),
+    ('tra-b9', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-3', 'bitem-9', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 22000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Passeios', NULL, FALSE, TRUE, 'BRL'),
+
+    -- Transações Reais
+    ('tra-1',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-3',  NULL,     NULL,      'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE, 1200000, NULL, NULL, TIMESTAMPTZ '2026-04-01 09:00:00-04', 'Salario Mirante',        'Competencia abril',                 TRUE,  TRUE, 'BRL'),
+    ('tra-2',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-12', NULL,     NULL,      'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,  275000, NULL, NULL, TIMESTAMPTZ '2026-04-03 16:30:00-04', 'Freelance pago',         'Projeto entregue',                  TRUE,  TRUE, 'BRL'),
+    ('tra-3',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-11', 'bud-1',  'bitem-1', 'EXPENSE', 'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,    4850, NULL, NULL, TIMESTAMPTZ '2026-04-02 12:15:00-04', 'Almoco executivo',       NULL,                                TRUE,  TRUE, 'BRL'),
+    ('tra-4',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7',  NULL,     NULL,      'EXPENSE', 'COMMON',      'CREDIT', 'CARD_CREDIT','COMPLETED', TRUE,     5590, NULL, NULL, TIMESTAMPTZ '2026-04-02 20:00:00-04', 'Netflix',                'Assinatura mensal',                 FALSE, TRUE, 'BRL'),
+    ('tra-5',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2',  'bud-2',  'bitem-5', 'EXPENSE', 'FUEL',        'DEBIT',  'BANK',       'COMPLETED', FALSE,   22490, NULL, NULL, TIMESTAMPTZ '2026-04-04 07:30:00-04', 'Abastecimento',          'Tanque quase completo',             TRUE,  TRUE, 'BRL'),
+    ('tra-6',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-10', NULL,     NULL,      'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   18640, NULL, NULL, TIMESTAMPTZ '2026-04-03 19:40:00-04', 'Mercado',                'Compras para casa',                 TRUE,  TRUE, 'BRL'),
+    ('tra-7',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-16', NULL,     NULL,      'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   48000, NULL, NULL, TIMESTAMPTZ '2026-04-05 10:00:00-04', 'Bonus trimestral',       'Premio por meta batida',            TRUE,  TRUE, 'BRL'),
+    ('tra-8',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-8',  'bud-2',  'bitem-6', 'EXPENSE', 'MAINTENANCE', 'DEBIT',  'BANK',       'COMPLETED', FALSE,  127500, NULL, NULL, TIMESTAMPTZ '2026-04-06 14:10:00-04', 'Revisao do carro',       'Troca de oleo e filtros',           TRUE,  TRUE, 'BRL'),
+    ('tra-9',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-19', NULL,     NULL,      'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,   32900, NULL, NULL, TIMESTAMPTZ '2026-04-07 11:20:00-04', 'Reembolso',              'Despesa devolvida pelo fornecedor', TRUE, TRUE, 'BRL'),
+    ('tra-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-6',  'bud-1',  'bitem-4', 'EXPENSE', 'COMMON',      'DEBIT',  'CARD_DEBIT', 'COMPLETED', FALSE,    8990, NULL, NULL, TIMESTAMPTZ '2026-04-08 09:15:00-04', 'Curso online',           'Assinatura anual',                  TRUE,  TRUE, 'BRL'),
+    ('tra-11', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5',  'bud-1',  'bitem-2', 'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   21640, NULL, NULL, TIMESTAMPTZ '2026-04-09 18:25:00-04', 'Farmacia',               'Medicamentos e itens basicos',      TRUE,  TRUE, 'BRL'),
+    ('tra-12', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-15', NULL,     NULL,      'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,   15750, NULL, NULL, TIMESTAMPTZ '2026-04-10 08:00:00-04', 'Rendimento financeiro',  'Aplicacao de curto prazo',          TRUE,  TRUE, 'BRL'),
+    ('tra-13', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-14', NULL,     NULL,      'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'PENDING',   TRUE,   14990, NULL, NULL, TIMESTAMPTZ '2026-04-11 08:00:00-04', 'Internet e celular',     'Fatura agendada',                   TRUE,  TRUE, 'BRL'),
+    ('tra-14', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4',  'bud-1',  'bitem-2', 'EXPENSE', 'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,    7200, NULL, NULL, TIMESTAMPTZ '2026-04-12 21:00:00-04', 'Cinema',                 'Saida no fim de semana',            TRUE,  TRUE, 'BRL'),
+    ('tra-15', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-18', NULL,     NULL,      'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,   92000, NULL, NULL, TIMESTAMPTZ '2026-04-14 17:45:00-04', 'Venda de equipamento',   'Equipamento parado no estoque',     TRUE,  TRUE, 'BRL'),
+    ('tra-16', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-13', 'bud-1',  'bitem-3', 'EXPENSE', 'COMMON',      'DEBIT',  'BANK',       'COMPLETED', TRUE,   68000, NULL, NULL, TIMESTAMPTZ '2026-04-15 08:00:00-04', 'Conta de energia',       'Agendada para debito automatico',   TRUE,  TRUE, 'BRL'),
+    ('tra-17', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-13', 'bud-3',  'bitem-7', 'EXPENSE', 'COMMON',      'DEBIT',  'CARD_CREDIT','PENDING',   FALSE,  31500, NULL, NULL, TIMESTAMPTZ '2026-04-18 13:00:00-04', 'Reserva hospedagem',     'Adiantamento para a viagem',        FALSE, TRUE, 'BRL'),
+    ('tra-18', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4',  'bud-3',  'bitem-9', 'EXPENSE', 'COMMON',      'DEBIT',  'PIX',        'PENDING',   FALSE,   9200, NULL, NULL, TIMESTAMPTZ '2026-04-18 15:30:00-04', 'Passeio futuro',         'Ingressos e atividades',            TRUE,  TRUE, 'BRL')
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE accounts
