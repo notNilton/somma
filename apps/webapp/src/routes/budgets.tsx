@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   ArrowDownLeft,
   CalendarDays,
+  ChevronRight,
   Loader2,
   Pencil,
   Plus,
@@ -22,6 +23,7 @@ import type { BudgetPlan } from "../lib/budgets";
 import { formatMonthLabelPtBr } from "../lib/formatters";
 import { cn } from "../lib/utils";
 import { BudgetModal } from "../components/BudgetModal";
+import BudgetDetailView from "../components/BudgetDetailView";
 
 export const Route = createFileRoute("/budgets")({
   component: BudgetsPage,
@@ -31,15 +33,20 @@ function BudgetCard({
   budget,
   onEdit,
   onDelete,
+  onViewDetails,
 }: {
   budget: BudgetPlan;
   onEdit: (budget: BudgetPlan) => void;
   onDelete: (id: string) => void;
+  onViewDetails: (budget: BudgetPlan) => void;
 }) {
   const percent = Math.min(100, Math.max(0, budget.progress));
 
   return (
-    <DashboardPanel className="flex flex-col gap-4 p-4">
+    <DashboardPanel
+      className="flex flex-col gap-4 p-4 hover:border-slate-300 transition-colors cursor-pointer group"
+      onClick={() => onViewDetails(budget)}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-500">
@@ -49,7 +56,10 @@ function BudgetCard({
             {budget.name}
           </h3>
         </div>
-        <div className="flex items-center gap-1">
+        <div
+          className="flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             type="button"
             onClick={() => onEdit(budget)}
@@ -113,15 +123,23 @@ function BudgetCard({
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {budget.items.map((item) => (
-          <span
-            key={item.id}
-            className="rounded-full border border-slate-300/80 bg-white/75 px-3 py-1 text-xs font-medium text-slate-700"
-          >
-            {item.name}: <PrivacyAmount value={item.amountCents / 100} />
-          </span>
-        ))}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          {budget.items.slice(0, 3).map((item) => (
+            <span
+              key={item.id}
+              className="rounded-full border border-slate-300/80 bg-white/75 px-3 py-1 text-[10px] font-medium text-slate-700"
+            >
+              {item.name}
+            </span>
+          ))}
+          {budget.items.length > 3 && (
+            <span className="text-[10px] font-bold text-slate-400">
+              +{budget.items.length - 3}
+            </span>
+          )}
+        </div>
+        <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
       </div>
     </DashboardPanel>
   );
@@ -133,6 +151,12 @@ function BudgetsPage() {
 
   const [editingBudget, setEditingBudget] = useState<BudgetPlan | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
+
+  const selectedBudget = useMemo(
+    () => budgets.find((b) => b.id === selectedBudgetId),
+    [budgets, selectedBudgetId],
+  );
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["budgets"] });
@@ -169,6 +193,22 @@ function BudgetsPage() {
     (acc, budget) => acc + budget.remainingCents,
     0,
   );
+
+  if (selectedBudget) {
+    return (
+      <SectionShell
+        backgroundClassName="transactions-bg-starfield"
+        decorations={[]}
+      >
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-3 sm:gap-5 sm:p-6">
+          <BudgetDetailView
+            budget={selectedBudget}
+            onBack={() => setSelectedBudgetId(null)}
+          />
+        </div>
+      </SectionShell>
+    );
+  }
 
   return (
     <SectionShell
@@ -272,6 +312,7 @@ function BudgetsPage() {
                   key={budget.id}
                   budget={budget}
                   onEdit={openEdit}
+                  onViewDetails={(b) => setSelectedBudgetId(b.id)}
                   onDelete={(id) => {
                     if (window.confirm("Excluir este orçamento?")) {
                       deleteMutation.mutate(id);

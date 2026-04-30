@@ -158,6 +158,11 @@ func (h *Handler) buildTransactionsFilter(q url.Values, userID string) (string, 
 		args = append(args, v)
 		i++
 	}
+	if v := q.Get("budgetId"); v != "" {
+		filters = append(filters, fmt.Sprintf("t.budget_id = $%d", i))
+		args = append(args, v)
+		i++
+	}
 
 	return strings.Join(filters, " AND "), args, i
 }

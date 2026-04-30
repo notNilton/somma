@@ -9,14 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TransactionsRouteImport } from './routes/transactions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as BudgetsRouteImport } from './routes/budgets'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as TransactionsCrudTransactionsRouteImport } from './routes/transactions/crud-transactions'
-import { Route as TransactionsCrudFuelingRouteImport } from './routes/transactions/crud-fueling'
 import { Route as SettingsVehiclesRouteImport } from './routes/settings/vehicles'
 import { Route as SettingsPersonalInfoRouteImport } from './routes/settings/personal-info'
 import { Route as SettingsDataPrivacyRouteImport } from './routes/settings/data-privacy'
@@ -24,11 +22,6 @@ import { Route as SettingsCategoriesRouteImport } from './routes/settings/catego
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 
-const TransactionsRoute = TransactionsRouteImport.update({
-  id: '/transactions',
-  path: '/transactions',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -60,11 +53,6 @@ const TransactionsCrudTransactionsRoute =
     path: '/crud-transactions',
     getParentRoute: () => TransactionsRoute,
   } as any)
-const TransactionsCrudFuelingRoute = TransactionsCrudFuelingRouteImport.update({
-  id: '/crud-fueling',
-  path: '/crud-fueling',
-  getParentRoute: () => TransactionsRoute,
-} as any)
 const SettingsVehiclesRoute = SettingsVehiclesRouteImport.update({
   id: '/vehicles',
   path: '/vehicles',
@@ -101,14 +89,12 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/budgets': typeof BudgetsRoute
   '/settings': typeof SettingsRouteWithChildren
-  '/transactions': typeof TransactionsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/settings/categories': typeof SettingsCategoriesRoute
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
-  '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -116,14 +102,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/budgets': typeof BudgetsRoute
-  '/transactions': typeof TransactionsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/settings/categories': typeof SettingsCategoriesRoute
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
-  '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/settings': typeof SettingsIndexRoute
 }
@@ -133,14 +117,12 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/budgets': typeof BudgetsRoute
   '/settings': typeof SettingsRouteWithChildren
-  '/transactions': typeof TransactionsRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/settings/categories': typeof SettingsCategoriesRoute
   '/settings/data-privacy': typeof SettingsDataPrivacyRoute
   '/settings/personal-info': typeof SettingsPersonalInfoRoute
   '/settings/vehicles': typeof SettingsVehiclesRoute
-  '/transactions/crud-fueling': typeof TransactionsCrudFuelingRoute
   '/transactions/crud-transactions': typeof TransactionsCrudTransactionsRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -151,14 +133,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/budgets'
     | '/settings'
-    | '/transactions'
     | '/auth/login'
     | '/auth/register'
     | '/settings/categories'
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
-    | '/transactions/crud-fueling'
     | '/transactions/crud-transactions'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -166,14 +146,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/budgets'
-    | '/transactions'
     | '/auth/login'
     | '/auth/register'
     | '/settings/categories'
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
-    | '/transactions/crud-fueling'
     | '/transactions/crud-transactions'
     | '/settings'
   id:
@@ -182,14 +160,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/budgets'
     | '/settings'
-    | '/transactions'
     | '/auth/login'
     | '/auth/register'
     | '/settings/categories'
     | '/settings/data-privacy'
     | '/settings/personal-info'
     | '/settings/vehicles'
-    | '/transactions/crud-fueling'
     | '/transactions/crud-transactions'
     | '/settings/'
   fileRoutesById: FileRoutesById
@@ -199,18 +175,10 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   BudgetsRoute: typeof BudgetsRoute
   SettingsRoute: typeof SettingsRouteWithChildren
-  TransactionsRoute: typeof TransactionsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/transactions': {
-      id: '/transactions'
-      path: '/transactions'
-      fullPath: '/transactions'
-      preLoaderRoute: typeof TransactionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -251,13 +219,6 @@ declare module '@tanstack/react-router' {
       path: '/crud-transactions'
       fullPath: '/transactions/crud-transactions'
       preLoaderRoute: typeof TransactionsCrudTransactionsRouteImport
-      parentRoute: typeof TransactionsRoute
-    }
-    '/transactions/crud-fueling': {
-      id: '/transactions/crud-fueling'
-      path: '/crud-fueling'
-      fullPath: '/transactions/crud-fueling'
-      preLoaderRoute: typeof TransactionsCrudFuelingRouteImport
       parentRoute: typeof TransactionsRoute
     }
     '/settings/vehicles': {
@@ -337,26 +298,11 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
   SettingsRouteChildren,
 )
 
-interface TransactionsRouteChildren {
-  TransactionsCrudFuelingRoute: typeof TransactionsCrudFuelingRoute
-  TransactionsCrudTransactionsRoute: typeof TransactionsCrudTransactionsRoute
-}
-
-const TransactionsRouteChildren: TransactionsRouteChildren = {
-  TransactionsCrudFuelingRoute: TransactionsCrudFuelingRoute,
-  TransactionsCrudTransactionsRoute: TransactionsCrudTransactionsRoute,
-}
-
-const TransactionsRouteWithChildren = TransactionsRoute._addFileChildren(
-  TransactionsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   BudgetsRoute: BudgetsRoute,
   SettingsRoute: SettingsRouteWithChildren,
-  TransactionsRoute: TransactionsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
