@@ -10,10 +10,10 @@ Este repositório usa runners separados por tipo de build para reduzir contenç�
 
 ## Objetivo
 
-- `go` para pipelines de backend em Go.
-- `react` para pipelines de frontend em React.
-- `deploy` para rotinas de publicação, bump de versão e validação de infra.
-- Cada runner executa um job por vez.
+- `go`: Pipelines de backend em Go e rotinas de orquestração (bump de versão, validação de infra).
+- `react`: Pipelines de frontend em React.
+- Ambos utilizam a imagem `catthehacker/ubuntu:full-latest`, que já contém a maioria das ferramentas necessárias (Go, Node, Docker).
+- Cada runner executa um job por vez (`capacity: 1`).
 - Cada runner tem limites próprios de CPU, RAM e PIDs.
 - Os runners não entram na rede de produção; ficam apenas na rede do Gitea.
 
@@ -21,7 +21,7 @@ Este repositório usa runners separados por tipo de build para reduzir contenç�
 
 O seletor é o `runs-on` do job.
 
-### Backend Go
+### Backend Go / Infra
 
 ```yaml
 jobs:
@@ -37,14 +37,6 @@ jobs:
     runs-on: react
 ```
 
-### Deploy / Infra
-
-```yaml
-jobs:
-  publish:
-    runs-on: deploy
-```
-
 ## O que não fazer
 
 - Não use o mesmo label para Go e React.
@@ -56,7 +48,6 @@ jobs:
 
 Os runners atuais foram configurados com:
 
-- `capacity: 1`
 - `cpus: 1.50`
 - `mem_limit: 1536m`
 - `pids_limit: 256`
@@ -65,7 +56,7 @@ Isso reduz a chance de um build derrubar o Gitea, mas não elimina totalmente im
 
 ## Próximo passo recomendado
 
-Se quiser isolar ainda mais produção, o passo seguinte é criar um terceiro runner, com label `deploy`, apenas para rotinas de publicação e restart. Assim build e deploy deixam de competir entre si. (Nota: Já configuramos os workflows para usar este label em tarefas de orquestração).
+Se o volume de builds aumentar, pode-se criar um terceiro runner exclusivo para orquestração (ex: label `deploy`), separando tarefas leves de bump/validação das tarefas pesadas de compilação.
 
 ---
 

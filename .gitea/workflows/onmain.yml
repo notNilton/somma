@@ -12,7 +12,7 @@ jobs:
   # 1. Bumpa versões, commita e cria tags (sempre)
   # ========================================================
   bump-versions:
-    runs-on: deploy
+    runs-on: go
     outputs:
       BACKEND_VERSION: ${{ steps.bump.outputs.BACKEND_VERSION }}
       WEBAPP_VERSION: ${{ steps.bump.outputs.WEBAPP_VERSION }}

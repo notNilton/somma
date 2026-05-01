@@ -64,7 +64,7 @@ jobs:
   # Valida arquivos docker-compose
   # ========================================================
   validate-compose:
-    runs-on: deploy
+    runs-on: go
     steps:
       - name: Check out repository code
         run: |
