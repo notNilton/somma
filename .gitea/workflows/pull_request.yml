@@ -19,21 +19,6 @@ jobs:
           git clone --depth=1 --branch "${{ gitea.ref_name }}" \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-      - name: Setup Go
-        run: |
-          for GO_DIR in /opt/hostedtoolcache/go/*/x64/bin /usr/local/go/bin /usr/bin /usr/local/bin /snap/bin; do
-            if [ -x "${GO_DIR}/go" ]; then
-              echo "${GO_DIR}" >> $GITHUB_PATH
-              export PATH="${GO_DIR}:$PATH"
-              echo "Found Go at ${GO_DIR}/go"
-              go version
-              exit 0
-            fi
-          done
-          echo "ERROR: go not found, searching..."
-          find / -maxdepth 8 -name go -type f 2>/dev/null | head -10 || true
-          exit 1
-
       - name: Build binaries
         working-directory: apps/backend
         env:

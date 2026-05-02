@@ -82,18 +82,6 @@ jobs:
           git clone --depth=1 --branch main \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-      - name: Setup Go
-        run: |
-          for GO_DIR in /opt/hostedtoolcache/go/*/x64/bin /usr/local/go/bin /usr/bin /usr/local/bin /snap/bin; do
-            if [ -x "${GO_DIR}/go" ]; then
-              echo "${GO_DIR}" >> $GITHUB_PATH
-              export PATH="${GO_DIR}:$PATH"
-              go version
-              exit 0
-            fi
-          done
-          exit 1
-
       - name: Build binary
         working-directory: apps/backend
         env:
@@ -130,18 +118,6 @@ jobs:
           echo "https://oauth2:${{ secrets.REPO_COMPLETE_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
           git clone --depth=1 --branch main \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
-
-      - name: Setup Go
-        run: |
-          for GO_DIR in /opt/hostedtoolcache/go/*/x64/bin /usr/local/go/bin /usr/bin /usr/local/bin /snap/bin; do
-            if [ -x "${GO_DIR}/go" ]; then
-              echo "${GO_DIR}" >> $GITHUB_PATH
-              export PATH="${GO_DIR}:$PATH"
-              go version
-              exit 0
-            fi
-          done
-          exit 1
 
       - name: Build migrate binary
         working-directory: database
