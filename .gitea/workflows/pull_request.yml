@@ -38,13 +38,6 @@ jobs:
           git clone --depth=1 --branch "${{ gitea.ref_name }}" \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: apps/webapp/package-lock.json
-
       - name: Build Webapp
         working-directory: apps/webapp
         run: |
