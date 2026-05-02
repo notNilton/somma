@@ -6,16 +6,19 @@ Pipeline de integração e entrega contínua do Mirante, rodando no act_runner h
 
 # Gitea Runner Pools
 
-Este repositório usa runners separados por tipo de build para reduzir contenção no VPS de produção.
+Este repositório usa runners separados por workload para evitar que builds de aplicação concorram entre si no mesmo host.
+
+## Topologia
+
+- `go`: Backend Go, Migrations, e rotinas de orquestração (bump de versão, validação de infra).
+- `typescript`: Webapp React, Vite, e outras ferramentas Node.js.
 
 ## Objetivo
 
-- `go`: Pipelines de backend em Go e rotinas de orquestração (bump de versão, validação de infra).
-- `react`: Pipelines de frontend em React.
-- Ambos utilizam a imagem `catthehacker/ubuntu:full-latest`, que já contém a maioria das ferramentas necessárias (Go, Node, Docker).
-- Cada runner executa um job por vez (`capacity: 1`).
-- Cada runner tem limites próprios de CPU, RAM e PIDs.
-- Os runners não entram na rede de produção; ficam apenas na rede do Gitea.
+- Isolar builds Go de builds TypeScript.
+- Limitar concorrência no host (`capacity: 1`).
+- Reduzir o peso das imagens de job usando imagens especializadas.
+- Evitar `ubuntu:full-latest` como base genérica.
 
 ## Como o workflow escolhe o runner
 
@@ -29,34 +32,28 @@ jobs:
     runs-on: go
 ```
 
-### Frontend React
+### Webapp TypeScript / React
 
 ```yaml
 jobs:
   build:
-    runs-on: react
+    runs-on: typescript
 ```
 
-## O que não fazer
+## O que evitar
 
-- Não use o mesmo label para Go e React.
-- Não use `ubuntu-latest` como label genérico para build de produção.
-- Não dependa de `deploy.resources` no compose para limitar runner local; em `docker compose` comum isso não segura o host.
-- Não conecte runner de build à rede `nilbyte-prod` sem necessidade.
+- **Não use `ubuntu-latest`** como label genérico.
+- **Não use `react`** (label depreciado; use `typescript`).
+- Não instale toolchains pesadas manualmente se a imagem do runner já fornece isso.
 
-## Limites atuais
+## Setup de toolchain
 
-Os runners atuais foram configurados com:
+As imagens dos runners já trazem as toolchains principais (`go`, `node`, `npm`).
 
-- `cpus: 1.50`
-- `mem_limit: 1536m`
-- `pids_limit: 256`
-
-Isso reduz a chance de um build derrubar o Gitea, mas não elimina totalmente impacto de CPU e I/O no mesmo host.
-
-## Próximo passo recomendado
-
-Se o volume de builds aumentar, pode-se criar um terceiro runner exclusivo para orquestração (ex: label `deploy`), separando tarefas leves de bump/validação das tarefas pesadas de compilação.
+Use `actions/setup-go` ou `actions/setup-node` apenas quando precisar:
+- Fixar uma versão específica diferente da embutida.
+- Usar cache nativo da action.
+- Testar múltiplas versões.
 
 ---
 
@@ -85,7 +82,7 @@ push → development
 
 #### `build-backend`
 1. Clona o repositório via HTTPS com `PACKAGES_TOKEN`
-2. Localiza o binário Go em `/opt/hostedtoolcache/go/*/x64/bin` (pré-instalado na imagem do runner)
+2. Utiliza a toolchain Go presente no runner
 3. Compila com `go build -mod=vendor ./...` — usa o diretório `apps/backend/vendor/`, zero acesso à internet
 
 #### `build-webapp`
@@ -130,7 +127,7 @@ Outputs do job (usados pelos builds):
 ### Job `build-backend`
 
 1. Clona `main` via HTTPS
-2. Localiza Go no toolcache do runner
+2. Utiliza a toolchain Go presente no runner
 3. Compila o binário: `CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -ldflags "-X .../version.Version=X.Y.Z" -o main ./cmd/api`
    - `CGO_ENABLED=0` é **obrigatório** — o runner é Ubuntu (glibc) mas a imagem final é Alpine (musl). Sem isso, o binário falha com `exec ./main: no such file or directory` em produção.
 4. Resolve o IP do container Gitea na rede `nilbyte-git` via `docker network inspect`

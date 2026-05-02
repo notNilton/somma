@@ -142,7 +142,7 @@ jobs:
 
   build-webapp:
     needs: bump-versions
-    runs-on: react
+    runs-on: typescript
     steps:
       - name: Check out repository code
         run: |
