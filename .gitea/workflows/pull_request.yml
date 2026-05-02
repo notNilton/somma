@@ -65,9 +65,6 @@ jobs:
           git clone --depth=1 --branch "${{ gitea.ref_name }}" \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-      - name: Fix Docker Socket Permissions
-        run: sudo chmod 666 /var/run/docker.sock
-
       - name: Validate docker-compose.yml
         run: |
           JWT_SECRET=ci-dummy-secret \

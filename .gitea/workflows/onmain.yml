@@ -101,7 +101,6 @@ jobs:
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
           echo "REPO_LOWER=$(echo ${{ gitea.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-          sudo chmod 666 /var/run/docker.sock
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
       - name: Build and push Backend image
         run: |
@@ -135,7 +134,6 @@ jobs:
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
           echo "REPO_LOWER=$(echo ${{ gitea.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-          sudo chmod 666 /var/run/docker.sock
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
       - name: Build and push Database/Migrate image
         run: |
@@ -176,7 +174,6 @@ jobs:
           echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
           echo "REPO_LOWER=$(echo ${{ gitea.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-          sudo chmod 666 /var/run/docker.sock
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
       - name: Build and push Webapp image
         run: |
