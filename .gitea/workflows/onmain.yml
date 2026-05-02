@@ -12,7 +12,7 @@ jobs:
   # 1. Bumpa versões, commita e cria tags (sempre)
   # ========================================================
   bump-versions:
-    runs-on: go
+    runs-on: typescript
     outputs:
       BACKEND_VERSION: ${{ steps.bump.outputs.BACKEND_VERSION }}
       WEBAPP_VERSION: ${{ steps.bump.outputs.WEBAPP_VERSION }}
@@ -29,20 +29,11 @@ jobs:
       - name: Bump versions, commit and tag
         id: bump
         run: |
-          # Instala jq se não estiver presente (para imagens minimalistas)
-          if ! command -v jq &> /dev/null; then
-            if command -v apk &> /dev/null; then
-              sudo apk add --no-cache jq
-            elif command -v apt-get &> /dev/null; then
-              sudo apt-get update && sudo apt-get install -y jq
-            fi
-          fi
-
           FILES_CHANGED=""
 
-          # Backend — sempre bump
-          CURRENT=$(cat apps/backend/VERSION)
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          # Backend — sempre bump (txt puro)
+          CURRENT_BE=$(cat apps/backend/VERSION)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_BE"
           PATCH=$((PATCH + 1))
           BACKEND_NEW="${MAJOR}.${MINOR}.${PATCH}"
           echo "$BACKEND_NEW" > apps/backend/VERSION
@@ -50,13 +41,17 @@ jobs:
           FILES_CHANGED="$FILES_CHANGED backend-v${BACKEND_NEW}"
           echo "BACKEND_VERSION=$BACKEND_NEW" >> $GITHUB_OUTPUT
 
-          # Webapp — sempre bump
-          CURRENT=$(jq -r '.version' apps/webapp/package.json)
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          PATCH=$((PATCH + 1))
-          WEBAPP_NEW="${MAJOR}.${MINOR}.${PATCH}"
-          jq --arg v "$WEBAPP_NEW" '.version = $v' apps/webapp/package.json > /tmp/pkg.json
-          mv /tmp/pkg.json apps/webapp/package.json
+          # Webapp — sempre bump (usando node já que estamos no runner de typescript)
+          WEBAPP_NEW=$(node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('apps/webapp/package.json', 'utf8'));
+            const parts = pkg.version.split('.');
+            parts[2] = parseInt(parts[2]) + 1;
+            const next = parts.join('.');
+            pkg.version = next;
+            fs.writeFileSync('apps/webapp/package.json', JSON.stringify(pkg, null, 2) + '\\n');
+            console.log(next);
+          ")
           git add apps/webapp/package.json
           FILES_CHANGED="$FILES_CHANGED webapp-v${WEBAPP_NEW}"
           echo "WEBAPP_VERSION=$WEBAPP_NEW" >> $GITHUB_OUTPUT
