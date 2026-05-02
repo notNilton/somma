@@ -70,7 +70,7 @@ make seed-complete     # aplica o seed completo
 make seed-barebones    # aplica o seed básico
 ```
 
-Para um fluxo isolado so de banco local, use [docs/local-db.md](/var/home/notNilton/Workspace/nilbyte-studios/mirante/docs/local-db.md) com `make deps-up`, `make db-reset` e os alvos de migration.
+Para um fluxo isolado so de banco local, use [docs/local-db.md](/var/home/notNilton/Workspace/nilByte/mirante/docs/local-db.md) com `make deps-up`, `make db-reset` e os alvos de migration.
 
 Para criar uma nova migration, adicionar dois arquivos em `database/migrations/`:
 
@@ -220,7 +220,7 @@ O `docker-compose.backend.yml` inclui um serviço `mirante-migrate` que roda ant
 
 ```yaml
 mirante-migrate:
-  image: gitea.nilbyte.com.br/nilbyte-studios/mirante/database:latest
+  image: gitea.nilbyte.com.br/nilByte/mirante/database:latest
   restart: "no"
 
 mirante-backend:
@@ -244,13 +244,13 @@ O Gitea expõe SSH na porta **2222**. O SSH **não passa pelo Cloudflare** — o
 O Gitea é acessível diretamente pelo nome do container. A porta interna do container é 22:
 
 ```bash
-ssh://git@gitea:22/nilbyte-studios/mirante.git
+ssh://git@gitea:22/nilByte/mirante.git
 ```
 
 Ou via `localhost` se rodar fora de container no próprio host:
 
 ```bash
-ssh://git@localhost:2222/nilbyte-studios/mirante.git
+ssh://git@localhost:2222/nilByte/mirante.git
 ```
 
 #### De uma máquina externa com Tailscale (recomendado)
@@ -258,7 +258,7 @@ ssh://git@localhost:2222/nilbyte-studios/mirante.git
 O servidor está na VPN Tailscale com o hostname `niflhel`. O tráfego vai direto pelo túnel VPN, contornando o Cloudflare:
 
 ```bash
-git clone ssh://git@niflhel:2222/nilbyte-studios/mirante.git
+git clone ssh://git@niflhel:2222/nilByte/mirante.git
 
 # Testar conexão
 ssh -T git@niflhel -p 2222

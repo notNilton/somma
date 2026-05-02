@@ -113,11 +113,11 @@ jobs:
       - name: Build and push Backend image
         run: |
           docker build -f apps/backend/Dockerfile \
-            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/backend:latest \
-            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
+            -t ${{ env.REGISTRY }}/${{ gitea.repository }}/backend:latest \
+            -t ${{ env.REGISTRY }}/${{ gitea.repository }}/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
             .
-          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/backend:latest
-          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
+          docker push ${{ env.REGISTRY }}/${{ gitea.repository }}/backend:latest
+          docker push ${{ env.REGISTRY }}/${{ gitea.repository }}/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
 
   build-database:
     needs: bump-versions
@@ -158,9 +158,9 @@ jobs:
       - name: Build and push Database/Migrate image
         run: |
           docker build -f database/Dockerfile \
-            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/database:latest \
+            -t ${{ env.REGISTRY }}/${{ gitea.repository }}/database:latest \
             .
-          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/database:latest
+          docker push ${{ env.REGISTRY }}/${{ gitea.repository }}/database:latest
 
   build-webapp:
     needs: bump-versions
@@ -191,8 +191,8 @@ jobs:
       - name: Build and push Webapp image
         run: |
           docker build -f apps/webapp/Dockerfile \
-            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/webapp:latest \
-            -t ${{ env.REGISTRY }}/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
+            -t ${{ env.REGISTRY }}/${{ gitea.repository }}/webapp:latest \
+            -t ${{ env.REGISTRY }}/${{ gitea.repository }}/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
             .
-          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/webapp:latest
-          docker push ${{ env.REGISTRY }}/nilbyte-studios/mirante/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
+          docker push ${{ env.REGISTRY }}/${{ gitea.repository }}/webapp:latest
+          docker push ${{ env.REGISTRY }}/${{ gitea.repository }}/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}

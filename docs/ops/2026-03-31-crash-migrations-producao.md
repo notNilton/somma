@@ -68,7 +68,7 @@ Adicionado serviço `mirante-migrate` ao `docker-compose.backend.yml`:
 ```yaml
 services:
   mirante-migrate:
-    image: gitea.nilbyte.com.br/nilbyte-studios/mirante/database:latest
+    image: gitea.nilbyte.com.br/nilByte/mirante/database:latest
     container_name: mirante_migrate_prod
     restart: "no"
     environment:
@@ -168,11 +168,11 @@ Sem argumento, o container executa o `CMD` padrão do Dockerfile: `./migrate up`
 ```sh
 migrate)
     docker run --rm --network mirante-internal --env-file apps/mirante/.env \
-      gitea.nilbyte.com.br/nilbyte-studios/mirante/database:latest ./migrate up
+      gitea.nilbyte.com.br/nilByte/mirante/database:latest ./migrate up
     ;;
 seed)
     docker run --rm --network mirante-internal --env-file apps/mirante/.env \
-      gitea.nilbyte.com.br/nilbyte-studios/mirante/database:latest ./migrate seed
+      gitea.nilbyte.com.br/nilByte/mirante/database:latest ./migrate seed
     ;;
 ```
 
