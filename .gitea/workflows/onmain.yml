@@ -29,6 +29,15 @@ jobs:
       - name: Bump versions, commit and tag
         id: bump
         run: |
+          # Instala jq se não estiver presente (para imagens minimalistas)
+          if ! command -v jq &> /dev/null; then
+            if command -v apk &> /dev/null; then
+              sudo apk add --no-cache jq
+            elif command -v apt-get &> /dev/null; then
+              sudo apt-get update && sudo apt-get install -y jq
+            fi
+          fi
+
           FILES_CHANGED=""
 
           # Backend — sempre bump
