@@ -8,17 +8,23 @@ Pipeline de integração e entrega contínua do Mirante, rodando no act_runner h
 
 Este repositório usa runners separados por workload para evitar que builds de aplicação concorram entre si no mesmo host.
 
+## Contexto do host (VPS Niflheim)
+
+- 4 vCPU / 8 GB de RAM
+- Gitea e stack de produção rodando no mesmo host.
+- Os runners são configurados para limitar o impacto no servidor, priorizando a estabilidade dos serviços de produção sobre a velocidade do CI.
+
 ## Topologia
 
 - `go`: Backend Go, Migrations, e rotinas de orquestração (bump de versão, validação de infra).
 - `typescript`: Webapp React, Vite, e outras ferramentas Node.js.
 
-## Objetivo
+## Limites operacionais
 
-- Isolar builds Go de builds TypeScript.
-- Limitar concorrência no host (`capacity: 1`).
-- Reduzir o peso das imagens de job usando imagens especializadas.
-- Evitar `ubuntu:full-latest` como base genérica.
+- `go`: `mem_limit: 1024m`, `cpu_shares: 96`.
+- `typescript`: `mem_limit: 2048m`, `cpu_shares: 160`.
+- Ambos têm `capacity: 1` e `oom_score_adj: 500`.
+- Os runners não têm limite de CPU fixo para permitir bursts quando o host está livre.
 
 ## Como o workflow escolhe o runner
 
