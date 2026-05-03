@@ -15,7 +15,7 @@ jobs:
       - name: Check out repository code
         run: |
           git config --global credential.helper store
-          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          echo "https://oauth2:${{ secrets.REPO_COMPLETE_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
           git clone --depth=1 --branch "${{ gitea.ref_name }}" \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
@@ -34,7 +34,7 @@ jobs:
       - name: Check out repository code
         run: |
           git config --global credential.helper store
-          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          echo "https://oauth2:${{ secrets.REPO_COMPLETE_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
           git clone --depth=1 --branch "${{ gitea.ref_name }}" \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
@@ -54,7 +54,7 @@ jobs:
       - name: Check out repository code
         run: |
           git config --global credential.helper store
-          echo "https://oauth2:${{ secrets.PACKAGES_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          echo "https://oauth2:${{ secrets.REPO_COMPLETE_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
           git clone --depth=1 --branch "${{ gitea.ref_name }}" \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
