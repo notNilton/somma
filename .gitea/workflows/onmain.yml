@@ -199,11 +199,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H 173.212.207.80 >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy on VPS
         run: |
-          ssh -i ~/.ssh/deploy_key deploy@173.212.207.80 '
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
             cd /srv/nilbyte/infrastructure &&
             docker compose -f apps/infra/mirante/docker-compose.backend.yml -f apps/infra/mirante/docker-compose.webapp.yml pull &&
             docker compose -f apps/infra/mirante/docker-compose.backend.yml -f apps/infra/mirante/docker-compose.webapp.yml up -d

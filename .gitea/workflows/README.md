@@ -175,7 +175,9 @@ Outputs do job (usados pelos builds):
 |--------|-----------|
 | `REPO_COMPLETE_TOKEN` | Clone HTTPS + push do bump-versions + docker login |
 | `PACKAGES_TOKEN` | Clone HTTPS em Pull Requests |
-| `DEPLOY_SSH_KEY` | Chave SSH do usuário `deploy` para o VPS |
+| `DEPLOY_SSH_KEY` | Chave SSH para acesso ao VPS |
+| `DEPLOY_HOST` | Endereço IP ou domínio do VPS |
+| `DEPLOY_USER` | Usuário para o deploy (ex: `deploy`) |
 
 ---
 
