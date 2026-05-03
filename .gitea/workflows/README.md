@@ -164,7 +164,11 @@ Outputs do job (usados pelos builds):
 
 | Secret | Usado para |
 |--------|-----------|
-| `PACKAGES_TOKEN` | Clone HTTPS + push do bump-versions + docker login no registry |
+| `REPO_COMPLETE_TOKEN` | Clone HTTPS + push do bump-versions + docker login |
+| `PACKAGES_TOKEN` | Clone HTTPS em Pull Requests |
+| `SSH_PRIVATE_KEY` | Acesso ao VPS para deploy |
+| `SSH_HOST` | Endereço/IP do VPS |
+| `SSH_USER` | Usuário para login SSH no VPS |
 
 ---
 
