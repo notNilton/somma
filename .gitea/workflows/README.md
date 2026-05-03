@@ -63,12 +63,12 @@ Use `actions/setup-go` ou `actions/setup-node` apenas quando precisar:
 
 ---
 
-## Operação (Autosync)
+## Operação (Deploy Explícito)
 
-O deploy no VPS não é um job da pipeline. O fluxo funciona da seguinte forma:
+O deploy no VPS é um job explícito na pipeline:
 1.  A pipeline publica as imagens com a tag `:latest`.
-2.  O serviço de **Autosync** no host de produção detecta novas imagens, faz o `pull` e reinicia os containers (`up -d`) automaticamente a cada 5 minutos.
-3.  Isso elimina a necessidade de acesso SSH direto ou webhooks complexos durante o workflow.
+2.  Um job de `deploy` conecta via SSH ao VPS usando o usuário `deploy`.
+3.  O VPS executa o `docker compose pull` e `up -d` a partir do checkout de infraestrutura em `/srv/nilbyte/infrastructure`.
 
 ---
 
@@ -144,7 +144,7 @@ Outputs do job (usados pelos builds):
 1. Clona `main` via HTTPS
 2. Utiliza a toolchain Go presente no runner
 3. Compila o binário: `CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -ldflags "-X .../version.Version=X.Y.Z" -o main ./cmd/api`
-   - `CGO_ENABLED=0` é **obrigatório** — o runner é Ubuntu (glibc) mas a imagem final é Alpine (musl). Sem isso, o binário falha com `exec ./main: no such file or directory` em produção.
+   - `CGO_ENABLED=0` é **obrigatório** — o runner é Ubuntu (glibc) mas a imagem final é Alpine (musl). Sem isso, o binário falha with `exec ./main: no such file or directory` em produção.
 4. Resolve o IP do container Gitea na rede `nilbyte-git` via `docker network inspect`
 5. Faz `docker login` no registry interno (`172.20.x.x:3000`)
 6. `docker build --network=host` — usa rede do host para puxar imagens base do Docker Hub
@@ -175,6 +175,7 @@ Outputs do job (usados pelos builds):
 |--------|-----------|
 | `REPO_COMPLETE_TOKEN` | Clone HTTPS + push do bump-versions + docker login |
 | `PACKAGES_TOKEN` | Clone HTTPS em Pull Requests |
+| `DEPLOY_SSH_KEY` | Chave SSH do usuário `deploy` para o VPS |
 
 ---
 
@@ -249,14 +250,10 @@ Runner container (rede nilbyte-git)
 4. build-backend: compila binary (CGO_ENABLED=0), gera backend:1.0.6 + backend:latest
 5. build-database: compila migrate (CGO_ENABLED=0), gera database:latest (com SQLs embutidos)
 6. build-webapp: npm build, gera webapp:1.0.6 + webapp:latest
-7. No servidor: sh scripts/manage-mirante.sh update →
-   a. pull → puxa novas imagens do registry
-   b. stop → para todos os containers
-   c. start → sobe tudo com os 3 compose files juntos:
-      - mirante-db sobe e aguarda healthcheck (pg_isready)
-      - mirante-migrate roda ./migrate up → encerra com exit 0
-      - mirante-backend sobe (depends_on: mirante-migrate: service_completed_successfully)
-      - mirante-webapp sobe em paralelo
+7. Job deploy (via SSH):
+   a. cd /srv/nilbyte/infrastructure
+   b. docker compose pull
+   c. docker compose up -d
 ```
 
 ### Comandos disponíveis no manage-mirante.sh
