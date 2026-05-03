@@ -63,6 +63,15 @@ Use `actions/setup-go` ou `actions/setup-node` apenas quando precisar:
 
 ---
 
+## Operação (Autosync)
+
+O deploy no VPS não é um job da pipeline. O fluxo funciona da seguinte forma:
+1.  A pipeline publica as imagens com a tag `:latest`.
+2.  O serviço de **Autosync** no host de produção detecta novas imagens, faz o `pull` e reinicia os containers (`up -d`) automaticamente a cada 5 minutos.
+3.  Isso elimina a necessidade de acesso SSH direto ou webhooks complexos durante o workflow.
+
+---
+
 ## Visão geral
 
 | Workflow | Trigger | Propósito |
@@ -166,9 +175,6 @@ Outputs do job (usados pelos builds):
 |--------|-----------|
 | `REPO_COMPLETE_TOKEN` | Clone HTTPS + push do bump-versions + docker login |
 | `PACKAGES_TOKEN` | Clone HTTPS em Pull Requests |
-| `SSH_PRIVATE_KEY` | Acesso ao VPS para deploy |
-| `SSH_HOST` | Endereço/IP do VPS |
-| `SSH_USER` | Usuário para login SSH no VPS |
 
 ---
 
