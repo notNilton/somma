@@ -177,18 +177,12 @@ jobs:
 
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
-      - name: Warm Docker cache
-        if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
-        run: |
-          docker pull "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" || true
-
       - name: Build and push Backend image
         if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         env:
           DOCKER_BUILDKIT: "0"
         run: |
-          docker build --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" \
-            -f apps/backend/Dockerfile \
+          docker build -f apps/backend/Dockerfile \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
             .
@@ -225,18 +219,12 @@ jobs:
 
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
-      - name: Warm Docker cache
-        if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
-        run: |
-          docker pull "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" || true
-
       - name: Build and push Database/Migrate image
         if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
         env:
           DOCKER_BUILDKIT: "0"
         run: |
-          docker build --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" \
-            -f database/Dockerfile \
+          docker build -f database/Dockerfile \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" \
             .
           docker push "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest"
@@ -273,18 +261,12 @@ jobs:
 
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
-      - name: Warm Docker cache
-        if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
-        run: |
-          docker pull "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" || true
-
       - name: Build and push Webapp image
         if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         env:
           DOCKER_BUILDKIT: "0"
         run: |
-          docker build --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" \
-            -f apps/webapp/Dockerfile \
+          docker build -f apps/webapp/Dockerfile \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}" \
             .
