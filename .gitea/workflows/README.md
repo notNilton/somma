@@ -16,7 +16,8 @@ Este repositório usa runners separados por workload para evitar que builds de a
 
 ## Topologia
 
-- `go`: Backend Go, Migrations, e rotinas de orquestração (bump de versão, validação de infra).
+- `basic`: Detecção de mudanças, bump/tag, deploy por SSH e validações leves de infraestrutura.
+- `go`: Backend Go e Migrations.
 - `typescript`: Webapp React, Vite, e outras ferramentas Node.js.
 
 ## Limites operacionais
@@ -36,6 +37,14 @@ O seletor é o `runs-on` do job.
 jobs:
   build:
     runs-on: go
+```
+
+### Basic / automações leves
+
+```yaml
+jobs:
+  deploy:
+    runs-on: basic
 ```
 
 ### Webapp TypeScript / React

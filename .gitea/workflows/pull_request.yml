@@ -7,7 +7,7 @@ on:
 
 jobs:
   detect-changes:
-    runs-on: go
+    runs-on: basic
     outputs:
       BACKEND_CHANGED: ${{ steps.detect.outputs.BACKEND_CHANGED }}
       DATABASE_CHANGED: ${{ steps.detect.outputs.DATABASE_CHANGED }}
@@ -119,7 +119,7 @@ jobs:
 
   validate-compose:
     needs: detect-changes
-    runs-on: go
+    runs-on: basic
     steps:
       - name: Check out repository code
         run: |

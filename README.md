@@ -167,11 +167,12 @@ Roda em todo push para `main`. Detecta quais áreas mudaram, bumpa versão só d
 
 | Job | O que faz |
 |-----|-----------|
-| `detect-changes` | Identifica se backend, database ou webapp mudou no commit atual |
-| `bump-versions` | Incrementa apenas as versões afetadas em `apps/backend/VERSION` e `apps/webapp/package.json`, commita e cria tags git |
+| `detect-changes` | Roda no runner `basic` e identifica se backend, database ou webapp mudou no commit atual |
+| `bump-versions` | Roda no runner `basic`, incrementa apenas as versões afetadas em `apps/backend/VERSION` e `apps/webapp/package.json`, commita e cria tags git |
 | `build-backend` | Compila binário Go, reaproveita cache de camadas Docker e publica `backend:latest` e `backend:vX.Y.Z` |
 | `build-database` | Compila binário `migrate`, reaproveita cache de camadas Docker e publica `database:latest` |
 | `build-webapp` | `npm ci` com cache local, `npm run build`, reaproveita cache de camadas Docker e publica `webapp:latest` e `webapp:vX.Y.Z` |
+| `deploy` | Roda no runner `basic`, conecta por SSH e executa `docker compose pull` + `up -d` no VPS |
 
 ### Dependências no CI (vendor)
 
