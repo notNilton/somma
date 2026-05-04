@@ -120,7 +120,7 @@ jobs:
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/database:latest"
 
   build-webapp:
-    runs-on: typescript
+    runs-on: basic
     env:
       REGISTRY: "gitea.nilbyte.com.br"
       IMAGE_NAMESPACE: "nilbyte/mirante"
@@ -147,18 +147,6 @@ jobs:
           fi
           echo "WEBAPP_CHANGED=$WEBAPP_CHANGED" >> "$GITHUB_OUTPUT"
 
-      - name: Build Webapp
-        if: steps.check.outputs.WEBAPP_CHANGED == 'true'
-        working-directory: apps/webapp
-        env:
-          NPM_CONFIG_CACHE: /tmp/npm-cache
-        run: |
-          VERSION=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' package.json | head -n1)
-          npm ci --cache "$NPM_CONFIG_CACHE" --prefer-offline
-          VITE_API_URL=https://api.mirante.nilbyte.com.br \
-          VITE_APP_VERSION=$VERSION \
-          npm run build
-
       - name: Login to Gitea registry
         if: steps.check.outputs.WEBAPP_CHANGED == 'true'
         run: |
@@ -171,6 +159,8 @@ jobs:
         run: |
           VERSION=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' apps/webapp/package.json | head -n1)
           docker build -f apps/webapp/Dockerfile \
+            --build-arg VITE_API_URL=https://api.mirante.nilbyte.com.br \
+            --build-arg VITE_APP_VERSION=${VERSION} \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:latest" \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:${VERSION}" \
             .
