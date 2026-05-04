@@ -9,6 +9,6 @@ COPY apps/backend/main .
 
 USER appuser
 
-EXPOSE 3000
+EXPOSE 3300
 
 CMD ["./main"]

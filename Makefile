@@ -11,7 +11,7 @@ POSTGRES_PASSWORD ?= postgres
 POSTGRES_DB ?= mirante
 POSTGRES_PORT ?= 5454
 
-BACKEND_PORT ?= 3000
+BACKEND_PORT ?= 3300
 WEBAPP_PORT ?= 3400
 ENV ?= development
 JWT_SECRET ?= dev-secret-change-in-production

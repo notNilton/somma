@@ -17,10 +17,10 @@ services:
     container_name: api.mirante.nilbyte
     restart: always
     ports:
-      - "3000:3000"
+      - "3300:3300"
     environment:
       ENV: production
-      PORT: 3000
+      PORT: 3300
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       WEBAPP_URL: ${WEBAPP_URL:-http://localhost:3400}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
