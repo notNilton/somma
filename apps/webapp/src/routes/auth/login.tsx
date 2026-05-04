@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ShieldCheck, ArrowRight, Mail, Lock, Loader2 } from "lucide-react";
+import { ArrowRight, Lock, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { auth } from "../../lib/auth";
 import { api } from "../../lib/api";
 
@@ -26,11 +26,7 @@ function LoginPage() {
         { email, password },
       );
       auth.setToken(accessToken);
-
-      // Pequeno delay para feedback visual
-      setTimeout(() => {
-        navigate({ to: "/" });
-      }, 500);
+      navigate({ to: "/" });
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "Ocorreu um erro inesperado.",
@@ -41,58 +37,64 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen transactions-bg-starfield transactions-starfield flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="w-full max-w-sm animate-in fade-in zoom-in duration-500 relative z-10">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-none bg-primary text-primary-foreground mb-4 shadow-lg shadow-primary/20 border border-primary-foreground/20">
-            <ShieldCheck className="w-7 h-7" />
+    <div className="h-full min-h-[100dvh] overflow-hidden transactions-bg-starfield transactions-starfield text-foreground">
+      <div className="absolute inset-0 bg-background/35" />
+      <div className="relative flex h-full min-h-[100dvh] items-center justify-center px-4 py-4">
+        <div className="w-full max-w-sm">
+          <div className="mb-4 text-center">
+            <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-none border border-primary-foreground/20 bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h1 className="font-display text-xl font-bold tracking-tight sm:text-2xl">
+              Bem-vindo de volta
+            </h1>
+            <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">
+              Faça login para continuar
+            </p>
           </div>
-          <h1 className="text-2xl font-display font-bold tracking-tight uppercase">
-            Bem-vindo de volta
-          </h1>
-          <p className="text-muted-foreground mt-1 text-xs font-bold uppercase tracking-widest">
-            Acesse sua conta PersonalLedger.
-          </p>
-        </div>
 
-        <div className="card-premium p-6 flex flex-col gap-5 rounded-none border-slate-300/80">
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+          <form
+            onSubmit={handleLogin}
+            className="card-premium flex flex-col gap-3 rounded-2xl border-slate-300/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(242,246,250,0.86))] p-4 shadow-sm sm:rounded-none sm:p-5"
+          >
+            <div className="flex flex-col gap-1">
+              <label className="ml-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 E-mail
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-border rounded-none focus:ring-0 focus:border-primary outline-none transition-all text-sm"
+                  className="h-11 w-full rounded-md border border-border bg-white/55 pl-10 pr-3 text-sm outline-none transition-colors focus:border-primary"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+            <div className="flex flex-col gap-1">
+              <label className="ml-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 Senha
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="password"
                   required
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-border rounded-none focus:ring-0 focus:border-primary outline-none transition-all text-sm"
+                  className="h-11 w-full rounded-md border border-border bg-white/55 pl-10 pr-3 text-sm outline-none transition-colors focus:border-primary"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="p-3 rounded-none bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] uppercase font-bold tracking-wider animate-in slide-in-from-top-1">
+              <div className="rounded-md border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-rose-600">
                 {error}
               </div>
             )}
@@ -100,35 +102,25 @@ function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-none transactions-primary font-bold transition-all group disabled:opacity-50"
+              className="transactions-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-opacity disabled:opacity-60"
             >
               {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  <span className="uppercase tracking-widest text-xs">
-                    Entrar
-                  </span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <span>Entrar</span>
+                  <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </button>
+
+            <p className="pt-1 text-center text-xs text-muted-foreground">
+              Não tem conta?{" "}
+              <Link to="/auth/register" className="font-semibold text-primary">
+                Criar conta
+              </Link>
+            </p>
           </form>
-
-          <div className="relative flex items-center gap-3 my-1">
-            <div className="flex-1 h-[1px] bg-border" />
-            <span className="text-[10px] uppercase font-bold text-muted-foreground/50 tracking-widest">
-              ou
-            </span>
-            <div className="flex-1 h-[1px] bg-border" />
-          </div>
-
-          <p className="text-center text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-            Ainda não tem uma conta?{" "}
-            <Link to="/auth/register" className="text-primary hover:underline">
-              Crie uma agora
-            </Link>
-          </p>
         </div>
       </div>
     </div>
