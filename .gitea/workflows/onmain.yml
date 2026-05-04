@@ -205,6 +205,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
             cd /srv/nilbyte/infrastructure &&
+            sed -i "s#nilbyte-studios/mirante#nilbyte/mirante#g" apps/infra/mirante/docker-compose.backend.yml apps/infra/mirante/docker-compose.webapp.yml &&
             docker compose -f apps/infra/mirante/docker-compose.backend.yml -f apps/infra/mirante/docker-compose.webapp.yml pull &&
             docker compose -f apps/infra/mirante/docker-compose.backend.yml -f apps/infra/mirante/docker-compose.webapp.yml up -d
           '
