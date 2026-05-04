@@ -57,7 +57,7 @@ jobs:
       - name: Build and push Backend image
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
         env:
-          DOCKER_BUILDKIT: "1"
+          DOCKER_BUILDKIT: "0"
         run: |
           VERSION=$(cat apps/backend/VERSION)
           docker build -f apps/backend/Dockerfile \
@@ -112,7 +112,7 @@ jobs:
       - name: Build and push Database/Migrate image
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
         env:
-          DOCKER_BUILDKIT: "1"
+          DOCKER_BUILDKIT: "0"
         run: |
           docker build -f database/Dockerfile \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/database:latest" \
@@ -167,7 +167,7 @@ jobs:
       - name: Build and push Webapp image
         if: steps.check.outputs.WEBAPP_CHANGED == 'true'
         env:
-          DOCKER_BUILDKIT: "1"
+          DOCKER_BUILDKIT: "0"
         run: |
           VERSION=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' apps/webapp/package.json | head -n1)
           docker build -f apps/webapp/Dockerfile \
