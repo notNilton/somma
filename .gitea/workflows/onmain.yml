@@ -120,7 +120,7 @@ jobs:
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/database:latest"
 
   build-webapp:
-    runs-on: basic
+    runs-on: typescript
     env:
       REGISTRY: "gitea.nilbyte.com.br"
       IMAGE_NAMESPACE: "nilbyte/mirante"
