@@ -12,7 +12,7 @@ jobs:
     runs-on: go
     env:
       REGISTRY: "gitea.nilbyte.com.br"
-      IMAGE_NAMESPACE: "nilbyte/mirante"
+      IMAGE_NAMESPACE: "nilbyte/personalledger"
     steps:
       - name: Check out repository code
         run: |
@@ -71,7 +71,7 @@ jobs:
     runs-on: go
     env:
       REGISTRY: "gitea.nilbyte.com.br"
-      IMAGE_NAMESPACE: "nilbyte/mirante"
+      IMAGE_NAMESPACE: "nilbyte/personalledger"
     steps:
       - name: Check out repository code
         run: |
@@ -123,7 +123,7 @@ jobs:
     runs-on: typescript
     env:
       REGISTRY: "gitea.nilbyte.com.br"
-      IMAGE_NAMESPACE: "nilbyte/mirante"
+      IMAGE_NAMESPACE: "nilbyte/personalledger"
     steps:
       - name: Check out repository code
         run: |
@@ -159,7 +159,7 @@ jobs:
         run: |
           VERSION=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' apps/webapp/package.json | head -n1)
           docker build -f apps/webapp/Dockerfile \
-            --build-arg VITE_API_URL=https://api.mirante.nilbyte.com.br \
+            --build-arg VITE_API_URL=https://api.personalledger.nilbyte.com.br \
             --build-arg VITE_APP_VERSION=${VERSION} \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:latest" \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:${VERSION}" \
@@ -193,8 +193,8 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
             cd /srv/nilbyte/infrastructure &&
-            docker compose -f apps/infra/mirante/docker-compose.backend.yml -f apps/infra/mirante/docker-compose.webapp.yml pull &&
-            docker compose -f apps/infra/mirante/docker-compose.backend.yml -f apps/infra/mirante/docker-compose.webapp.yml up -d
+            docker compose -f apps/infra/personalledger/docker-compose.backend.yml -f apps/infra/personalledger/docker-compose.webapp.yml pull &&
+            docker compose -f apps/infra/personalledger/docker-compose.backend.yml -f apps/infra/personalledger/docker-compose.webapp.yml up -d
           '
 
       - name: Bump versions for next release
