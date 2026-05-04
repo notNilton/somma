@@ -11,10 +11,16 @@ jobs:
   build-backend:
     runs-on: go
     env:
-      REGISTRY_INTERNAL: "172.20.0.1:3000"
+      REGISTRY_INTERNAL: "gitea:3000"
       REGISTRY_EXTERNAL: "gitea.nilbyte.com.br"
       IMAGE_NAMESPACE: "nilbyte/mirante"
     steps:
+      - name: Fix internal DNS
+        run: |
+          # Adiciona o IP do gateway ao hosts para o nome 'gitea' resolver internamente
+          # O daemon já está configurado para aceitar gitea:3000 como insecure registry
+          echo "172.20.0.1 gitea" | sudo tee -a /etc/hosts || echo "172.20.0.1 gitea" >> /etc/hosts
+
       - name: Check out repository code
         run: |
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
@@ -53,7 +59,7 @@ jobs:
       - name: Login to Gitea registry
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
         run: |
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "http://${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
 
       - name: Build and push Backend image
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
@@ -75,10 +81,14 @@ jobs:
   build-database:
     runs-on: go
     env:
-      REGISTRY_INTERNAL: "172.20.0.1:3000"
+      REGISTRY_INTERNAL: "gitea:3000"
       REGISTRY_EXTERNAL: "gitea.nilbyte.com.br"
       IMAGE_NAMESPACE: "nilbyte/mirante"
     steps:
+      - name: Fix internal DNS
+        run: |
+          echo "172.20.0.1 gitea" | sudo tee -a /etc/hosts || echo "172.20.0.1 gitea" >> /etc/hosts
+
       - name: Check out repository code
         run: |
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
@@ -113,7 +123,7 @@ jobs:
       - name: Login to Gitea registry
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
         run: |
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "http://${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
 
       - name: Build and push Database/Migrate image
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
@@ -130,10 +140,14 @@ jobs:
   build-webapp:
     runs-on: typescript
     env:
-      REGISTRY_INTERNAL: "172.20.0.1:3000"
+      REGISTRY_INTERNAL: "gitea:3000"
       REGISTRY_EXTERNAL: "gitea.nilbyte.com.br"
       IMAGE_NAMESPACE: "nilbyte/mirante"
     steps:
+      - name: Fix internal DNS
+        run: |
+          echo "172.20.0.1 gitea" | sudo tee -a /etc/hosts || echo "172.20.0.1 gitea" >> /etc/hosts
+
       - name: Check out repository code
         run: |
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
@@ -171,7 +185,7 @@ jobs:
       - name: Login to Gitea registry
         if: steps.check.outputs.WEBAPP_CHANGED == 'true'
         run: |
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "http://${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
 
       - name: Build and push Webapp image
         if: steps.check.outputs.WEBAPP_CHANGED == 'true'
