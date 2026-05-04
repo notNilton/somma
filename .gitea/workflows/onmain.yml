@@ -53,7 +53,7 @@ jobs:
       - name: Login to Gitea registry
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
         run: |
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "http://${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
 
       - name: Build and push Backend image
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
@@ -61,13 +61,11 @@ jobs:
           DOCKER_BUILDKIT: "1"
         run: |
           VERSION=$(cat apps/backend/VERSION)
-          # Build usando o nome externo para consistência na imagem, mas push via IP interno
           docker build -f apps/backend/Dockerfile \
             -t "${{ env.REGISTRY_EXTERNAL }}/${{ env.IMAGE_NAMESPACE }}/backend:latest" \
             -t "${{ env.REGISTRY_EXTERNAL }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}" \
             .
 
-          # Tag adicional para o IP interno poder fazer o push
           docker tag "${{ env.REGISTRY_EXTERNAL }}/${{ env.IMAGE_NAMESPACE }}/backend:latest" "${{ env.REGISTRY_INTERNAL }}/${{ env.IMAGE_NAMESPACE }}/backend:latest"
           docker tag "${{ env.REGISTRY_EXTERNAL }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}" "${{ env.REGISTRY_INTERNAL }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}"
 
@@ -115,7 +113,7 @@ jobs:
       - name: Login to Gitea registry
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
         run: |
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "http://${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
 
       - name: Build and push Database/Migrate image
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
@@ -173,7 +171,7 @@ jobs:
       - name: Login to Gitea registry
         if: steps.check.outputs.WEBAPP_CHANGED == 'true'
         run: |
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "http://${{ env.REGISTRY_INTERNAL }}" -u notNilton --password-stdin
 
       - name: Build and push Webapp image
         if: steps.check.outputs.WEBAPP_CHANGED == 'true'
