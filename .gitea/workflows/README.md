@@ -70,6 +70,19 @@ O deploy no VPS é um job explícito na pipeline:
 2.  Um job de `deploy` conecta via SSH ao VPS usando o usuário `deploy`.
 3.  O VPS executa o `docker compose pull` e `up -d` a partir do checkout de infraestrutura em `/srv/nilbyte/infrastructure`.
 
+## Execução seletiva
+
+Os workflows principais não constroem mais tudo em toda execução:
+
+- `onmain.yml` detecta backend/database/webapp separadamente e só faz bump/build/push do que mudou.
+- `pull_request.yml` valida backend/database/webapp separadamente e pula os jobs não afetados.
+
+### Cache usado nos jobs
+
+- Docker usa `--cache-from` com a imagem `:latest` já publicada no registry.
+- Webapp usa cache local do npm via `npm ci --cache /tmp/npm-cache --prefer-offline`.
+- Backend/database usam `GOCACHE` e `GOMODCACHE` em `/tmp` para reduzir recompilações quando o runner reaproveita estado.
+
 ---
 
 ## Visão geral

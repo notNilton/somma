@@ -8,14 +8,67 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ========================================================
-  # 1. Bumpa versões, commita e cria tags (sempre)
-  # ========================================================
+  detect-changes:
+    runs-on: go
+    outputs:
+      BACKEND_CHANGED: ${{ steps.detect.outputs.BACKEND_CHANGED }}
+      DATABASE_CHANGED: ${{ steps.detect.outputs.DATABASE_CHANGED }}
+      WEBAPP_CHANGED: ${{ steps.detect.outputs.WEBAPP_CHANGED }}
+      ANY_CHANGED: ${{ steps.detect.outputs.ANY_CHANGED }}
+    steps:
+      - name: Check out repository code
+        run: |
+          git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+
+      - name: Detect changed areas
+        id: detect
+        run: |
+          BASE_REF=""
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            BASE_REF="HEAD^"
+          else
+            BASE_REF="HEAD"
+          fi
+
+          CHANGED_FILES=$(git diff --name-only "$BASE_REF" HEAD)
+
+          BACKEND_CHANGED=false
+          DATABASE_CHANGED=false
+          WEBAPP_CHANGED=false
+
+          if echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$)'; then
+            BACKEND_CHANGED=true
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q '^database/'; then
+            DATABASE_CHANGED=true
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q '^apps/webapp/'; then
+            WEBAPP_CHANGED=true
+          fi
+
+          ANY_CHANGED=false
+          if [ "$BACKEND_CHANGED" = "true" ] || [ "$DATABASE_CHANGED" = "true" ] || [ "$WEBAPP_CHANGED" = "true" ]; then
+            ANY_CHANGED=true
+          fi
+
+          {
+            echo "BACKEND_CHANGED=$BACKEND_CHANGED"
+            echo "DATABASE_CHANGED=$DATABASE_CHANGED"
+            echo "WEBAPP_CHANGED=$WEBAPP_CHANGED"
+            echo "ANY_CHANGED=$ANY_CHANGED"
+          } >> "$GITHUB_OUTPUT"
+
   bump-versions:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
     runs-on: typescript
     outputs:
       BACKEND_VERSION: ${{ steps.bump.outputs.BACKEND_VERSION }}
       WEBAPP_VERSION: ${{ steps.bump.outputs.WEBAPP_VERSION }}
+      BACKEND_CHANGED: ${{ needs.detect-changes.outputs.BACKEND_CHANGED }}
+      WEBAPP_CHANGED: ${{ needs.detect-changes.outputs.WEBAPP_CHANGED }}
     steps:
       - name: Check out repository code
         run: |
@@ -28,55 +81,69 @@ jobs:
 
       - name: Bump versions, commit and tag
         id: bump
+        env:
+          BACKEND_CHANGED: ${{ needs.detect-changes.outputs.BACKEND_CHANGED }}
+          WEBAPP_CHANGED: ${{ needs.detect-changes.outputs.WEBAPP_CHANGED }}
         run: |
           FILES_CHANGED=""
 
-          # Backend — sempre bump (txt puro)
           CURRENT_BE=$(cat apps/backend/VERSION)
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_BE"
-          PATCH=$((PATCH + 1))
-          BACKEND_NEW="${MAJOR}.${MINOR}.${PATCH}"
-          echo "$BACKEND_NEW" > apps/backend/VERSION
-          git add apps/backend/VERSION
-          FILES_CHANGED="$FILES_CHANGED backend-v${BACKEND_NEW}"
-          echo "BACKEND_VERSION=$BACKEND_NEW" >> $GITHUB_OUTPUT
+          BACKEND_NEW="$CURRENT_BE"
+          if [ "$BACKEND_CHANGED" = "true" ]; then
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_BE"
+            PATCH=$((PATCH + 1))
+            BACKEND_NEW="${MAJOR}.${MINOR}.${PATCH}"
+            echo "$BACKEND_NEW" > apps/backend/VERSION
+            git add apps/backend/VERSION
+            FILES_CHANGED="$FILES_CHANGED backend-v${BACKEND_NEW}"
+          fi
+          echo "BACKEND_VERSION=$BACKEND_NEW" >> "$GITHUB_OUTPUT"
 
-          # Webapp — sempre bump (usando node já que estamos no runner de typescript)
-          WEBAPP_NEW=$(node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('apps/webapp/package.json', 'utf8'));
-            const parts = pkg.version.split('.');
-            parts[2] = parseInt(parts[2]) + 1;
-            const next = parts.join('.');
-            pkg.version = next;
-            fs.writeFileSync('apps/webapp/package.json', JSON.stringify(pkg, null, 2) + '\\n');
-            console.log(next);
-          ")
-          git add apps/webapp/package.json
-          FILES_CHANGED="$FILES_CHANGED webapp-v${WEBAPP_NEW}"
-          echo "WEBAPP_VERSION=$WEBAPP_NEW" >> $GITHUB_OUTPUT
+          CURRENT_WEBAPP=$(node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('apps/webapp/package.json', 'utf8')); console.log(pkg.version);")
+          WEBAPP_NEW="$CURRENT_WEBAPP"
+          if [ "$WEBAPP_CHANGED" = "true" ]; then
+            WEBAPP_NEW=$(node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('apps/webapp/package.json', 'utf8'));
+              const parts = pkg.version.split('.');
+              parts[2] = parseInt(parts[2], 10) + 1;
+              const next = parts.join('.');
+              pkg.version = next;
+              fs.writeFileSync('apps/webapp/package.json', JSON.stringify(pkg, null, 2) + '\\n');
+              console.log(next);
+            ")
+            git add apps/webapp/package.json
+            FILES_CHANGED="$FILES_CHANGED webapp-v${WEBAPP_NEW}"
+          fi
+          echo "WEBAPP_VERSION=$WEBAPP_NEW" >> "$GITHUB_OUTPUT"
+
+          if [ -z "$FILES_CHANGED" ]; then
+            echo "No versioned components changed."
+            exit 0
+          fi
 
           PUSH_URL=$(echo "${{ gitea.server_url }}/${{ gitea.repository }}.git" | sed "s|://|://oauth2:${{ secrets.REPO_COMPLETE_TOKEN }}@|")
 
           git commit -m "chore: bump versions $FILES_CHANGED [skip ci]"
 
-          # Tenta atualizar antes de dar push para evitar conflitos concorrentes
           git fetch "$PUSH_URL" main
           git rebase FETCH_HEAD
 
           git push "$PUSH_URL" HEAD:main
 
-          git tag -a "backend-v${BACKEND_NEW}" -m "backend-v${BACKEND_NEW}"
-          git push "$PUSH_URL" "backend-v${BACKEND_NEW}"
+          if [ "$BACKEND_CHANGED" = "true" ]; then
+            git tag -a "backend-v${BACKEND_NEW}" -m "backend-v${BACKEND_NEW}"
+            git push "$PUSH_URL" "backend-v${BACKEND_NEW}"
+          fi
 
-          git tag -a "webapp-v${WEBAPP_NEW}" -m "webapp-v${WEBAPP_NEW}"
-          git push "$PUSH_URL" "webapp-v${WEBAPP_NEW}"
+          if [ "$WEBAPP_CHANGED" = "true" ]; then
+            git tag -a "webapp-v${WEBAPP_NEW}" -m "webapp-v${WEBAPP_NEW}"
+            git push "$PUSH_URL" "webapp-v${WEBAPP_NEW}"
+          fi
 
-  # ========================================================
-  # 2. Build & Push — sempre, paralelo
-  # ========================================================
   build-backend:
     needs: bump-versions
+    if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true'
     runs-on: go
     steps:
       - name: Check out repository code
@@ -90,6 +157,8 @@ jobs:
         working-directory: apps/backend
         env:
           GOWORK: "off"
+          GOCACHE: /tmp/go-build
+          GOMODCACHE: /tmp/go-mod-cache
         run: |
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor \
             -ldflags "-X github.com/nilbyte/mirante/backend/internal/version.Version=${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
@@ -98,21 +167,31 @@ jobs:
       - name: Login to Gitea registry
         run: |
           REGISTRY="gitea.nilbyte.com.br"
-          echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
-          echo "IMAGE_NAMESPACE=nilbyte/mirante" >> $GITHUB_ENV
+          echo "REGISTRY=${REGISTRY}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAMESPACE=nilbyte/mirante" >> "$GITHUB_ENV"
 
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
-      - name: Build and push Backend image
+
+      - name: Warm Docker cache
         run: |
-          docker build -f apps/backend/Dockerfile \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }} \
+          docker pull "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" || true
+
+      - name: Build and push Backend image
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" \
+            -f apps/backend/Dockerfile \
+            -t "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" \
+            -t "${REGISTRY}/${IMAGE_NAMESPACE}/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
             .
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}
+          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest"
+          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}"
 
   build-database:
-    needs: bump-versions
+    needs: detect-changes
+    if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
     runs-on: go
     steps:
       - name: Check out repository code
@@ -126,24 +205,36 @@ jobs:
         working-directory: database
         env:
           GOWORK: "off"
+          GOCACHE: /tmp/go-build
+          GOMODCACHE: /tmp/go-mod-cache
         run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o migrate ./cmd/migrate
 
       - name: Login to Gitea registry
         run: |
           REGISTRY="gitea.nilbyte.com.br"
-          echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
-          echo "IMAGE_NAMESPACE=nilbyte/mirante" >> $GITHUB_ENV
+          echo "REGISTRY=${REGISTRY}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAMESPACE=nilbyte/mirante" >> "$GITHUB_ENV"
 
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
-      - name: Build and push Database/Migrate image
+
+      - name: Warm Docker cache
         run: |
-          docker build -f database/Dockerfile \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/database:latest \
+          docker pull "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" || true
+
+      - name: Build and push Database/Migrate image
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" \
+            -f database/Dockerfile \
+            -t "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" \
             .
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/database:latest
+          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest"
 
   build-webapp:
     needs: bump-versions
+    if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true'
     runs-on: typescript
     steps:
       - name: Check out repository code
@@ -155,8 +246,10 @@ jobs:
 
       - name: Build Webapp
         working-directory: apps/webapp
+        env:
+          NPM_CONFIG_CACHE: /tmp/npm-cache
         run: |
-          npm ci
+          npm ci --cache "$NPM_CONFIG_CACHE" --prefer-offline
           VITE_API_URL=https://api-mirante.nilbyte.com.br \
           VITE_APP_VERSION=${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
           npm run build
@@ -164,24 +257,31 @@ jobs:
       - name: Login to Gitea registry
         run: |
           REGISTRY="gitea.nilbyte.com.br"
-          echo "REGISTRY=${REGISTRY}" >> $GITHUB_ENV
-          echo "IMAGE_NAMESPACE=nilbyte/mirante" >> $GITHUB_ENV
+          echo "REGISTRY=${REGISTRY}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAMESPACE=nilbyte/mirante" >> "$GITHUB_ENV"
 
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
-      - name: Build and push Webapp image
-        run: |
-          docker build -f apps/webapp/Dockerfile \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:latest \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }} \
-            .
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}
 
-  # ========================================================
-  # 3. Deploy — se todos os builds passarem
-  # ========================================================
+      - name: Warm Docker cache
+        run: |
+          docker pull "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" || true
+
+      - name: Build and push Webapp image
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" \
+            -f apps/webapp/Dockerfile \
+            -t "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" \
+            -t "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}" \
+            .
+          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest"
+          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}"
+
   deploy:
-    needs: [build-backend, build-database, build-webapp]
+    needs: [detect-changes, build-backend, build-database, build-webapp]
+    if: needs.detect-changes.outputs.ANY_CHANGED == 'true'
     runs-on: go
     steps:
       - name: Install SSH client

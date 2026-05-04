@@ -6,10 +6,59 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ========================================================
-  # Build e teste do backend (compilação)
-  # ========================================================
+  detect-changes:
+    runs-on: go
+    outputs:
+      BACKEND_CHANGED: ${{ steps.detect.outputs.BACKEND_CHANGED }}
+      DATABASE_CHANGED: ${{ steps.detect.outputs.DATABASE_CHANGED }}
+      WEBAPP_CHANGED: ${{ steps.detect.outputs.WEBAPP_CHANGED }}
+      ANY_CHANGED: ${{ steps.detect.outputs.ANY_CHANGED }}
+    steps:
+      - name: Check out repository code
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.REPO_COMPLETE_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+
+      - name: Detect changed areas
+        id: detect
+        run: |
+          git fetch origin main
+          BASE_REF=$(git merge-base HEAD origin/main)
+          CHANGED_FILES=$(git diff --name-only "$BASE_REF" HEAD)
+
+          BACKEND_CHANGED=false
+          DATABASE_CHANGED=false
+          WEBAPP_CHANGED=false
+
+          if echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$)'; then
+            BACKEND_CHANGED=true
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q '^database/'; then
+            DATABASE_CHANGED=true
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q '^apps/webapp/'; then
+            WEBAPP_CHANGED=true
+          fi
+
+          ANY_CHANGED=false
+          if [ "$BACKEND_CHANGED" = "true" ] || [ "$DATABASE_CHANGED" = "true" ] || [ "$WEBAPP_CHANGED" = "true" ]; then
+            ANY_CHANGED=true
+          fi
+
+          {
+            echo "BACKEND_CHANGED=$BACKEND_CHANGED"
+            echo "DATABASE_CHANGED=$DATABASE_CHANGED"
+            echo "WEBAPP_CHANGED=$WEBAPP_CHANGED"
+            echo "ANY_CHANGED=$ANY_CHANGED"
+          } >> "$GITHUB_OUTPUT"
+
   build-backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true'
     runs-on: go
     steps:
       - name: Check out repository code
@@ -23,12 +72,33 @@ jobs:
         working-directory: apps/backend
         env:
           GOWORK: "off"
+          GOCACHE: /tmp/go-build
+          GOMODCACHE: /tmp/go-mod-cache
         run: go build -mod=vendor ./...
 
-  # ========================================================
-  # Build da webapp (npm)
-  # ========================================================
+  build-database:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
+    runs-on: go
+    steps:
+      - name: Check out repository code
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.REPO_COMPLETE_TOKEN }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+
+      - name: Build migrate binary
+        working-directory: database
+        env:
+          GOWORK: "off"
+          GOCACHE: /tmp/go-build
+          GOMODCACHE: /tmp/go-mod-cache
+        run: go build -mod=vendor ./...
+
   build-webapp:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
     runs-on: typescript
     steps:
       - name: Check out repository code
@@ -40,15 +110,15 @@ jobs:
 
       - name: Build Webapp
         working-directory: apps/webapp
+        env:
+          NPM_CONFIG_CACHE: /tmp/npm-cache
         run: |
-          npm ci
+          npm ci --cache "$NPM_CONFIG_CACHE" --prefer-offline
           npm run build
           echo "✅ Webapp build successful"
 
-  # ========================================================
-  # Valida arquivos docker-compose
-  # ========================================================
   validate-compose:
+    needs: detect-changes
     runs-on: go
     steps:
       - name: Check out repository code

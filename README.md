@@ -163,14 +163,15 @@ Roda em todo push para `development`. Valida sem publicar imagens.
 
 ### `onmain.yml` — branch `main`
 
-Roda em todo push para `main`. Publica imagens no registry do Gitea.
+Roda em todo push para `main`. Detecta quais áreas mudaram, bumpa versão só do que foi afetado e publica imagens no registry do Gitea.
 
 | Job | O que faz |
 |-----|-----------|
-| `bump-versions` | Incrementa patch em `apps/backend/VERSION` e `apps/webapp/package.json`, commita e cria tags git |
-| `build-backend` | Compila binário Go, builda imagem Docker, publica `backend:latest` e `backend:vX.Y.Z` |
-| `build-database` | Compila binário `migrate`, builda imagem Docker, publica `database:latest` |
-| `build-webapp` | `npm run build`, builda imagem Docker, publica `webapp:latest` e `webapp:vX.Y.Z` |
+| `detect-changes` | Identifica se backend, database ou webapp mudou no commit atual |
+| `bump-versions` | Incrementa apenas as versões afetadas em `apps/backend/VERSION` e `apps/webapp/package.json`, commita e cria tags git |
+| `build-backend` | Compila binário Go, reaproveita cache de camadas Docker e publica `backend:latest` e `backend:vX.Y.Z` |
+| `build-database` | Compila binário `migrate`, reaproveita cache de camadas Docker e publica `database:latest` |
+| `build-webapp` | `npm ci` com cache local, `npm run build`, reaproveita cache de camadas Docker e publica `webapp:latest` e `webapp:vX.Y.Z` |
 
 ### Dependências no CI (vendor)
 
