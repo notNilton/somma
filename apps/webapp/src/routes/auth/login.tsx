@@ -51,7 +51,7 @@ function LoginPage() {
             Bem-vindo de volta
           </h1>
           <p className="text-muted-foreground mt-1 text-xs font-bold uppercase tracking-widest">
-            Acesse sua conta AurorOwl.
+            Acesse sua conta PersonalLedger.
           </p>
         </div>
 
