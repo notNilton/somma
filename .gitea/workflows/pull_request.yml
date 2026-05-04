@@ -13,6 +13,7 @@ jobs:
       DATABASE_CHANGED: ${{ steps.detect.outputs.DATABASE_CHANGED }}
       WEBAPP_CHANGED: ${{ steps.detect.outputs.WEBAPP_CHANGED }}
       ANY_CHANGED: ${{ steps.detect.outputs.ANY_CHANGED }}
+      FORCE_ALL: ${{ steps.detect.outputs.FORCE_ALL }}
     steps:
       - name: Check out repository code
         run: |
@@ -31,16 +32,21 @@ jobs:
           BACKEND_CHANGED=false
           DATABASE_CHANGED=false
           WEBAPP_CHANGED=false
+          FORCE_ALL=false
 
-          if echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$)'; then
+          if echo "$CHANGED_FILES" | grep -q '^.gitea/workflows/'; then
+            FORCE_ALL=true
+          fi
+
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$)'; then
             BACKEND_CHANGED=true
           fi
 
-          if echo "$CHANGED_FILES" | grep -q '^database/'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^database/'; then
             DATABASE_CHANGED=true
           fi
 
-          if echo "$CHANGED_FILES" | grep -q '^apps/webapp/'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^apps/webapp/'; then
             WEBAPP_CHANGED=true
           fi
 
@@ -54,11 +60,12 @@ jobs:
             echo "DATABASE_CHANGED=$DATABASE_CHANGED"
             echo "WEBAPP_CHANGED=$WEBAPP_CHANGED"
             echo "ANY_CHANGED=$ANY_CHANGED"
+            echo "FORCE_ALL=$FORCE_ALL"
           } >> "$GITHUB_OUTPUT"
 
   build-backend:
     needs: detect-changes
-    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true'
+    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
     runs-on: go
     steps:
       - name: Check out repository code
@@ -78,7 +85,7 @@ jobs:
 
   build-database:
     needs: detect-changes
-    if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
+    if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
     runs-on: go
     steps:
       - name: Check out repository code
@@ -98,7 +105,7 @@ jobs:
 
   build-webapp:
     needs: detect-changes
-    if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true'
+    if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
     runs-on: typescript
     steps:
       - name: Check out repository code
@@ -119,6 +126,7 @@ jobs:
 
   validate-compose:
     needs: detect-changes
+    if: needs.detect-changes.outputs.ANY_CHANGED == 'true'
     runs-on: basic
     steps:
       - name: Check out repository code

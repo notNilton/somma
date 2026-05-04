@@ -92,7 +92,7 @@ O deploy no VPS é um job explícito na pipeline:
 
 Os workflows principais não constroem mais tudo em toda execução:
 
-- `onmain.yml` detecta backend/database/webapp separadamente, só faz bump/build/push do que mudou e roda deploy se qualquer build tiver sido concluído com sucesso.
+- `onmain.yml` detecta backend/database/webapp separadamente, só faz bump/build/push do que mudou, mas se alterar `.gitea/workflows/**` ele força o conjunto completo.
 - `pull_request.yml` valida backend/database/webapp separadamente e pula os jobs não afetados.
 
 ### Cache usado nos jobs

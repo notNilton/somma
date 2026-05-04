@@ -15,6 +15,7 @@ jobs:
       DATABASE_CHANGED: ${{ steps.detect.outputs.DATABASE_CHANGED }}
       WEBAPP_CHANGED: ${{ steps.detect.outputs.WEBAPP_CHANGED }}
       ANY_CHANGED: ${{ steps.detect.outputs.ANY_CHANGED }}
+      FORCE_ALL: ${{ steps.detect.outputs.FORCE_ALL }}
     steps:
       - name: Check out repository code
         run: |
@@ -35,16 +36,21 @@ jobs:
           BACKEND_CHANGED=false
           DATABASE_CHANGED=false
           WEBAPP_CHANGED=false
+          FORCE_ALL=false
 
-          if echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$)'; then
+          if echo "$CHANGED_FILES" | grep -q '^.gitea/workflows/'; then
+            FORCE_ALL=true
+          fi
+
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$)'; then
             BACKEND_CHANGED=true
           fi
 
-          if echo "$CHANGED_FILES" | grep -q '^database/'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^database/'; then
             DATABASE_CHANGED=true
           fi
 
-          if echo "$CHANGED_FILES" | grep -q '^apps/webapp/'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^apps/webapp/'; then
             WEBAPP_CHANGED=true
           fi
 
@@ -58,16 +64,19 @@ jobs:
             echo "DATABASE_CHANGED=$DATABASE_CHANGED"
             echo "WEBAPP_CHANGED=$WEBAPP_CHANGED"
             echo "ANY_CHANGED=$ANY_CHANGED"
+            echo "FORCE_ALL=$FORCE_ALL"
           } >> "$GITHUB_OUTPUT"
 
   bump-versions:
     needs: detect-changes
+    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.WEBAPP_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
     runs-on: basic
     outputs:
       BACKEND_VERSION: ${{ steps.bump.outputs.BACKEND_VERSION }}
       WEBAPP_VERSION: ${{ steps.bump.outputs.WEBAPP_VERSION }}
       BACKEND_CHANGED: ${{ needs.detect-changes.outputs.BACKEND_CHANGED }}
       WEBAPP_CHANGED: ${{ needs.detect-changes.outputs.WEBAPP_CHANGED }}
+      FORCE_ALL: ${{ needs.detect-changes.outputs.FORCE_ALL }}
     steps:
       - name: Check out repository code
         run: |
@@ -83,6 +92,7 @@ jobs:
         env:
           BACKEND_CHANGED: ${{ needs.detect-changes.outputs.BACKEND_CHANGED }}
           WEBAPP_CHANGED: ${{ needs.detect-changes.outputs.WEBAPP_CHANGED }}
+          FORCE_ALL: ${{ needs.detect-changes.outputs.FORCE_ALL }}
         run: |
           FILES_CHANGED=""
 
@@ -136,6 +146,7 @@ jobs:
 
   build-backend:
     needs: bump-versions
+    if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
     runs-on: go
     steps:
       - name: Check out repository code
@@ -146,7 +157,7 @@ jobs:
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Build binary
-        if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true'
+        if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         working-directory: apps/backend
         env:
           GOWORK: "off"
@@ -158,7 +169,7 @@ jobs:
             -o main ./cmd/api
 
       - name: Login to Gitea registry
-        if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true'
+        if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         run: |
           REGISTRY="gitea.nilbyte.com.br"
           echo "REGISTRY=${REGISTRY}" >> "$GITHUB_ENV"
@@ -167,12 +178,12 @@ jobs:
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
       - name: Warm Docker cache
-        if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true'
+        if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         run: |
           docker pull "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" || true
 
       - name: Build and push Backend image
-        if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true'
+        if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         env:
           DOCKER_BUILDKIT: "1"
         run: |
@@ -187,6 +198,7 @@ jobs:
 
   build-database:
     needs: detect-changes
+    if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
     runs-on: go
     steps:
       - name: Check out repository code
@@ -197,7 +209,7 @@ jobs:
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Build migrate binary
-        if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
+        if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
         working-directory: database
         env:
           GOWORK: "off"
@@ -206,7 +218,7 @@ jobs:
         run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o migrate ./cmd/migrate
 
       - name: Login to Gitea registry
-        if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
+        if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
         run: |
           REGISTRY="gitea.nilbyte.com.br"
           echo "REGISTRY=${REGISTRY}" >> "$GITHUB_ENV"
@@ -215,12 +227,12 @@ jobs:
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
       - name: Warm Docker cache
-        if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
+        if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
         run: |
           docker pull "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" || true
 
       - name: Build and push Database/Migrate image
-        if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true'
+        if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
         env:
           DOCKER_BUILDKIT: "1"
         run: |
@@ -233,6 +245,7 @@ jobs:
 
   build-webapp:
     needs: bump-versions
+    if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
     runs-on: typescript
     steps:
       - name: Check out repository code
@@ -243,7 +256,7 @@ jobs:
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Build Webapp
-        if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true'
+        if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         working-directory: apps/webapp
         env:
           NPM_CONFIG_CACHE: /tmp/npm-cache
@@ -254,7 +267,7 @@ jobs:
           npm run build
 
       - name: Login to Gitea registry
-        if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true'
+        if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         run: |
           REGISTRY="gitea.nilbyte.com.br"
           echo "REGISTRY=${REGISTRY}" >> "$GITHUB_ENV"
@@ -263,12 +276,12 @@ jobs:
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "$REGISTRY" -u notNilton --password-stdin
 
       - name: Warm Docker cache
-        if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true'
+        if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         run: |
           docker pull "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" || true
 
       - name: Build and push Webapp image
-        if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true'
+        if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         env:
           DOCKER_BUILDKIT: "1"
         run: |
