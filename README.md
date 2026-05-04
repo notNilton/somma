@@ -98,7 +98,7 @@ VPS niflheim (Ubuntu)
    ▼
 Caddy (container, http:// apenas — sem certificados próprios)
    ├── gitea.nilbyte.com.br         → gitea:3000
-   ├── mirante-api.nilbyte.com.br   → mirante_backend_prod:3000
+   ├── api.mirante.nilbyte.com.br   → mirante_backend_prod:3000
    └── mirante.nilbyte.com.br       → mirante_webapp_prod:80
 ```
 

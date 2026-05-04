@@ -10,35 +10,42 @@ import (
 	"github.com/nilbyte/mirante/backend/internal/cache"
 	"github.com/nilbyte/mirante/backend/internal/config"
 	"github.com/nilbyte/mirante/backend/internal/jobs"
+	"github.com/nilbyte/mirante/backend/internal/middleware"
 	"github.com/nilbyte/mirante/backend/internal/routes"
 	"github.com/nilbyte/mirante/database"
 )
 
 func main() {
+	log.Printf("STARTING BACKEND VERSION 1.0.60 (DEBUG)")
+
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: .env file not found")
 	}
 
+	log.Printf("CHECKPOINT: Loading config")
 	cfg := config.Load()
+	log.Printf("CHECKPOINT: Config loaded (Env: %s, Port: %s)", cfg.Env, cfg.Port)
 
+	log.Printf("CHECKPOINT: Connecting to database")
 	db, err := database.Connect(cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatalf("FATAL: failed to connect to database: %v", err)
 	}
 	defer db.Close()
+	log.Printf("CHECKPOINT: Database connected successfully")
 
 	c := cache.New()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	log.Printf("CHECKPOINT: Starting scheduler")
 	scheduler := jobs.New(db, ctx)
 	scheduler.Start()
 
+	log.Printf("CHECKPOINT: Registering routes")
 	mux := http.NewServeMux()
 	routes.Register(mux, db, []byte(cfg.JWTSecret), c)
-
-
 
 	logger := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,9 +61,10 @@ func main() {
 		})
 	}
 
-	log.Printf("starting server on :%s", cfg.Port)
-	if err := http.ListenAndServe(":"+cfg.Port, logger(mux)); err != nil {
-		log.Fatalf("server error: %v", err)
+	log.Printf("CHECKPOINT: Starting HTTP server on :%s", cfg.Port)
+	handler := middleware.CORS(logger(mux))
+	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
+		log.Fatalf("FATAL: server error: %v", err)
 	}
 }
 

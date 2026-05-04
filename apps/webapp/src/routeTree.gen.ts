@@ -49,9 +49,9 @@ const SettingsIndexRoute = SettingsIndexRouteImport.update({
 } as any)
 const TransactionsCrudTransactionsRoute =
   TransactionsCrudTransactionsRouteImport.update({
-    id: '/crud-transactions',
-    path: '/crud-transactions',
-    getParentRoute: () => TransactionsRoute,
+    id: '/transactions/crud-transactions',
+    path: '/transactions/crud-transactions',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const SettingsVehiclesRoute = SettingsVehiclesRouteImport.update({
   id: '/vehicles',
@@ -175,6 +175,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   BudgetsRoute: typeof BudgetsRoute
   SettingsRoute: typeof SettingsRouteWithChildren
+  TransactionsCrudTransactionsRoute: typeof TransactionsCrudTransactionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -216,10 +217,10 @@ declare module '@tanstack/react-router' {
     }
     '/transactions/crud-transactions': {
       id: '/transactions/crud-transactions'
-      path: '/crud-transactions'
+      path: '/transactions/crud-transactions'
       fullPath: '/transactions/crud-transactions'
       preLoaderRoute: typeof TransactionsCrudTransactionsRouteImport
-      parentRoute: typeof TransactionsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/settings/vehicles': {
       id: '/settings/vehicles'
@@ -303,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   BudgetsRoute: BudgetsRoute,
   SettingsRoute: SettingsRouteWithChildren,
+  TransactionsCrudTransactionsRoute: TransactionsCrudTransactionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

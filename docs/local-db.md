@@ -47,7 +47,7 @@ Logo, a `DATABASE_URL` local fica:
 DATABASE_URL=postgresql://postgres:postgres@localhost:5454/mirante?sslmode=disable
 ```
 
-Isso já bate com [apps/backend/.env.example](/var/home/notNilton/Workspace/nilbyte-studios/mirante/apps/backend/.env.example).
+Isso já bate com [apps/backend/.env.example](/var/home/notNilton/Workspace/nilbyte/mirante/apps/backend/.env.example).
 
 ## Rodar migrations
 
@@ -85,7 +85,7 @@ make seed
 
 `make seed` é um atalho para `make seed-complete`.
 
-O seed SQL usado hoje está em [database/seeds/initial_seed.sql](/var/home/notNilton/Workspace/nilbyte-studios/mirante/database/seeds/initial_seed.sql).
+O seed SQL usado hoje está em [database/seeds/initial_seed.sql](/var/home/notNilton/Workspace/nilbyte/mirante/database/seeds/initial_seed.sql).
 
 Para um banco minimalista com usuario, contas e veiculo:
 

@@ -14,7 +14,7 @@ services:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
-    container_name: mirante-backend
+    container_name: api.mirante.nilbyte
     restart: always
     ports:
       - "3000:3000"
