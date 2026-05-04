@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Check out repository code
         run: |
-          git clone --depth=1 --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Detect changes
         id: check
@@ -22,8 +22,13 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             BACKEND_CHANGED=true
           else
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-            if echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$|.gitea/workflows/)'; then
+            # Tenta pegar o diff do último commit, se falhar (ex: primeiro commit), assume true
+            if git rev-parse HEAD^ >/dev/null 2>&1; then
+              CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+              if echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$|.gitea/workflows/)'; then
+                BACKEND_CHANGED=true
+              fi
+            else
               BACKEND_CHANGED=true
             fi
           fi
@@ -66,7 +71,7 @@ jobs:
     steps:
       - name: Check out repository code
         run: |
-          git clone --depth=1 --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Detect changes
         id: check
@@ -75,8 +80,12 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             DATABASE_CHANGED=true
           else
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-            if echo "$CHANGED_FILES" | grep -Eq '^(database/|.gitea/workflows/)'; then
+            if git rev-parse HEAD^ >/dev/null 2>&1; then
+              CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+              if echo "$CHANGED_FILES" | grep -Eq '^(database/|.gitea/workflows/)'; then
+                DATABASE_CHANGED=true
+              fi
+            else
               DATABASE_CHANGED=true
             fi
           fi
@@ -112,7 +121,7 @@ jobs:
     steps:
       - name: Check out repository code
         run: |
-          git clone --depth=1 --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Detect changes
         id: check
@@ -121,8 +130,12 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             WEBAPP_CHANGED=true
           else
-            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-            if echo "$CHANGED_FILES" | grep -Eq '^(apps/webapp/|.gitea/workflows/)'; then
+            if git rev-parse HEAD^ >/dev/null 2>&1; then
+              CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+              if echo "$CHANGED_FILES" | grep -Eq '^(apps/webapp/|.gitea/workflows/)'; then
+                WEBAPP_CHANGED=true
+              fi
+            else
               WEBAPP_CHANGED=true
             fi
           fi
