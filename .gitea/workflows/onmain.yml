@@ -185,10 +185,9 @@ jobs:
       - name: Build and push Backend image
         if: needs.bump-versions.outputs.BACKEND_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         env:
-          DOCKER_BUILDKIT: "1"
+          DOCKER_BUILDKIT: "0"
         run: |
-          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" \
+          docker build --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" \
             -f apps/backend/Dockerfile \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/backend:${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
@@ -234,10 +233,9 @@ jobs:
       - name: Build and push Database/Migrate image
         if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
         env:
-          DOCKER_BUILDKIT: "1"
+          DOCKER_BUILDKIT: "0"
         run: |
-          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" \
+          docker build --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" \
             -f database/Dockerfile \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" \
             .
@@ -283,10 +281,9 @@ jobs:
       - name: Build and push Webapp image
         if: needs.bump-versions.outputs.WEBAPP_CHANGED == 'true' || needs.bump-versions.outputs.FORCE_ALL == 'true'
         env:
-          DOCKER_BUILDKIT: "1"
+          DOCKER_BUILDKIT: "0"
         run: |
-          docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" \
+          docker build --cache-from "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" \
             -f apps/webapp/Dockerfile \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" \
             -t "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:${{ needs.bump-versions.outputs.WEBAPP_VERSION }}" \
