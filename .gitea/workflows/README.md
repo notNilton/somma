@@ -16,8 +16,9 @@ Este repositório usa runners separados por workload para evitar que builds de a
 
 ## Topologia
 
-- `basic`: Detecção de mudanças, bump/tag, deploy por SSH e validações leves de infraestrutura.
+- `basic`: Detecção de mudanças, bump/tag e validações leves de infraestrutura.
 - `go`: Backend Go e Migrations.
+- `basic`: Deploy por SSH.
 - `typescript`: Webapp React, Vite, e outras ferramentas Node.js.
 
 ## Limites operacionais
@@ -40,6 +41,14 @@ jobs:
 ```
 
 ### Basic / automações leves
+
+```yaml
+jobs:
+  detect-changes:
+    runs-on: basic
+```
+
+### Deploy / SSH
 
 ```yaml
 jobs:
@@ -83,7 +92,7 @@ O deploy no VPS é um job explícito na pipeline:
 
 Os workflows principais não constroem mais tudo em toda execução:
 
-- `onmain.yml` detecta backend/database/webapp separadamente e só faz bump/build/push do que mudou.
+- `onmain.yml` detecta backend/database/webapp separadamente, só faz bump/build/push do que mudou e roda deploy se qualquer build tiver sido concluído com sucesso.
 - `pull_request.yml` valida backend/database/webapp separadamente e pula os jobs não afetados.
 
 ### Cache usado nos jobs

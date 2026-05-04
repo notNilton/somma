@@ -283,7 +283,7 @@ jobs:
 
   deploy:
     needs: [detect-changes, build-backend, build-database, build-webapp]
-    if: needs.detect-changes.outputs.ANY_CHANGED == 'true'
+    if: needs.build-backend.result == 'success' || needs.build-database.result == 'success' || needs.build-webapp.result == 'success'
     runs-on: basic
     steps:
       - name: Install SSH client

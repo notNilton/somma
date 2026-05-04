@@ -172,7 +172,7 @@ Roda em todo push para `main`. Detecta quais áreas mudaram, bumpa versão só d
 | `build-backend` | Compila binário Go, reaproveita cache de camadas Docker e publica `backend:latest` e `backend:vX.Y.Z` |
 | `build-database` | Compila binário `migrate`, reaproveita cache de camadas Docker e publica `database:latest` |
 | `build-webapp` | `npm ci` com cache local, `npm run build`, reaproveita cache de camadas Docker e publica `webapp:latest` e `webapp:vX.Y.Z` |
-| `deploy` | Roda no runner `basic`, conecta por SSH e executa `docker compose pull` + `up -d` no VPS |
+| `deploy` | Roda no runner `basic`, conecta por SSH e executa `docker compose pull` + `up -d` no VPS quando ao menos um build terminou com sucesso |
 
 ### Dependências no CI (vendor)
 
