@@ -67,8 +67,8 @@ jobs:
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}"
 
-  build-database:
-    runs-on: go
+  update-database:
+    runs-on: basic
     env:
       REGISTRY: "gitea.nilbyte.com.br"
       IMAGE_NAMESPACE: "nilbyte/personalledger"
@@ -95,21 +95,12 @@ jobs:
           fi
           echo "DATABASE_CHANGED=$DATABASE_CHANGED" >> "$GITHUB_OUTPUT"
 
-      - name: Build migrate binary
-        if: steps.check.outputs.DATABASE_CHANGED == 'true'
-        working-directory: database
-        env:
-          GOWORK: "off"
-          GOCACHE: /tmp/go-build
-          GOMODCACHE: /tmp/go-mod-cache
-        run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o migrate ./cmd/migrate
-
       - name: Login to Gitea registry
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
         run: |
           echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
-      - name: Build and push Database/Migrate image
+      - name: Build and push Database image
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
         env:
           DOCKER_BUILDKIT: "0"
@@ -168,8 +159,8 @@ jobs:
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:${VERSION}"
 
   deploy:
-    needs: [build-backend, build-database, build-webapp]
-    if: always() && (needs.build-backend.result == 'success' || needs.build-database.result == 'success' || needs.build-webapp.result == 'success')
+    needs: [build-backend, update-database, build-webapp]
+    if: always() && (needs.build-backend.result == 'success' || needs.update-database.result == 'success' || needs.build-webapp.result == 'success')
     runs-on: basic
     steps:
       - name: Install SSH client

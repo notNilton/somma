@@ -170,7 +170,7 @@ Roda em todo push para `main`. Detecta quais áreas mudaram, bumpa versão só d
 | `detect-changes` | Roda no runner `basic` e identifica se backend, database, webapp ou workflows mudou no commit atual |
 | `bump-versions` | Roda no runner `basic`, incrementa apenas as versões afetadas em `apps/backend/VERSION` e `apps/webapp/package.json`, commita e cria tags git |
 | `build-backend` | Compila binário Go, reaproveita cache de camadas Docker e publica `backend:latest` e `backend:vX.Y.Z` |
-| `build-database` | Compila binário `migrate`, reaproveita cache de camadas Docker e publica `database:latest` |
+| `update-database` | Gera e publica `database:latest` quando migrations/seed mudam |
 | `build-webapp` | `npm ci` com cache local, `npm run build`, reaproveita cache de camadas Docker e publica `webapp:latest` e `webapp:vX.Y.Z` |
 | `deploy` | Roda no runner `basic`, conecta por SSH e executa `docker compose pull` + `up -d` no VPS quando ao menos um build terminou com sucesso |
 

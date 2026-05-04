@@ -151,7 +151,7 @@ push → main
          └── bump-versions          (sempre, sequencial)
                   │
                   ├── build-backend   (paralelo)
-                  ├── build-database  (paralelo)
+                  ├── update-database (paralelo)
                   └── build-webapp    (paralelo)
 ```
 
@@ -181,14 +181,12 @@ Outputs do job (usados pelos builds):
 6. `docker build --network=host` — usa rede do host para puxar imagens base do Docker Hub
 7. Publica `backend:latest` e `backend:X.Y.Z` no registry
 
-### Job `build-database`
+### Job `update-database`
 
 1. Clona `main`
-2. Compila o binário `migrate`: `CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o migrate ./cmd/migrate`
-   - Mesma regra de `CGO_ENABLED=0` — binário roda em Alpine em produção.
-3. Login no registry (mesmo fluxo do backend)
-4. `docker build --network=host`
-5. Publica `database:latest` — imagem contém o binário `migrate` + todos os arquivos SQL de migration e seed
+2. Faz login no registry
+3. `docker build` usa o `database/Dockerfile`, que compila o binário `migrate` dentro da imagem final
+4. Publica `database:latest` — imagem contém o binário `migrate` + todos os arquivos SQL de migration e seed
 
 ### Job `build-webapp`
 
@@ -280,7 +278,7 @@ Runner container (rede nilbyte-git)
 2. onmain.yml dispara
 3. bump-versions: VERSION 1.0.5 → 1.0.6, commita, cria tag backend-v1.0.6
 4. build-backend: compila binary (CGO_ENABLED=0), gera backend:1.0.6 + backend:latest
-5. build-database: compila migrate (CGO_ENABLED=0), gera database:latest (com SQLs embutidos)
+5. update-database: `docker build` gera database:latest com o binário `migrate` compilado no Dockerfile
 6. build-webapp: npm build, gera webapp:1.0.6 + webapp:latest
 7. Job deploy (via SSH):
    a. cd /srv/nilbyte/infrastructure
