@@ -10,6 +10,9 @@ on:
 jobs:
   build-backend:
     runs-on: go
+    env:
+      REGISTRY: "gitea.nilbyte.com.br"
+      IMAGE_NAMESPACE: "nilbyte/mirante"
     steps:
       - name: Check out repository code
         run: |
@@ -22,7 +25,6 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             BACKEND_CHANGED=true
           else
-            # Tenta pegar o diff do último commit, se falhar (ex: primeiro commit), assume true
             if git rev-parse HEAD^ >/dev/null 2>&1; then
               CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
               if echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$|.gitea/workflows/)'; then
@@ -50,24 +52,24 @@ jobs:
       - name: Login to Gitea registry
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
         run: |
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "gitea:3000" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
       - name: Build and push Backend image
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
-        env:
-          REGISTRY: "gitea:3000"
-          IMAGE_NAMESPACE: "nilbyte/mirante"
         run: |
           VERSION=$(cat apps/backend/VERSION)
           docker build -f apps/backend/Dockerfile \
-            -t "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest" \
-            -t "${REGISTRY}/${IMAGE_NAMESPACE}/backend:${VERSION}" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}" \
             .
-          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/backend:latest"
-          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/backend:${VERSION}"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}"
 
   build-database:
     runs-on: go
+    env:
+      REGISTRY: "gitea.nilbyte.com.br"
+      IMAGE_NAMESPACE: "nilbyte/mirante"
     steps:
       - name: Check out repository code
         run: |
@@ -103,21 +105,21 @@ jobs:
       - name: Login to Gitea registry
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
         run: |
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "gitea:3000" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
       - name: Build and push Database/Migrate image
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
-        env:
-          REGISTRY: "gitea:3000"
-          IMAGE_NAMESPACE: "nilbyte/mirante"
         run: |
           docker build -f database/Dockerfile \
-            -t "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/database:latest" \
             .
-          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/database:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/database:latest"
 
   build-webapp:
     runs-on: typescript
+    env:
+      REGISTRY: "gitea.nilbyte.com.br"
+      IMAGE_NAMESPACE: "nilbyte/mirante"
     steps:
       - name: Check out repository code
         run: |
@@ -156,21 +158,18 @@ jobs:
       - name: Login to Gitea registry
         if: steps.check.outputs.WEBAPP_CHANGED == 'true'
         run: |
-          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "gitea:3000" -u notNilton --password-stdin
+          echo "${{ secrets.REPO_COMPLETE_TOKEN }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
       - name: Build and push Webapp image
         if: steps.check.outputs.WEBAPP_CHANGED == 'true'
-        env:
-          REGISTRY: "gitea:3000"
-          IMAGE_NAMESPACE: "nilbyte/mirante"
         run: |
           VERSION=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' apps/webapp/package.json | head -n1)
           docker build -f apps/webapp/Dockerfile \
-            -t "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest" \
-            -t "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:${VERSION}" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:${VERSION}" \
             .
-          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:latest"
-          docker push "${REGISTRY}/${IMAGE_NAMESPACE}/webapp:${VERSION}"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:${VERSION}"
 
   deploy:
     needs: [build-backend, build-database, build-webapp]
