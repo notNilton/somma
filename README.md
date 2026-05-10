@@ -1,6 +1,8 @@
-# Mirante
+# Personalledger
 
-Plataforma de gerenciamento financeiro pessoal baseada em partidas dobradas (double-entry bookkeeping). Controle de contas, transações, cartões, orçamentos, transferências e análise evolutiva de gastos.
+Plataforma de gerenciamento financeiro pessoal baseada em partidas dobradas (double-entry bookkeeping). Controle de transações, categorias, orçamentos derivados, veículos e análise evolutiva de gastos.
+
+> **Arquitetura enxuta:** contas bancárias, cartões, transferências e planejamento de metas de longo prazo foram removidos para manter o core simplificado. Orçamentos são derivados diretamente das transações vinculadas.
 
 ## Stack
 
@@ -27,7 +29,7 @@ database/
   cmd/migrate/      → binário de migration standalone
 .gitea/
   workflows/
-    ondev.yml       → CI em pushes para development
+    pull_request.yml → CI em pull requests (valida build e compose)
     onmain.yml      → CI + build + push de imagens em pushes para main
 ```
 
@@ -54,7 +56,7 @@ O `make up` sobe o PostgreSQL local, cria `apps/backend/.env` quando necessario,
 
 ```env
 PORT=3000
-DATABASE_URL=postgresql://postgres:postgres@localhost:5454/mirante?sslmode=disable
+DATABASE_URL=postgresql://postgres:postgres@localhost:5454/personalledger?sslmode=disable
 JWT_SECRET=sua-chave-secreta
 WEBAPP_URL=http://localhost:3400
 ENV=development
@@ -70,7 +72,7 @@ make seed-complete     # aplica o seed completo
 make seed-barebones    # aplica o seed básico
 ```
 
-Para um fluxo isolado so de banco local, use [docs/local-db.md](/var/home/notNilton/Workspace/nilByte/mirante/docs/local-db.md) com `make deps-up`, `make db-reset` e os alvos de migration.
+Para um fluxo isolado so de banco local, use [docs/local-db.md](/var/home/notNilton/Workspace/nilByte/personalledger/docs/local-db.md) com `make deps-up`, `make db-reset` e os alvos de migration.
 
 Para criar uma nova migration, adicionar dois arquivos em `database/migrations/`:
 
@@ -98,8 +100,8 @@ VPS niflheim (Ubuntu)
    ▼
 Caddy (container, http:// apenas — sem certificados próprios)
    ├── gitea.nilbyte.com.br         → gitea:3000
-   ├── api.mirante.nilbyte.com.br   → mirante_backend_prod:3000
-   └── mirante.nilbyte.com.br       → mirante_webapp_prod:80
+   ├── api.personalledger.nilbyte.com.br   → personalledger_backend_prod:3000
+   └── personalledger.nilbyte.com.br       → personalledger_webapp_prod:80
 ```
 
 O tráfego externo entra via **Cloudflare Tunnel** (`cloudflared` rodando no servidor), não por portas abertas diretamente na internet. O Cloudflare termina TLS e envia HTTP para o Caddy internamente. Por isso o Caddy usa blocos `http://` no Caddyfile — ele nunca precisa de certificados.
@@ -111,7 +113,7 @@ O tráfego externo entra via **Cloudflare Tunnel** (`cloudflared` rodando no ser
 | Rede | Propósito |
 |------|-----------|
 | `nilbyte-git` | Gitea + act_runner (CI) |
-| `mirante-internal` | DB + backend + webapp do Mirante |
+| `personalledger-internal` | DB + backend + webapp do Personalledger |
 
 O **Caddy** está conectado a todas as redes para fazer o proxy reverso. O gateway da rede `nilbyte-git` é `172.20.0.1`.
 
@@ -151,13 +153,15 @@ Com isso, `gitea.nilbyte.com.br` aponta para `172.20.0.1` (gateway → Caddy) de
 
 ## CI/CD
 
-### `ondev.yml` — branch `development`
+### `pull_request.yml` — Pull Requests
 
-Roda em todo push para `development`. Valida sem publicar imagens.
+Roda em todo PR. Valida sem publicar imagens.
 
 | Job | O que faz |
 |-----|-----------|
+| `detect-changes` | Identifica quais áreas mudaram |
 | `build-backend` | `go build -mod=vendor ./...` |
+| `build-database` | `go build -mod=vendor ./...` no módulo de migrations |
 | `build-webapp` | `npm ci && npm run build` |
 | `validate-compose` | `docker compose config` nos arquivos de compose |
 
@@ -196,44 +200,44 @@ O servidor usa um script de orquestração com compose files separados:
 
 ```bash
 # Subir stack completa
-./mirante.sh start
+./personalledger.sh start
 
 # Parar
-./mirante.sh stop
+./personalledger.sh stop
 
 # Puxar novas imagens e reiniciar
-./mirante.sh pull && ./mirante.sh restart
+./personalledger.sh pull && ./personalledger.sh restart
 
 # Logs
-./mirante.sh logs
+./personalledger.sh logs
 ```
 
-Os compose files ficam em `apps/mirante/` no servidor:
+Os compose files ficam em `apps/personalledger/` no servidor:
 
 | Arquivo | Serviço |
 |---------|---------|
-| `docker-compose.db.yml` | `mirante_db_prod` (PostgreSQL) |
-| `docker-compose.backend.yml` | `mirante_migrate_prod` + `mirante_backend_prod` |
-| `docker-compose.webapp.yml` | `mirante_webapp_prod` (nginx) |
+| `docker-compose.db.yml` | `personalledger_db_prod` (PostgreSQL) |
+| `docker-compose.backend.yml` | `personalledger_migrate_prod` + `personalledger_backend_prod` |
+| `docker-compose.webapp.yml` | `personalledger_webapp_prod` (nginx) |
 
 ### Migrations automáticas no deploy
 
-O `docker-compose.backend.yml` inclui um serviço `mirante-migrate` que roda antes do backend:
+O `docker-compose.backend.yml` inclui um serviço `personalledger-migrate` que roda antes do backend:
 
 ```yaml
-mirante-migrate:
-  image: gitea.nilbyte.com.br/nilByte/mirante/database:latest
+personalledger-migrate:
+  image: gitea.nilbyte.com.br/nilByte/personalledger/database:latest
   restart: "no"
 
-mirante-backend:
+personalledger-backend:
   depends_on:
-    mirante-migrate:
+    personalledger-migrate:
       condition: service_completed_successfully
 ```
 
 Fluxo ao fazer deploy:
-1. `./mirante.sh pull` — puxa novas imagens (backend, webapp, database)
-2. `./mirante.sh restart` — sobe `mirante-migrate`, espera terminar com sucesso, aí sobe `mirante-backend`
+1. `./personalledger.sh pull` — puxa novas imagens (backend, webapp, database)
+2. `./personalledger.sh restart` — sobe `personalledger-migrate`, espera terminar com sucesso, aí sobe `personalledger-backend`
 
 Migrations nunca precisam ser rodadas manualmente no servidor.
 
@@ -246,13 +250,13 @@ O Gitea expõe SSH na porta **2222**. O SSH **não passa pelo Cloudflare** — o
 O Gitea é acessível diretamente pelo nome do container. A porta interna do container é 22:
 
 ```bash
-ssh://git@gitea:22/nilByte/mirante.git
+ssh://git@gitea:22/nilByte/personalledger.git
 ```
 
 Ou via `localhost` se rodar fora de container no próprio host:
 
 ```bash
-ssh://git@localhost:2222/nilByte/mirante.git
+ssh://git@localhost:2222/nilByte/personalledger.git
 ```
 
 #### De uma máquina externa com Tailscale (recomendado)
@@ -260,7 +264,7 @@ ssh://git@localhost:2222/nilByte/mirante.git
 O servidor está na VPN Tailscale com o hostname `niflhel`. O tráfego vai direto pelo túnel VPN, contornando o Cloudflare:
 
 ```bash
-git clone ssh://git@niflhel:2222/nilByte/mirante.git
+git clone ssh://git@niflhel:2222/nilByte/personalledger.git
 
 # Testar conexão
 ssh -T git@niflhel -p 2222
@@ -291,7 +295,7 @@ Não funciona. O domínio `gitea.nilbyte.com.br:2222` vai para o Cloudflare, que
 Padrão Conventional Commits:
 
 ```
-feat(backend): adicionar endpoint de exportação CSV
+feat(backend): adicionar endpoint de analytics anual
 fix(webapp): corrigir cálculo de saldo negativo
 chore(ci): atualizar versão do Go no pipeline
 ```
