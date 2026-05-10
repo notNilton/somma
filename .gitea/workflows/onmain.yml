@@ -150,7 +150,7 @@ jobs:
         run: |
           VERSION=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' apps/webapp/package.json | head -n1)
           docker build -f apps/webapp/Dockerfile \
-            --build-arg VITE_API_URL=https://api.personalledger.nilbyte.com.br \
+            --build-arg VITE_API_URL= \
             --build-arg VITE_APP_VERSION=${VERSION} \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:latest" \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/webapp:${VERSION}" \
