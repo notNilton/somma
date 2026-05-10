@@ -10,13 +10,14 @@ http:
     type: json
     data: |-
       {
-        "accountId": "{{accountId}}",
         "categoryId": "{{categoryId}}",
         "type": "EXPENSE",
         "amount": 45.90,
         "description": "Supermercado",
         "date": "2024-03-29T10:00:00Z",
-        "status": "COMPLETED"
+        "status": "COMPLETED",
+        "paymentMethod": "DEBIT",
+        "channel": "PIX"
       }
   auth:
     type: bearer

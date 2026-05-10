@@ -10,8 +10,16 @@ http:
     type: json
     data: |-
       {
-        "amount": 1200.00,
-        "notes": "Ajustado para janeiro"
+        "name": "Orçamento Março 2025 (ajustado)",
+        "targetDate": "2025-03-01",
+        "notes": "Ajustado após revisão",
+        "items": [
+          {
+            "name": "Alimentação",
+            "categoryId": "{{categoryId}}",
+            "sortOrder": 0
+          }
+        ]
       }
   auth:
     type: bearer

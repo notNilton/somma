@@ -10,11 +10,20 @@ http:
     type: json
     data: |-
       {
-        "categoryId": "{{categoryId}}",
-        "amount": 1000.00,
-        "month": 1,
-        "year": 2025,
-        "notes": "Orçamento de alimentação"
+        "name": "Orçamento Março 2025",
+        "targetDate": "2025-03-01",
+        "notes": "Planejamento mensal",
+        "items": [
+          {
+            "name": "Alimentação",
+            "categoryId": "{{categoryId}}",
+            "sortOrder": 0
+          },
+          {
+            "name": "Transporte",
+            "sortOrder": 1
+          }
+        ]
       }
   auth:
     type: bearer

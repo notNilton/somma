@@ -1,14 +1,21 @@
 info:
-  name: RevokeMember
+  name: UpdateCategory
   type: http
-  seq: 10
+  seq: 3
 
 http:
-  method: DELETE
-  url: "{{baseUrl}}/api/v1/accounts/{{accountId}}/members/{{memberId}}"
+  method: PATCH
+  url: "{{baseUrl}}/api/v1/categories/{{categoryId}}"
   auth:
     type: bearer
     token: "{{accessToken}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Alimentação Atualizada",
+        "color": "#E53935"
+      }
 
 runtime:
   variables:
