@@ -18,12 +18,12 @@ A maioria dos endpoints exige um JWT no header `Authorization`.
 ## Grupos de Endpoints
 
 ### 1. Sistema e Saúde (`Health`)
-- `GET /health`: Verificação de status do servidor.
+- `GET /api/health`: Verificação de status do servidor.
 
 ### 2. Autenticação e Perfil (`Auth`, `Users`, `Settings`)
 - `POST /api/auth/login` e `POST /api/auth/register`: Fluxo de acesso.
-- `GET /users/me`: Dados do usuário logado.
-- `PATCH /users/me`: Atualização de dados pessoais.
+- `GET /api/users/me`: Dados do usuário logado.
+- `PATCH /api/users/me`: Atualização de dados pessoais.
 - `GET /api/v1/settings/profile`: Perfil completo.
 - `PATCH /api/v1/settings/profile`: Atualização de perfil.
 - `PATCH /api/v1/settings/change-password`: Alteração de senha.

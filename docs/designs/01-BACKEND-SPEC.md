@@ -29,11 +29,10 @@ Todos os endpoints (exceto Login/Register/Health) exigem o header `Authorization
 ### Autenticação (`Auth`)
 - `POST /api/auth/register`: Criação de nova conta.
 - `POST /api/auth/login`: Autenticação e recebimento de JWT.
-- `POST /auth/register` e `POST /auth/login`: aliases legados.
 
 ### Perfil (`Users`)
-- `GET /users/me`: Dados do usuário logado.
-- `PATCH /users/me`: Atualização de nome/email.
+- `GET /api/users/me`: Dados do usuário logado.
+- `PATCH /api/users/me`: Atualização de nome/email.
 
 ### Categorias (`Categories`)
 - `GET /api/v1/categories`: Lista categorias.
@@ -88,7 +87,7 @@ Todos os endpoints (exceto Login/Register/Health) exigem o header `Authorization
 - `DELETE /api/v1/settings/account`: Deleta conta e todos os dados.
 
 ### Sistema
-- `GET /health`: Healthcheck básico.
+- `GET /api/health`: Healthcheck básico.
 
 ## Regras de Negócio Críticas
 
