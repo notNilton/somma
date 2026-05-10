@@ -1,8 +1,10 @@
 # 02 — Fase 2: Expansão de Módulos
 
-> **Status: ✅ Concluída** — Cartões ✅ | Veículos ✅ | Orçamentos ✅ | Planejamento ✅ | Colaboração ✅
+> **Status: ⚠️ Parcialmente Simplificada** — Veículos ✅ | Orçamentos ✅ (redesign) | Cartões ❌ removidos | Planejamento ❌ removido | Colaboração ❌ removida
 
-A Fase 2 expandiu o Mirante de um extrato básico para uma plataforma de gestão financeira completa, adicionando módulos especializados para cartões de crédito, frota pessoal, orçamentos mensais e metas de longo prazo.
+> ⚠️ **Aviso de Simplificação:** Este documento descreve funcionalidades que foram implementadas mas posteriormente removidas para manter o sistema enxuto. Cartões (`cards`), transferências (`transfers`), planejamento de metas (`planning_plans`), colaboração (`account_access`) e manutenções de veículos (`vehicle_maintenances`) foram dropados nas migrations `000007` e `000011`. Orçamentos foram redesenhados na `000014` para derivar valores das transações. Consulte os documentos atuais para o estado real.
+
+A Fase 2 originalmente expandiu o Personalledger com módulos especializados. Grande parte desses módulos foi removida na simplificação de 2025.
 
 ---
 

@@ -1,6 +1,8 @@
-# Mirante — Master TODO
+# Personalledger — Master TODO
 
-Plataforma de gestão financeira pessoal baseada em partidas dobradas. Controle de contas, transações, cartões, orçamentos, metas de longo prazo, frota pessoal e análise evolutiva de gastos.
+Plataforma de gestão financeira pessoal baseada em partidas dobradas. Controle de transações, categorias, orçamentos, frota pessoal e análise evolutiva de gastos.
+
+> **Nota arquitetural (2025-05):** O sistema foi intencionalmente simplificado. Funcionalidades legadas como contas bancárias, cartões de crédito, transferências, planejamento de metas de longo prazo e colaboração em contas foram removidas para manter o core enxuto e manutenível. O modelo atual deriva orçamentos diretamente das transações vinculadas.
 
 ---
 
@@ -9,25 +11,23 @@ Plataforma de gestão financeira pessoal baseada em partidas dobradas. Controle 
 ### Backend (Go)
 - [x] Monorepo (`apps/backend`, `apps/webapp`, `database`, `client-api`)
 - [x] Auth JWT com bcrypt
-- [x] Contas bancárias (CRUD + soft-delete)
 - [x] Categorias e Tags (CRUD)
 - [x] Transações com precisão em centavos (`BIGINT`)
-- [x] Transferências entre contas (double-entry)
 - [x] Dashboard (evolução mensal + breakdown por categoria)
 - [x] Cache em memória (`internal/cache`)
 - [x] Migrations via `golang-migrate` (schema SQL puro)
 - [x] Logging estruturado e healthcheck
+- [x] Jobs assíncronos (scheduler de recorrências + budget alerts)
 
 ### Webapp (React + TanStack)
 - [x] Autenticação (Login / Registro)
 - [x] Dashboard principal com gráficos
 - [x] Extrato de transações com filtros
-- [x] Gestão de contas e transferências
 - [x] Gestão de categorias e tags (Settings)
 
 ### DevOps
 - [x] Docker Compose local (PostgreSQL + backend + webapp)
-- [x] CI via Gitea Actions (`ondev.yml` + `onmain.yml`)
+- [x] CI via Gitea Actions (`pull_request.yml` + `onmain.yml`)
 - [x] Build multi-stage Go e Nginx
 - [x] Bump automático de versão no merge para `main`
 
@@ -36,23 +36,28 @@ Plataforma de gestão financeira pessoal baseada em partidas dobradas. Controle 
 ## Fase 2 — Expansão de Módulos ✅
 
 ### Backend
-- [x] Cartões de crédito (CRUD + fatura por período)
-- [x] Calendário financeiro (vencimentos e recebimentos)
-- [x] Módulo de Veículos (CRUD + abastecimentos + manutenções + stats)
-- [x] Orçamentos mensais por categoria (CRUD + status real vs planejado)
-- [x] Planejamento de metas (`plans` + `items` + `contributions`)
-- [x] Vínculo de transações com planos de metas (`planning_id`)
-- [x] Colaboração em contas (`account_access` — CRUD de membros)
-- [x] Exportação de transações em CSV
-- [x] Importação de extrato via CSV
+- [x] Módulo de Veículos (CRUD + abastecimentos + stats)
+- [x] Orçamentos derivados de transações (CRUD + status real vs planejado)
+- [x] Vínculo de transações com orçamentos (`budget_id` + `budget_item_id`)
 - [x] Listagem de transações futuras
+- [x] Analytics anual (`/api/v1/analytics/annual-evolution`)
 
 ### Webapp
-- [x] Módulo `/wallet` (contas, cartões, veículos)
-- [x] Módulo `/activity` (transações, transferências, calendário)
-- [x] Módulo `/planning` (orçamentos, planos, relatórios)
+- [x] Módulo `/budgets` (orçamentos derivados)
 - [x] Módulo `/settings` (perfil, categorias, privacidade, veículos)
+- [x] Módulo `/transactions/crud-transactions`
 - [x] Privacy Mode (blur em valores financeiros)
+
+### Funcionalidades removidas (simplificação intencional)
+> As funcionalidades abaixo existiram em versões anteriores mas foram removidas via migrations para manter o sistema enxuto:
+- ~~Contas bancárias (`accounts`)~~ — removido na `000011`
+- ~~Cartões de crédito (`cards`)~~ — removido na `000011`
+- ~~Transferências entre contas (`transfers`)~~ — removido na `000011`
+- ~~Colaboração em contas (`account_access`)~~ — removido na `000011`
+- ~~Planejamento de metas (`planning_plans`, `items`, `contributions`)~~ — removido na `000007`
+- ~~Manutenções de veículos (`vehicle_maintenances`)~~ — removido na `000007`
+- ~~Importação / exportação CSV~~ — não implementado
+- ~~Calendário financeiro~~ — não implementado
 
 ---
 
@@ -62,12 +67,11 @@ Plataforma de gestão financeira pessoal baseada em partidas dobradas. Controle 
 - [ ] Testes de integração com banco real (`pgx` + banco de teste isolado)
 - [ ] Validação de entrada centralizada (middleware ou helper)
 - [ ] Rate limiting por usuário nos endpoints de escrita
-- [ ] Endpoint `GET /api/v1/transactions/future` com suporte a recorrência
+- [ ] Endpoint `GET /api/v1/transactions/future` com suporte a recorrência avançada
 
 ### Webapp
 - [ ] Testes E2E com Playwright (fluxo Login → Transação → Dashboard)
 - [ ] Cobertura de testes unitários nos hooks de domínio
-- [ ] Página `/planning/reports` com análise detalhada de gastos
 - [ ] Modo offline básico (PWA / Service Worker para leitura em cache)
 
 ### Infraestrutura
