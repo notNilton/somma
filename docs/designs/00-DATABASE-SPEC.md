@@ -1,98 +1,86 @@
-# 00 - Arquitetura de Banco de Dados (Evolução Mirante)
+# 00 - Arquitetura de Banco de Dados (Personalledger Enxuto)
 
-Se a meta final é transformar o Mirante de um app de finanças pessoais em uma plataforma de gestão financeira robusta (multi-usuário, multi-carteira e possivelmente B2B/Family Office), o banco atual é a fundação sólida, mas precisa evoluir de um modelo centrado no usuário para um modelo "Platform-First".
+O Personalledger opera com um modelo de banco intencionalmente enxuto, focado em transações como fonte da verdade. Orçamentos não possuem valores fixos — são derivados dinamicamente das transações vinculadas a cada item de orçamento.
 
 **Direção Principal**
-O modelo atual é baseado em Partidas Dobradas (implícitas via `transactions` e `accounts`) e focado em `user_id`.
-
-Para servir grupos familiares, empresas e colaboração real, a arquitetura deve evoluir para suportar isolamento e compartilhamento granular:
+O modelo atual é centrado no usuário (`user_id`) e elimina complexidades legadas como contas bancárias, cartões e transferências explícitas.
 
 ```text
-tenants (ex: Família Silva, Empresa X)
-tenant_users (permissões dentro do tenant)
-users (identidade global)
-accounts (carteiras, bancos, cofres)
-categories (árvore de categorias por tenant/global)
+users (identidade)
+sessions (auth)
+categories (árvore de categorias por usuário)
 tags (etiquetas transversais)
-transactions (o core contábil)
-transfers (vínculo de movimentação)
-budgets (planejamento mensal)
-planning_plans (metas de longo prazo)
-vehicles (módulo de frotas/pessoal)
-refueling_logs
-vehicle_maintenances
-audit_logs
-idempotency_keys
-outbox_events
+transactions (o core contábil — fonte da verdade)
+budgets (orçamentos mensais/semestrais)
+budget_items (itens de orçamento — sem valor fixo)
+vehicles (módulo de frota pessoal)
 ```
 
-**1. Multi-tenant e Colaboração Familiar**
-O ponto mais importante é introduzir `tenants`. Atualmente o Mirante usa `account_access` para compartilhamento, o que é um bom começo, mas para escala:
+---
 
-- `tenants`
-  - `id`, `slug`, `display_name`, `plan`, `settings jsonb`
-- `tenant_users`
-  - Relação N:N entre usuário e tenant
-  - `role` (OWNER, ADMIN, MEMBER, VIEWER)
+## 1. Core Contábil: Transações como Fonte da Verdade
 
-Isso permite que um usuário tenha sua "Finança Pessoal" e participe da "Finança Familiar" ou "Pequena Empresa" de forma isolada e segura.
+Toda movimentação financeira vive na tabela `transactions`. Não há tabelas separadas para transferências, abastecimentos ou manutenções — esses conceitos são expressos via:
 
-**2. Core Contábil: Partidas Dobradas Explícitas**
-Hoje, o Mirante já usa `amount_cents` (BIGINT) para evitar erros de arredondamento. A evolução natural é tornar as partidas dobradas mais auditáveis:
+- `type`: `INCOME`, `EXPENSE`, `TRANSFER`, `ADJUSTMENT`
+- `classification`: `COMMON`, `FUEL`, `MAINTENANCE`, `TRANSFER`
+- `vehicle_id`: vínculo opcional com frota
+- `budget_id` / `budget_item_id`: vínculo opcional com orçamento
 
-- `accounting_entries`
-  - `transaction_id`
-  - `account_id`
-  - `amount_cents` (positivo para débito, negativo para crédito)
-  
-Isso permite reconciliações bancárias perfeitas e balancetes em tempo real sem depender apenas da soma da tabela de transações.
+Valores monetários sempre em centavos (`BIGINT`).
 
-**3. Idempotência e Confiabilidade**
-Para integrações via Open Finance ou importações massivas de CSV/OFX:
+## 2. Orçamentos Derivados
 
-- `idempotency_keys`
-  - `tenant_id`, `key` (hash do payload/origem)
-  - `status`, `response_snapshot`
-  
-Evita duplicidade de lançamentos se o usuário clicar duas vezes ou se o worker de importação falhar no meio do processo.
+A tabela `budget_items` **não possui** `amount_cents`. O valor planejado e o gasto real de cada item são calculados em tempo de leitura a partir das transações vinculadas:
 
-**4. Módulo de Frota (Vehicles) como Domínio Separado**
-O Mirante já possui `vehicles`, `refueling_logs` e `maintenances`. A evolução aqui é:
+```sql
+-- Orçamentado (INCOME vinculado ao item)
+-- Gasto (EXPENSE vinculado ao item)
+-- Tudo via budget_item_id em transactions
+```
 
-- `vehicle_metrics`
-  - Agregados de km/L, custo por km e depreciação.
-- `maintenance_schedules`
-  - Alertas preventivos baseados em tempo ou km projetada.
+Isso elimina inconsistências entre orçamento e extrato, mas exige que o usuário crie transações de "receita" para alimentar o orçamento.
 
-**5. Orçamentos e Planejamento (Planning)**
-A estrutura de `planning_plans` e `budgets` deve suportar versionamento:
+## 3. Módulo de Frota (Vehicles)
 
-- `budget_snapshots`
-  - Para comparar "Planejado vs Realizado" historicamente sem que mudanças no orçamento do mês atual afetem o histórico.
+O Personalledger mantém `vehicles` com dados cadastrais. Abastecimentos e manutenções são transações comuns (`classification = 'FUEL'` ou `'MAINTENANCE'`) vinculadas ao veículo. Não há tabelas separadas para `refueling_logs` ou `vehicle_maintenances`.
 
-**6. Isolamento e Segurança (RLS)**
-Recomendação para o Mirante:
-- Utilizar **Row Level Security (RLS)** do PostgreSQL baseado no `tenant_id` (ou `user_id` na fase atual).
-- Garantir que toda query de leitura/escrita passe pelo filtro de tenant/user no nível do banco, não apenas na aplicação.
+## 4. Chaves e Índices
 
-**7. Auditoria Financeira**
-Obrigatório para qualquer sistema que lida com dinheiro:
+Atualmente o Personalledger usa `TEXT` com UUID. Manter essa estratégia para chaves públicas.
 
-- `audit_logs`
-  - Quem alterou qual transação? Qual era o valor antigo?
-  - `before_state jsonb`, `after_state jsonb`
+**Índices principais:**
+- `idx_transactions_user_id_date` — queries de extrato
+- `idx_transactions_budget_id` — agregação de orçamentos
+- `idx_transactions_budget_item_id` — agregação por item
+- `idx_budgets_user_id_target_date` — listagem de orçamentos
+- `idx_categories_user_id` — filtros de categoria
 
-**8. Integração e Webhooks**
-Para automação (ex: "Se gastar mais de 80% do orçamento de Lazer, avise no Telegram"):
+## 5. Modelo Atual (pós-simplificação)
 
-- `webhooks`
-- `outbox_events` (Garante que a notificação seja disparada apenas se a transação for commitada com sucesso).
+### Tabelas ativas
+- `users` — perfil, credenciais, preferências
+- `sessions` — tokens JWT ativos
+- `categories` — receitas e despesas hierárquicas
+- `tags` — etiquetas coloridas
+- `transactions` — lançamentos financeiros (core)
+- `budgets` — planos orçamentários
+- `budget_items` — linhas de orçamento (sem valor fixo)
+- `vehicles` — cadastro de frota
 
-**9. Chaves e Índices**
-Atualmente o Mirante usa `TEXT` com UUID. Manter essa estratégia para chaves públicas, mas considerar `BIGSERIAL` para chaves primárias internas em tabelas de log/transações massivas se o volume atingir milhões de registros.
+### Tabelas removidas (legado)
+- ~~`accounts`~~ — dropada na `000011`
+- ~~`cards`~~ — dropada na `000011`
+- ~~`account_access`~~ — dropada na `000011`
+- ~~`transfers`~~ — dropada na `000011`
+- ~~`planning_plans`~~ — dropada na `000007`
+- ~~`planning_plan_items`~~ — dropada na `000007`
+- ~~`planning_contributions`~~ — dropada na `000007`
+- ~~`vehicle_maintenances`~~ — dropada na `000007`
 
-**10. Ordem Prática de Evolução**
-1. **Consolidação do Core:** Garantir que todos os cálculos de `balance_cents` sejam atômicos.
-2. **Audit & Idempotency:** Camada de segurança para importações.
-3. **Multi-tenancy Real:** Migrar de `user_id` direto para `tenant_id`.
-4. **Analytics & IA:** Camada de agregação para insights automáticos de economia.
+## 6. Evolução Futura (opcional)
+
+1. **Consolidação do Core:** Garantir atomicidade nos cálculos de agregação de orçamento.
+2. **Audit & Idempotency:** Camada de segurança para importações futuras (`audit_logs`, `idempotency_keys`).
+3. **Multi-tenancy Real:** Migrar de `user_id` direto para `tenant_id` (Fase 6).
+4. **Analytics & IA:** Camada de agregação para insights automáticos de economia (Fase 4).
