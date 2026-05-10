@@ -13,7 +13,7 @@ async function sessionFetch(path: string, init: RequestInit = {}): Promise<Respo
 export const auth = {
   async isAuthenticated(): Promise<boolean> {
     try {
-      const res = await sessionFetch('/users/me', {
+      const res = await sessionFetch('/api/users/me', {
         method: 'GET',
         headers: {
           Accept: 'application/json',
