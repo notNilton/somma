@@ -14,19 +14,16 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	auth := middleware.Auth(jwtKey)
 
 	// Health
-	mux.HandleFunc("GET /health", h.Health)
+	mux.HandleFunc("GET /api/health", h.Health)
 
 	// Auth (público)
 	mux.HandleFunc("POST /api/auth/register", h.Register)
 	mux.HandleFunc("POST /api/auth/login", h.Login)
 	mux.HandleFunc("POST /api/auth/logout", h.Logout)
-	mux.HandleFunc("POST /auth/register", h.Register)
-	mux.HandleFunc("POST /auth/login", h.Login)
-	mux.HandleFunc("POST /auth/logout", h.Logout)
 
 	// Users
-	mux.HandleFunc("GET /users/me", auth(h.GetMe))
-	mux.HandleFunc("PATCH /users/me", auth(h.UpdateMe))
+	mux.HandleFunc("GET /api/users/me", auth(h.GetMe))
+	mux.HandleFunc("PATCH /api/users/me", auth(h.UpdateMe))
 
 	// Categories
 	mux.HandleFunc("GET /api/v1/categories", auth(h.ListCategories))

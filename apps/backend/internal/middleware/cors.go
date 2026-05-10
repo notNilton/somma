@@ -4,14 +4,14 @@ import (
 	"net/http"
 )
 
+// CORS middleware — necessário apenas para desenvolvimento local (frontend e backend em portas diferentes).
+// Em produção, ambos rodam no mesmo domínio e este middleware não é estritamente necessário.
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		if origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
-		} else {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
 		}
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS, PUT")
