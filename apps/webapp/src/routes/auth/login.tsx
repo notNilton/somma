@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowRight, Lock, Loader2, Mail, ShieldCheck } from "lucide-react";
-import { auth } from "../../lib/auth";
 import { api } from "../../lib/api";
 
 export const Route = createFileRoute("/auth/login")({
@@ -21,11 +20,10 @@ function LoginPage() {
     setError(null);
 
     try {
-      const { accessToken } = await api.post<{ accessToken: string }>(
+      await api.post<{ sessionToken: string }>(
         "/api/auth/login",
         { email, password },
       );
-      auth.setToken(accessToken);
       navigate({ to: "/" });
     } catch (err: unknown) {
       setError(

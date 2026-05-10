@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/nilbyte/mirante/backend/internal/testutil"
+	"github.com/nilbyte/personalledger/backend/internal/testutil"
 )
 
 func TestCreateBudgetAndList(t *testing.T) {

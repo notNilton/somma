@@ -2,9 +2,11 @@ package handlers_test
 
 import (
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
-	"github.com/nilbyte/mirante/backend/internal/testutil"
+	"github.com/nilbyte/personalledger/backend/internal/testutil"
 )
 
 func TestRegister_Success(t *testing.T) {
@@ -21,7 +23,7 @@ func TestRegister_Success(t *testing.T) {
 	}
 	tok := testutil.Token(t, rec)
 	if tok == "" {
-		t.Fatal("expected accessToken, got empty")
+		t.Fatal("expected sessionToken, got empty")
 	}
 }
 
@@ -85,7 +87,35 @@ func TestLogin_Success(t *testing.T) {
 	}
 	tok := testutil.Token(t, rec)
 	if tok == "" {
-		t.Fatal("expected accessToken, got empty")
+		t.Fatal("expected sessionToken, got empty")
+	}
+}
+
+func TestLogin_SetsSessionCookie(t *testing.T) {
+	pool, mux := testutil.Setup(t)
+	testutil.CleanTables(t, pool)
+
+	testutil.RegisterUser(t, mux, "cookie@example.com", "secret123")
+
+	rec := testutil.Do(t, mux, "POST", "/auth/login", map[string]string{
+		"email":    "cookie@example.com",
+		"password": "secret123",
+	}, "")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	cookieHeader := rec.Header().Values("Set-Cookie")
+	found := false
+	for _, header := range cookieHeader {
+		if strings.Contains(header, "personalledger_session=") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected session cookie, got headers: %v", cookieHeader)
 	}
 }
 
@@ -127,5 +157,36 @@ func TestProtectedRoute_NoToken(t *testing.T) {
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d", rec.Code)
+	}
+}
+
+func TestProtectedRoute_WithSessionCookie(t *testing.T) {
+	pool, mux := testutil.Setup(t)
+	testutil.CleanTables(t, pool)
+
+	testutil.RegisterUser(t, mux, "session@example.com", "secret123")
+	loginRec := testutil.Do(t, mux, "POST", "/auth/login", map[string]string{
+		"email":    "session@example.com",
+		"password": "secret123",
+	}, "")
+
+	var sessionCookie string
+	for _, cookie := range loginRec.Result().Cookies() {
+		if cookie.Name == "personalledger_session" {
+			sessionCookie = cookie.Value
+			break
+		}
+	}
+	if sessionCookie == "" {
+		t.Fatal("expected session cookie in login response")
+	}
+
+	req := httptest.NewRequest("GET", "/users/me", nil)
+	req.AddCookie(&http.Cookie{Name: "personalledger_session", Value: sessionCookie})
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 }

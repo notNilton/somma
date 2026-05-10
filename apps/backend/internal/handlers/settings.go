@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/nilbyte/mirante/backend/internal/middleware"
-	"github.com/nilbyte/mirante/backend/internal/models"
+	"github.com/nilbyte/personalledger/backend/internal/middleware"
+	"github.com/nilbyte/personalledger/backend/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
 

@@ -16,9 +16,9 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nilbyte/mirante/backend/internal/cache"
-	"github.com/nilbyte/mirante/backend/internal/handlers"
-	"github.com/nilbyte/mirante/backend/internal/routes"
+	"github.com/nilbyte/personalledger/backend/internal/cache"
+	"github.com/nilbyte/personalledger/backend/internal/handlers"
+	"github.com/nilbyte/personalledger/backend/internal/routes"
 )
 
 var JWTKey = []byte("test-secret-key")
@@ -35,7 +35,7 @@ func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 	dsn := os.Getenv("DATABASE_URL")
 	usingDefaultDSN := dsn == ""
 	if dsn == "" {
-		dsn = "postgres://postgres:postgres@localhost:5454/mirante_test?sslmode=disable"
+		dsn = "postgres://postgres:postgres@localhost:5454/personalledger_test?sslmode=disable"
 	}
 	dsn = normalizeDSN(dsn)
 
@@ -122,16 +122,16 @@ func Do(t *testing.T, mux *http.ServeMux, method, path string, body any, token s
 	return rec
 }
 
-// Token extrai o accessToken do body JSON.
+// Token extrai o sessionToken do body JSON.
 func Token(t *testing.T, rec *httptest.ResponseRecorder) string {
 	t.Helper()
 	var resp map[string]string
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Token: unmarshal: %v", err)
 	}
-	tok, ok := resp["accessToken"]
+	tok, ok := resp["sessionToken"]
 	if !ok {
-		t.Fatalf("Token: accessToken not found in %s", rec.Body.String())
+		t.Fatalf("Token: sessionToken not found in %s", rec.Body.String())
 	}
 	return tok
 }

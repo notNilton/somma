@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nilbyte/mirante/backend/internal/cache"
-	"github.com/nilbyte/mirante/backend/internal/middleware"
-	"github.com/nilbyte/mirante/backend/internal/models"
-	"github.com/nilbyte/mirante/backend/internal/money"
+	"github.com/nilbyte/personalledger/backend/internal/cache"
+	"github.com/nilbyte/personalledger/backend/internal/middleware"
+	"github.com/nilbyte/personalledger/backend/internal/models"
+	"github.com/nilbyte/personalledger/backend/internal/money"
 )
 
 type createTransactionDto struct {

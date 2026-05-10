@@ -1,4 +1,4 @@
-module github.com/nilbyte/mirante/database
+module github.com/nilbyte/personalledger/database
 
 go 1.24.0
 

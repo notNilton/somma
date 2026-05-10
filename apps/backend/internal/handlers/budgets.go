@@ -11,9 +11,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/nilbyte/mirante/backend/internal/middleware"
-	"github.com/nilbyte/mirante/backend/internal/models"
-	"github.com/nilbyte/mirante/backend/internal/money"
+	"github.com/nilbyte/personalledger/backend/internal/middleware"
+	"github.com/nilbyte/personalledger/backend/internal/models"
+	"github.com/nilbyte/personalledger/backend/internal/money"
 )
 
 type budgetItemDto struct {

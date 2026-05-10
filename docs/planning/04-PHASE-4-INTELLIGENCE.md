@@ -2,7 +2,7 @@
 
 > **Status: ⏳ Planejada**
 
-A Fase 4 transforma o Mirante de um registrador de dados financeiros em um assistente financeiro inteligente. A proposta é usar o histórico já acumulado pelo usuário para oferecer insights automáticos, sugestões e projeções sem exigir configuração manual.
+A Fase 4 transforma o Personalledger de um registrador de dados financeiros em um assistente financeiro inteligente. A proposta é usar o histórico já acumulado pelo usuário para oferecer insights automáticos, sugestões e projeções sem exigir configuração manual.
 
 ---
 

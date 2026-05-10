@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nilbyte/mirante/backend/internal/cache"
-	"github.com/nilbyte/mirante/backend/internal/handlers"
-	"github.com/nilbyte/mirante/backend/internal/middleware"
+	"github.com/nilbyte/personalledger/backend/internal/cache"
+	"github.com/nilbyte/personalledger/backend/internal/handlers"
+	"github.com/nilbyte/personalledger/backend/internal/middleware"
 )
 
 func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cache) {
@@ -19,8 +19,10 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	// Auth (público)
 	mux.HandleFunc("POST /api/auth/register", h.Register)
 	mux.HandleFunc("POST /api/auth/login", h.Login)
+	mux.HandleFunc("POST /api/auth/logout", h.Logout)
 	mux.HandleFunc("POST /auth/register", h.Register)
 	mux.HandleFunc("POST /auth/login", h.Login)
+	mux.HandleFunc("POST /auth/logout", h.Logout)
 
 	// Users
 	mux.HandleFunc("GET /users/me", auth(h.GetMe))

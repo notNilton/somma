@@ -21,12 +21,11 @@ export function unwrapData<T>(res: T | ApiDataResponse<T> | null | undefined, fa
 }
 
 async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const token = auth.getToken();
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers ?? {}),
     },
   });
@@ -63,12 +62,11 @@ export const api = {
     apiFetch<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T>(path: string) => apiFetch<T>(path, { method: 'DELETE' }),
   postForm: async <T>(path: string, form: FormData) => {
-    const token = auth.getToken();
     const res = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
       body: form,
+      credentials: 'include',
       headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
     if (!res.ok) {

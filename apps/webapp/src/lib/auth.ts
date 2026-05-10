@@ -1,32 +1,37 @@
-export const AUTH_TOKEN_KEY = 'pagway_auth_token';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+
+async function sessionFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  return fetch(`${BASE_URL}${path}`, {
+    ...init,
+    credentials: 'include',
+    headers: {
+      ...(init.headers ?? {}),
+    },
+  });
+}
 
 export const auth = {
-  getToken: (): string | null => {
+  async isAuthenticated(): Promise<boolean> {
     try {
-      return localStorage.getItem(AUTH_TOKEN_KEY);
+      const res = await sessionFetch('/users/me', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+      return res.ok;
     } catch {
-      return null;
+      return false;
     }
   },
 
-  setToken: (token: string): void => {
+  async logout(): Promise<void> {
     try {
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      await sessionFetch('/api/auth/logout', { method: 'POST' });
     } catch {
       // ignore
     }
-  },
 
-  logout: (): void => {
-    try {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-    } catch {
-      // ignore
-    }
     window.location.href = '/auth/login';
-  },
-
-  isAuthenticated: (): boolean => {
-    return !!auth.getToken();
   },
 };

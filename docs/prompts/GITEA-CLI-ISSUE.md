@@ -44,7 +44,7 @@ Dado um problema descrito pelo usuário, retorne **apenas** o comando bash `tea 
 
 ```bash
 tea issues create \
-  --repo pagway/pagway-mobile \
+  --repo personalledger/personalledger \
   --title "<prefixo>: <título>" \
   --labels "<labels>" \
   --description "$(cat <<'EOF'

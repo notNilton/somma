@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/nilbyte/mirante/backend/internal/models"
+	"github.com/nilbyte/personalledger/backend/internal/models"
 )
 
 type createTagDto struct {

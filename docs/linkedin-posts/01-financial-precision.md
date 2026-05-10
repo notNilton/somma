@@ -8,7 +8,7 @@
 
 Você confiaria o seu suado dinheiro a um sistema que arredonda "pra baixo" aleatoriamente? 🧐
 
-Ao desenvolver o **Mirante**, meu projeto de gestão financeira pessoal, a primeira decisão não negociável foi: **Zero Floats para valores monetários**. Na engenharia de software financeira, usar tipos de ponto flutuante (como `float64` no Go ou `DOUBLE` no SQL) é um erro clássico que gera erros cumulativos de centavos em balanços de longo prazo.
+Ao desenvolver o **Personalledger**, meu projeto de gestão financeira pessoal, a primeira decisão não negociável foi: **Zero Floats para valores monetários**. Na engenharia de software financeira, usar tipos de ponto flutuante (como `float64` no Go ou `DOUBLE` no SQL) é um erro clássico que gera erros cumulativos de centavos em balanços de longo prazo.
 
 **A Minha Solução Técnica:**
 Adotei a estratégia de **Armazenamento em Cents (Integers)** em todo o stack:

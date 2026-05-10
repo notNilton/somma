@@ -37,17 +37,17 @@ O banco sobe com estes valores padrão:
 ```env
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
-POSTGRES_DB=mirante
+POSTGRES_DB=personalledger
 POSTGRES_PORT=5454
 ```
 
 Logo, a `DATABASE_URL` local fica:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5454/mirante?sslmode=disable
+DATABASE_URL=postgresql://postgres:postgres@localhost:5454/personalledger?sslmode=disable
 ```
 
-Isso já bate com [apps/backend/.env.example](/var/home/notNilton/Workspace/nilbyte/mirante/apps/backend/.env.example).
+Isso já bate com [apps/backend/.env.example](/var/home/notNilton/Workspace/nilbyte/personalledger/apps/backend/.env.example).
 
 ## Rodar migrations
 
@@ -85,7 +85,7 @@ make seed
 
 `make seed` é um atalho para `make seed-complete`.
 
-O seed SQL usado hoje está em [database/seeds/initial_seed.sql](/var/home/notNilton/Workspace/nilbyte/mirante/database/seeds/initial_seed.sql).
+O seed SQL usado hoje está em [database/seeds/initial_seed.sql](/var/home/notNilton/Workspace/nilbyte/personalledger/database/seeds/initial_seed.sql).
 
 Para um banco minimalista com usuario, contas e veiculo:
 

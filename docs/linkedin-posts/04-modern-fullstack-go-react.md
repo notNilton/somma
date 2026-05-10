@@ -8,7 +8,7 @@
 
 O segredo de um projeto escalável não está em frameworks da moda, mas na **simplicidade arquitetural**. 🛠️
 
-Ao construir o ecossistema **Mirante**, optei por uma abordagem de **Modular Monolith** que me permite ser ágil hoje, sem gerar dívida técnica para amanhã. O stack? Go 1.24 no backend e React 19 no frontend.
+Ao construir o ecossistema **Personalledger**, optei por uma abordagem de **Modular Monolith** que me permite ser ágil hoje, sem gerar dívida técnica para amanhã. O stack? Go 1.24 no backend e React 19 no frontend.
 
 **Minhas Escolhas de Engenharia:**
 

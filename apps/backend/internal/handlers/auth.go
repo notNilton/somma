@@ -12,6 +12,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const sessionCookieName = "personalledger_session"
+
 type registerDto struct {
 	Email    string  `json:"email"`
 	Password string  `json:"password"`
@@ -75,7 +77,8 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]string{"accessToken": token})
+	setSessionCookie(w, r, token)
+	writeJSON(w, http.StatusCreated, map[string]string{"sessionToken": token})
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +112,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"accessToken": token})
+	setSessionCookie(w, r, token)
+	writeJSON(w, http.StatusOK, map[string]string{"sessionToken": token})
 }
 
 func (h *Handler) generateToken(userID, email string) (string, error) {
@@ -120,4 +124,42 @@ func (h *Handler) generateToken(userID, email string) (string, error) {
 		"iat":   time.Now().Unix(),
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(h.jwtKey)
+}
+
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	clearSessionCookie(w, r)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func setSessionCookie(w http.ResponseWriter, r *http.Request, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   isSecureRequest(r),
+		MaxAge:   int((7 * 24 * time.Hour).Seconds()),
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+	})
+}
+
+func clearSessionCookie(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   isSecureRequest(r),
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+	})
+}
+
+func isSecureRequest(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 }

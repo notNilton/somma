@@ -1,6 +1,6 @@
-# Referências: Engenharia de Software (Mirante)
+# Referências: Engenharia de Software (Personalledger)
 
-Este documento detalha os fundamentos técnicos, padrões de projeto e escolhas arquiteturais que regem o desenvolvimento do ecossistema **Mirante**. O sistema prioriza simplicidade, robustez e performance.
+Este documento detalha os fundamentos técnicos, padrões de projeto e escolhas arquiteturais que regem o desenvolvimento do ecossistema **Personalledger**. O sistema prioriza simplicidade, robustez e performance.
 
 ---
 
@@ -14,14 +14,14 @@ As decisões de design e estrutura foram guiadas por estas obras:
 
 2. **The Go Programming Language**
    - *Autores:* Alan A. A. Donovan & Brian W. Kernighan (2015).
-   - *Contexto:* O Mirante utiliza Go de forma idiomática, preferindo a **Standard Library** (`net/http`) para o core do roteamento e concorrência nativa.
+   - *Contexto:* O Personalledger utiliza Go de forma idiomática, preferindo a **Standard Library** (`net/http`) para o core do roteamento e concorrência nativa.
 
 3. **Fundamentals of Software Architecture: An Engineering Approach**
    - *Autores:* Mark Richards & Neal Ford (2020).
    - *Contexto:* Base para a escolha do padrão **Modular Monolith**, otimizando a agilidade de desenvolvimento sem a complexidade prematura de microserviços.
 
 4. **Modern Frontend Development with React**
-   - *Contexto:* O Mirante utiliza React 19 em sua vanguarda, adotando o paradigma de **Server State Management** via TanStack Query.
+   - *Contexto:* O Personalledger utiliza React 19 em sua vanguarda, adotando o paradigma de **Server State Management** via TanStack Query.
 
 5. **Designing Data-Intensive Applications**
    - *Autor:* Martin Kleppmann (2017).
@@ -36,7 +36,7 @@ As decisões de design e estrutura foram guiadas por estas obras:
 
 2. **The Twelve-Factor App**
    - *Conceito:* Metodologia para construção de apps modernos e portáteis.
-   - *Aplicação:* O Mirante segue rigorosamente a gestão de configurações via variáveis de ambiente, paridade entre dev/prod e processos stateless.
+   - *Aplicação:* O Personalledger segue rigorosamente a gestão de configurações via variáveis de ambiente, paridade entre dev/prod e processos stateless.
 
 3. **Outbox Pattern** (Planejado)
    - Utilizado para garantir que eventos disparados por transações financeiras (ex: notificações) sejam enviados de forma resiliente após a persistência no banco.

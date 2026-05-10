@@ -13,9 +13,9 @@ import { auth } from "../lib/auth";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
-    beforeLoad: ({ location }) => {
+    beforeLoad: async ({ location }) => {
       const isPublic = location.pathname.startsWith("/auth");
-      const isAuthenticated = auth.isAuthenticated();
+      const isAuthenticated = await auth.isAuthenticated();
 
       if (!isAuthenticated && !isPublic) {
         throw redirect({

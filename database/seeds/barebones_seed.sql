@@ -1,4 +1,4 @@
--- Seed baseline minimal para Mirante
+-- Seed baseline minimal para Personalledger
 -- Usuario, contas bancarias e veiculo para subir a aplicacao sem historico financeiro.
 
 -- 0. Limpeza em ordem respeitando FKs

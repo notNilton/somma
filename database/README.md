@@ -1,4 +1,4 @@
-# Database Layer - Mirante
+# Database Layer - Personalledger
 
 Este diretório contém toda a lógica de gerenciamento de banco de dados do projeto.
 

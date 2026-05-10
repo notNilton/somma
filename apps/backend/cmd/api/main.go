@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nilbyte/mirante/backend/internal/cache"
-	"github.com/nilbyte/mirante/backend/internal/config"
-	"github.com/nilbyte/mirante/backend/internal/jobs"
-	"github.com/nilbyte/mirante/backend/internal/middleware"
-	"github.com/nilbyte/mirante/backend/internal/routes"
-	"github.com/nilbyte/mirante/database"
+	"github.com/nilbyte/personalledger/backend/internal/cache"
+	"github.com/nilbyte/personalledger/backend/internal/config"
+	"github.com/nilbyte/personalledger/backend/internal/jobs"
+	"github.com/nilbyte/personalledger/backend/internal/middleware"
+	"github.com/nilbyte/personalledger/backend/internal/routes"
+	"github.com/nilbyte/personalledger/database"
 )
 
 func main() {

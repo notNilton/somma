@@ -3,18 +3,18 @@ services:
     build:
       context: .
       dockerfile: database/Dockerfile
-    container_name: mirante-migrate
+    container_name: personalledger-migrate
     restart: "no"
     environment:
       # A URL deve ser injetada pelo ambiente de deploy
-      # Formato: postgresql://mirante:<senha>@nilbyte_postgres_prod:5432/mirante?sslmode=disable
+      # Formato: postgresql://personalledger:<senha>@nilbyte_postgres_prod:5432/personalledger?sslmode=disable
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
 
   backend:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
-    container_name: api.mirante.nilbyte
+    container_name: api.personalledger.nilbyte
     restart: always
     ports:
       - "3300:3300"
@@ -32,7 +32,7 @@ services:
     build:
       context: .
       dockerfile: apps/webapp/Dockerfile
-    container_name: mirante-webapp
+    container_name: personalledger-webapp
     restart: always
     ports:
       - "3400:80"

@@ -1,6 +1,6 @@
-# Mirante - Webapp
+# Personalledger - Webapp
 
-O webapp do Mirante é a interface web principal para gerenciamento financeiro pessoal, construída com foco em performance, estética premium e usabilidade intuitiva.
+O webapp do Personalledger é a interface web principal para gerenciamento financeiro pessoal, construída com foco em performance, estética premium e usabilidade intuitiva.
 
 ## Tecnologias
 

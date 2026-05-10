@@ -2,7 +2,7 @@
 
 > **Data:** Abril 2026 | **Branch:** `development` | **Backend:** v1.0.36 | **Webapp:** v1.0.37
 
-Análise do estado atual do Mirante — o que está sólido, o que está pendente e onde estão os riscos técnicos.
+Análise do estado atual do Personalledger — o que está sólido, o que está pendente e onde estão os riscos técnicos.
 
 ---
 

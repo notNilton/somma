@@ -18,7 +18,7 @@ grep token ~/.config/tea/config.yml
 ## Listar regras existentes
 
 ```bash
-curl -s "https://gitea.pagway.com.br/api/v1/repos/pagway/<repo>/branch_protections" \
+curl -s "https://gitea.nilbyte.com.br/api/v1/repos/personalledger/<repo>/branch_protections" \
   -H "Authorization: token <TOKEN>" | python3 -m json.tool
 ```
 
@@ -30,7 +30,7 @@ Bloqueia push direto, exige que os status checks passem e impede admin de fazer 
 
 ```bash
 curl -s -X POST \
-  "https://gitea.pagway.com.br/api/v1/repos/pagway/<repo>/branch_protections" \
+  "https://gitea.nilbyte.com.br/api/v1/repos/personalledger/<repo>/branch_protections" \
   -H "Authorization: token <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -65,7 +65,7 @@ curl -s -X POST \
 
 ```bash
 curl -s -X PATCH \
-  "https://gitea.pagway.com.br/api/v1/repos/pagway/<repo>/branch_protections/main" \
+  "https://gitea.nilbyte.com.br/api/v1/repos/personalledger/<repo>/branch_protections/main" \
   -H "Authorization: token <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"block_admin_merge_override": true}'
@@ -97,13 +97,13 @@ Para confirmar os nomes, consulte a aba **Checks** de qualquer PR aberto no repo
 
 ```bash
 curl -s -X DELETE \
-  "https://gitea.pagway.com.br/api/v1/repos/pagway/<repo>/branch_protections/main" \
+  "https://gitea.nilbyte.com.br/api/v1/repos/personalledger/<repo>/branch_protections/main" \
   -H "Authorization: token <TOKEN>"
 ```
 
 ---
 
-## Configuração aplicada no pagway-baas-api
+## Configuração aplicada no personalledger-baas-api
 
 Branch protegida: `main`
 

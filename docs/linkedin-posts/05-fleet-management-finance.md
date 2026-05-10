@@ -1,6 +1,6 @@
 # Post 05/05: Gestão de Ativos — O Módulo de Veículos Integrado 🚗
 
-**📸 Sugestão de Mídia:** Um print do dashboard do Mirante mostrando a estatística de autonomia do veículo (km/L) ao lado do gráfico de despesas de combustível.
+**📸 Sugestão de Mídia:** Um print do dashboard do Personalledger mostrando a estatística de autonomia do veículo (km/L) ao lado do gráfico de despesas de combustível.
 
 ---
 
@@ -8,7 +8,7 @@
 
 Gerenciar o seu carro deveria ser apenas sobre as parcelas do financiamento? 🧐
 
-No meu projeto **Mirante**, decidi que a gestão financeira pessoal só faz sentido se ela estiver conectada à realidade do dia a dia. Por isso, desenvolvi o **Módulo de Veículos (Fleet Module)** integrado diretamente ao core financeiro.
+No meu projeto **Personalledger**, decidi que a gestão financeira pessoal só faz sentido se ela estiver conectada à realidade do dia a dia. Por isso, desenvolvi o **Módulo de Veículos (Fleet Module)** integrado diretamente ao core financeiro.
 
 **A Minha Abordagem:**
 Cada "abastecimento" ou "manutenção" é tratado como uma transação financeira, mas com **metadados físicos**.
@@ -21,7 +21,7 @@ Isso transforma o app de um simples "gerenciador de gastos" em uma ferramenta de
 
 **O Desafio Técnico:** Integrar dados físicos (Km, Litros) com dados financeiros (Centavos) em um único fluxo de inserção rápida via mobile.
 
-**Pergunta:** Você prefere ter apps separados para cada tarefa (um para carro, outro para finanças, outro para metas) ou um hub unificado como o Mirante? 👇
+**Pergunta:** Você prefere ter apps separados para cada tarefa (um para carro, outro para finanças, outro para metas) ou um hub unificado como o Personalledger? 👇
 
 ---
 

@@ -10,7 +10,6 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
-import { auth } from "../../lib/auth";
 import { api } from "../../lib/api";
 
 export const Route = createFileRoute("/auth/register")({
@@ -36,15 +35,11 @@ function RegisterPage() {
     setError(null);
 
     try {
-      const { accessToken } = await api.post<{ accessToken: string }>(
+      await api.post<{ sessionToken: string }>(
         "/api/auth/register",
         formData,
       );
-      auth.setToken(accessToken);
-
-      setTimeout(() => {
-        navigate({ to: "/" });
-      }, 500);
+      navigate({ to: "/" });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Falha ao cadastrar.");
     } finally {

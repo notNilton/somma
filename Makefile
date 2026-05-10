@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash
 
-APP_NAME ?= mirante
+APP_NAME ?= personalledger
 
 CONTAINER_ENGINE ?= $(shell command -v docker >/dev/null 2>&1 && printf docker || printf podman)
 POSTGRES_IMAGE ?= postgres:18-alpine
@@ -8,7 +8,7 @@ POSTGRES_CONTAINER ?= $(APP_NAME)-db-local
 POSTGRES_VOLUME ?= $(APP_NAME)-postgres-local-data
 POSTGRES_USER ?= postgres
 POSTGRES_PASSWORD ?= postgres
-POSTGRES_DB ?= mirante
+POSTGRES_DB ?= personalledger
 POSTGRES_PORT ?= 5454
 
 BACKEND_PORT ?= 3300
@@ -34,7 +34,7 @@ REMOVE_VOLUME ?= 0
 .PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones install test lint clean
 
 help:
-	@printf '%s\n' 'Mirante local dev'
+	@printf '%s\n' 'Personalledger local dev'
 	@printf '\n%s\n' 'Fluxo principal:'
 	@printf '  make up              Sobe Postgres, cria .env, migra, semeia e inicia backend + webapp\n'
 	@printf '  make dev             Inicia backend + webapp, assumindo dependencias locais no ar\n'

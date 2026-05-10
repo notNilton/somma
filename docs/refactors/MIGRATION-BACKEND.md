@@ -451,7 +451,7 @@ Execute nessa ordem exata:
 
 ```env
 PORT=3000
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mirante?sslmode=disable
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/personalledger?sslmode=disable
 JWT_SECRET=seu_secret_aqui
 ENV=development
 ```

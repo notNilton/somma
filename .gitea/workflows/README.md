@@ -1,6 +1,6 @@
 # CI/CD — Gitea Actions
 
-Pipeline de integração e entrega contínua do Mirante, rodando no act_runner hospedado no VPS `niflheim`.
+Pipeline de integração e entrega contínua do Personalledger, rodando no act_runner hospedado no VPS `niflheim`.
 
 ---
 
@@ -202,7 +202,7 @@ Outputs do job (usados pelos builds):
 
 | Secret | Usado para |
 |--------|-----------|
-| `REPO_COMPLETE_TOKEN` | Clone HTTPS (Main e PR), push de tags e docker login |
+| `TOKEN_COMPLETE` | Clone HTTPS (Main e PR), push de tags e docker login |
 | `DEPLOY_SSH_KEY` | Chave SSH para acesso ao VPS |
 | `DEPLOY_HOST` | Endereço IP ou domínio do VPS |
 | `DEPLOY_USER` | Usuário para o deploy (ex: `deploy`) |
@@ -286,7 +286,7 @@ Runner container (rede nilbyte-git)
    c. docker compose up -d
 ```
 
-### Comandos disponíveis no manage-mirante.sh
+### Comandos disponíveis no manage-personalledger.sh
 
 | Comando | Ação |
 |---------|------|
