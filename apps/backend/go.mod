@@ -1,6 +1,6 @@
 module github.com/nilbyte/personalledger/backend
 
-go 1.24.0
+go 1.25.0
 
 replace github.com/nilbyte/personalledger/database => ../../database
 
@@ -18,4 +18,5 @@ require (
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 )

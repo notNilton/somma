@@ -2,26 +2,34 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 )
 
-// CORS middleware — necessário apenas para desenvolvimento local (frontend e backend em portas diferentes).
-// Em produção, ambos rodam no mesmo domínio e este middleware não é estritamente necessário.
-func CORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-		if origin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-		}
+// CORS returns a middleware that restricts allowed origins to the configured webapp URL.
+// In production, CORS is not strictly needed (same-origin), but the whitelist is defense-in-depth.
+func CORS(webappURL string, isProduction bool) func(http.Handler) http.Handler {
+	allowed := map[string]bool{
+		webappURL:       true,
+		"http://localhost:3400": true,
+	}
 
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS, PUT")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-App-Version")
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			origin := r.Header.Get("Origin")
+			if origin != "" {
+				if allowed[origin] || (!isProduction && strings.HasPrefix(origin, "http://localhost:")) {
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+					w.Header().Set("Access-Control-Allow-Credentials", "true")
+					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS, PUT")
+					w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-App-Version")
+					if r.Method == "OPTIONS" {
+						w.WriteHeader(http.StatusNoContent)
+						return
+					}
+				}
+			}
 
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
 }

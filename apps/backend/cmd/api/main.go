@@ -63,7 +63,8 @@ func main() {
 	}
 
 	log.Printf("CHECKPOINT: Starting HTTP server on :%s", cfg.Port)
-	handler := middleware.CORS(cfg.WebappURL, cfg.IsProduction())(securityHeaders(logger(mux)))
+	rl := middleware.NewRateLimiter(2, 10)
+	handler := middleware.CORS(cfg.WebappURL, cfg.IsProduction())(rl.Limit(securityHeaders(logger(mux))))
 	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
 		log.Fatalf("FATAL: server error: %v", err)
 	}
