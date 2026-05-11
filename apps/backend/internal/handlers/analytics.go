@@ -11,7 +11,11 @@ import (
 )
 
 func (h *Handler) GetMonthlyEvolution(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	rows, err := h.db.Query(r.Context(), `
 		SELECT TO_CHAR(DATE_TRUNC('month', date), 'YYYY-MM') AS month,
@@ -81,7 +85,11 @@ func (h *Handler) GetMonthlyEvolution(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetCategoryBreakdown(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	q := r.URL.Query()
 
 	month := q.Get("month")
@@ -146,7 +154,11 @@ func (h *Handler) GetCategoryBreakdown(w http.ResponseWriter, r *http.Request) {
 // GetAnnualEvolution retorna 12 meses de receitas e despesas para o ano solicitado.
 // Query param: year (padrão: ano atual).
 func (h *Handler) GetAnnualEvolution(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	year := time.Now().Year()
 	if raw := r.URL.Query().Get("year"); raw != "" {

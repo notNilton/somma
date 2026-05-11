@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/nilbyte/personalledger/backend/internal/middleware"
@@ -19,14 +20,18 @@ func (d *changePasswordDto) validate() error {
 	if d.CurrentPassword == "" {
 		return errors.New("currentPassword is required")
 	}
-	if len(d.NewPassword) < 6 {
-		return errors.New("newPassword min 6 chars")
+	if len(d.NewPassword) < 12 {
+		return errors.New("newPassword min 12 chars")
 	}
 	return nil
 }
 
 func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	var u models.User
 	err := h.db.QueryRow(r.Context(), `
@@ -45,7 +50,11 @@ func (h *Handler) GetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	var dto updateUserDto
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -80,7 +89,11 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	var dto changePasswordDto
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -104,7 +117,7 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newHash, err := bcrypt.GenerateFromPassword([]byte(dto.NewPassword), 10)
+	newHash, err := bcrypt.GenerateFromPassword([]byte(dto.NewPassword), 12)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
@@ -114,13 +127,41 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2
 	`, string(newHash), claims.UserID)
 
+	log.Printf("[AUDIT] password changed: %s", claims.Email)
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		CurrentPassword string `json:"currentPassword"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	if req.CurrentPassword == "" {
+		writeError(w, http.StatusBadRequest, "currentPassword required")
+		return
+	}
+
+	var passwordHash string
+	err := h.db.QueryRow(r.Context(), `SELECT password_hash FROM users WHERE id = $1`, claims.UserID).Scan(&passwordHash)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "user not found")
+		return
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.CurrentPassword)); err != nil {
+		writeError(w, http.StatusForbidden, "incorrect password")
+		return
+	}
 
 	h.db.Exec(r.Context(), `DELETE FROM users WHERE id = $1`, claims.UserID)
-
+	log.Printf("[AUDIT] account deleted: %s", claims.Email)
 	w.WriteHeader(http.StatusNoContent)
 }

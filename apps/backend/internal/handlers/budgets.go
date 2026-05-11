@@ -127,7 +127,11 @@ func budgetResponse(plan models.Budget, items []models.BudgetItem, budgetedCents
 }
 
 func (h *Handler) ListBudgets(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	plans, err := h.loadBudgets(r.Context(), claims.UserID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
@@ -137,7 +141,11 @@ func (h *Handler) ListBudgets(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateBudget(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	var dto upsertBudgetDto
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -191,7 +199,11 @@ func (h *Handler) CreateBudget(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateBudget(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	var dto upsertBudgetDto
@@ -252,7 +264,11 @@ func (h *Handler) UpdateBudget(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteBudget(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	tag, err := h.db.Exec(r.Context(), `

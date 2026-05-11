@@ -168,7 +168,11 @@ func (h *Handler) buildTransactionsFilter(q url.Values, userID string) (string, 
 }
 
 func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	q := r.URL.Query()
 
 	page, _ := strconv.Atoi(q.Get("page"))
@@ -231,7 +235,11 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	var t models.TransactionWithCategory
@@ -264,7 +272,11 @@ func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	var dto createTransactionDto
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -366,7 +378,11 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	var dto createTransactionDto
@@ -496,7 +512,11 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	now := time.Now()
@@ -516,7 +536,11 @@ func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	rows, err := h.db.Query(r.Context(), `
 		SELECT t.id, t.user_id, t.category_id,

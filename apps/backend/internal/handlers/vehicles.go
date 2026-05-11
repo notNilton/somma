@@ -32,7 +32,11 @@ func (d *createVehicleDto) validate() error {
 }
 
 func (h *Handler) ListVehicles(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	rows, err := h.db.Query(r.Context(), `
 		SELECT id, user_id, name, license_plate, brand, model, year, tank,
@@ -67,7 +71,11 @@ func (h *Handler) ListVehicles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetVehicle(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	var v models.Vehicle
@@ -88,7 +96,11 @@ func (h *Handler) GetVehicle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateVehicle(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	var dto createVehicleDto
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -119,7 +131,11 @@ func (h *Handler) CreateVehicle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateVehicle(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	var dto createVehicleDto
@@ -154,7 +170,11 @@ func (h *Handler) UpdateVehicle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteVehicle(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	now := time.Now()
@@ -171,7 +191,11 @@ func (h *Handler) DeleteVehicle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetVehicleRefuelings(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	rows, err := h.db.Query(r.Context(), `
@@ -218,7 +242,11 @@ func (h *Handler) GetVehicleRefuelings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetVehicleMaintenances(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	exists, err := h.tableExists(r.Context(), "public.vehicle_maintenances")
@@ -278,7 +306,11 @@ func (h *Handler) GetVehicleMaintenances(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *Handler) GetVehicleExpenseStats(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	var totalFuelCents int64

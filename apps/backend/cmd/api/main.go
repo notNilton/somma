@@ -46,7 +46,7 @@ func main() {
 
 	log.Printf("CHECKPOINT: Registering routes")
 	mux := http.NewServeMux()
-	routes.Register(mux, db, []byte(cfg.JWTSecret), c)
+	routes.Register(mux, db, []byte(cfg.JWTSecret), c, cfg.IsProduction())
 
 	logger := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

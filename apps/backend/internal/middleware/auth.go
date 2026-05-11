@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type contextKey string
@@ -16,9 +18,10 @@ const sessionCookieName = "personalledger_session"
 type AuthClaims struct {
 	UserID string
 	Email  string
+	JTI    string
 }
 
-func Auth(jwtKey []byte) func(http.HandlerFunc) http.HandlerFunc {
+func Auth(jwtKey []byte, db *pgxpool.Pool) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			tokenStr, ok := tokenFromRequest(r)
@@ -55,9 +58,28 @@ func Auth(jwtKey []byte) func(http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
+			jti, _ := claims["jti"].(string)
+			if jti == "" {
+				http.Error(w, `{"error":"invalid session claims"}`, http.StatusUnauthorized)
+				return
+			}
+
+			// Verify token has not been revoked
+			if db != nil {
+				var revoked bool
+				err := db.QueryRow(r.Context(), `
+					SELECT EXISTS(SELECT 1 FROM revoked_tokens WHERE jti = $1)
+				`, jti).Scan(&revoked)
+				if err != nil || revoked {
+					http.Error(w, `{"error":"session revoked"}`, http.StatusUnauthorized)
+					return
+				}
+			}
+
 			ac := AuthClaims{
 				UserID: userID,
 				Email:  email,
+				JTI:    jti,
 			}
 
 			ctx := context.WithValue(r.Context(), claimsKey, ac)
@@ -66,8 +88,9 @@ func Auth(jwtKey []byte) func(http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func ClaimsFromContext(ctx context.Context) AuthClaims {
-	return ctx.Value(claimsKey).(AuthClaims)
+func ClaimsFromContext(ctx context.Context) (AuthClaims, bool) {
+	claims, ok := ctx.Value(claimsKey).(AuthClaims)
+	return claims, ok
 }
 
 func tokenFromRequest(r *http.Request) (string, bool) {
@@ -85,4 +108,13 @@ func tokenFromRequest(r *http.Request) (string, bool) {
 	}
 
 	return "", false
+}
+
+// GenerateJTI returns a new UUID to be used as a JWT ID.
+func GenerateJTI() (string, error) {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return "", err
+	}
+	return id.String(), nil
 }

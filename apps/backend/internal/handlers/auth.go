@@ -3,12 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/nilbyte/personalledger/backend/internal/middleware"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,8 +29,8 @@ func (d *registerDto) validate() error {
 	if d.Email == "" || !strings.Contains(d.Email, "@") {
 		return errors.New("valid email required")
 	}
-	if len(d.Password) < 6 {
-		return errors.New("password min 6 chars")
+	if len(d.Password) < 12 {
+		return errors.New("password min 12 chars")
 	}
 	return nil
 }
@@ -49,7 +51,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(dto.Password), 10)
+	hash, err := bcrypt.GenerateFromPassword([]byte(dto.Password), 12)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
@@ -77,8 +79,9 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setSessionCookie(w, r, token)
-	writeJSON(w, http.StatusCreated, map[string]string{"sessionToken": token})
+	setSessionCookie(w, r, token, h.isProduction)
+	log.Printf("[AUDIT] user registered: %s", dto.Email)
+	writeJSON(w, http.StatusCreated, map[string]bool{"ok": true})
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -112,14 +115,20 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setSessionCookie(w, r, token)
-	writeJSON(w, http.StatusOK, map[string]string{"sessionToken": token})
+	setSessionCookie(w, r, token, h.isProduction)
+	log.Printf("[AUDIT] user logged in: %s", email)
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 func (h *Handler) generateToken(userID, email string) (string, error) {
+	jti, err := middleware.GenerateJTI()
+	if err != nil {
+		return "", err
+	}
 	claims := jwt.MapClaims{
 		"sub":   userID,
 		"email": email,
+		"jti":   jti,
 		"exp":   time.Now().Add(7 * 24 * time.Hour).Unix(),
 		"iat":   time.Now().Unix(),
 	}
@@ -127,31 +136,48 @@ func (h *Handler) generateToken(userID, email string) (string, error) {
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	clearSessionCookie(w, r)
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if ok && claims.JTI != "" {
+		_, _ = h.db.Exec(r.Context(), `
+			INSERT INTO revoked_tokens (jti) VALUES ($1) ON CONFLICT DO NOTHING
+		`, claims.JTI)
+		log.Printf("[AUDIT] token revoked: %s", claims.JTI)
+	}
+	clearSessionCookie(w, r, h.isProduction)
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func setSessionCookie(w http.ResponseWriter, r *http.Request, token string) {
+func setSessionCookie(w http.ResponseWriter, r *http.Request, token string, isProduction bool) {
+	secure := isProduction || isSecureRequest(r)
+	sameSite := http.SameSiteLaxMode
+	if isProduction {
+		sameSite = http.SameSiteStrictMode
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   isSecureRequest(r),
+		SameSite: sameSite,
+		Secure:   secure,
 		MaxAge:   int((7 * 24 * time.Hour).Seconds()),
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 	})
 }
 
-func clearSessionCookie(w http.ResponseWriter, r *http.Request) {
+func clearSessionCookie(w http.ResponseWriter, r *http.Request, isProduction bool) {
+	secure := isProduction || isSecureRequest(r)
+	sameSite := http.SameSiteLaxMode
+	if isProduction {
+		sameSite = http.SameSiteStrictMode
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   isSecureRequest(r),
+		SameSite: sameSite,
+		Secure:   secure,
 		MaxAge:   -1,
 		Expires:  time.Unix(0, 0),
 	})

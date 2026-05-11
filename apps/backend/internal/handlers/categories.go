@@ -32,7 +32,11 @@ func (d *createCategoryDto) validate() error {
 }
 
 func (h *Handler) ListCategories(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	rows, err := h.db.Query(r.Context(), `
 		SELECT id, user_id, name, type, description, color, parent_id, created_at, updated_at
@@ -87,7 +91,11 @@ func (h *Handler) ListCategories(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetCategory(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	var c models.Category
@@ -106,7 +114,11 @@ func (h *Handler) GetCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	var dto createCategoryDto
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -139,7 +151,11 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	var dto createCategoryDto
@@ -170,7 +186,11 @@ func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	tag, err := h.db.Exec(r.Context(), `

@@ -9,9 +9,9 @@ import (
 	"github.com/nilbyte/personalledger/backend/internal/middleware"
 )
 
-func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cache) {
-	h := handlers.New(db, jwtKey, c)
-	auth := middleware.Auth(jwtKey)
+func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cache, isProduction bool) {
+	h := handlers.New(db, jwtKey, c, isProduction)
+	auth := middleware.Auth(jwtKey, db)
 
 	// Health
 	mux.HandleFunc("GET /api/health", h.Health)

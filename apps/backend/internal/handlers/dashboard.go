@@ -11,7 +11,11 @@ import (
 )
 
 func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	month := r.URL.Query().Get("month")
 	if month == "" {

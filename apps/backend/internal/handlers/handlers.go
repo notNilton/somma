@@ -9,13 +9,14 @@ import (
 )
 
 type Handler struct {
-	db     *pgxpool.Pool
-	jwtKey []byte
-	cache  *cache.Cache
+	db           *pgxpool.Pool
+	jwtKey       []byte
+	cache        *cache.Cache
+	isProduction bool
 }
 
-func New(db *pgxpool.Pool, jwtKey []byte, c *cache.Cache) *Handler {
-	return &Handler{db: db, jwtKey: jwtKey, cache: c}
+func New(db *pgxpool.Pool, jwtKey []byte, c *cache.Cache, isProduction bool) *Handler {
+	return &Handler{db: db, jwtKey: jwtKey, cache: c, isProduction: isProduction}
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
