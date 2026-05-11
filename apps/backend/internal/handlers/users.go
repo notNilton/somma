@@ -25,7 +25,11 @@ func (d *updateUserDto) validate() error {
 }
 
 func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	var u models.User
 	err := h.db.QueryRow(r.Context(), `
@@ -44,7 +48,11 @@ func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateMe(w http.ResponseWriter, r *http.Request) {
-	claims := middleware.ClaimsFromContext(r.Context())
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 
 	var dto updateUserDto
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -78,14 +86,23 @@ func (h *Handler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, userResponse(u))
 }
 
+func maskString(s *string, keep int) *string {
+	if s == nil || len(*s) <= keep {
+		return s
+	}
+	v := *s
+	masked := v[:keep] + "***"
+	return &masked
+}
+
 func userResponse(u models.User) map[string]any {
 	return map[string]any{
 		"id":                 u.ID,
 		"email":              u.Email,
 		"name":               u.Name,
-		"phone":              u.Phone,
-		"cpf":                u.Cpf,
-		"cnpj":               u.Cnpj,
+		"phone":              maskString(u.Phone, 4),
+		"cpf":                maskString(u.Cpf, 3),
+		"cnpj":               maskString(u.Cnpj, 4),
 		"avatarUrl":          u.AvatarUrl,
 		"privacyModeEnabled": u.PrivacyModeEnabled,
 		"createdAt":          u.CreatedAt,
