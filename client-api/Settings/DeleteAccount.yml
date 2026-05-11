@@ -6,6 +6,12 @@ info:
 http:
   method: DELETE
   url: "{{baseUrl}}/api/v1/settings/account"
+  body:
+    type: json
+    data: |-
+      {
+        "currentPassword": "{{userPassword}}"
+      }
   auth:
     type: bearer
     token: "{{accessToken}}"

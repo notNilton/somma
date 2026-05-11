@@ -9,7 +9,10 @@ O backend do Personalledger é uma API REST de alta performance desenvolvida em 
 - **Linguagem**: Go 1.24
 - **Roteamento**: `net/http` (Standard Library)
 - **Banco de Dados**: PostgreSQL 18 + `pgx/v5`
-- **Autenticação**: JWT (`github.com/golang-jwt/jwt/v5`)
+- **Autenticação**: JWT (`github.com/golang-jwt/jwt/v5`) com claim `jti` e blocklist `revoked_tokens`
+- **Rate Limiting**: `golang.org/x/time/rate` (2 req/s, burst 10) por IP
+- **CORS**: Whitelist de origens (defesa em profundidade para dev local)
+- **Headers de Segurança**: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `HSTS`
 - **Migrações**: `golang-migrate` (encapsulado em `database/cmd/migrate`)
 - **Jobs**: Scheduler interno (recurring transactions + budget alerts)
 
@@ -24,11 +27,11 @@ O backend do Personalledger é uma API REST de alta performance desenvolvida em 
 
 ## Endpoints da API
 
-Todos os endpoints (exceto Login/Register/Health) exigem o header `Authorization: Bearer <token>`.
+Todos os endpoints (exceto Login/Register/Health) exigem autenticação via cookie `personalledger_session` ou header `Authorization: Bearer <token>`.
 
 ### Autenticação (`Auth`)
-- `POST /api/auth/register`: Criação de nova conta.
-- `POST /api/auth/login`: Autenticação e recebimento de JWT.
+- `POST /api/auth/register`: Criação de nova conta (senha mín. 12 chars). Retorna `{ok:true}` + cookie.
+- `POST /api/auth/login`: Autenticação. Retorna `{ok:true}` + cookie `personalledger_session`.
 
 ### Perfil (`Users`)
 - `GET /api/users/me`: Dados do usuário logado.
@@ -84,7 +87,7 @@ Todos os endpoints (exceto Login/Register/Health) exigem o header `Authorization
 - `GET /api/v1/settings/profile`: Perfil completo.
 - `PATCH /api/v1/settings/profile`: Atualiza perfil.
 - `PATCH /api/v1/settings/change-password`: Altera senha.
-- `DELETE /api/v1/settings/account`: Deleta conta e todos os dados.
+- `DELETE /api/v1/settings/account`: Deleta conta e todos os dados (exige `currentPassword`).
 
 ### Sistema
 - `GET /api/health`: Healthcheck básico.

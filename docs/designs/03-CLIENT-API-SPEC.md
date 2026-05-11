@@ -10,10 +10,10 @@ O diretório `client-api/` contém uma coleção do [Bruno](https://www.usebruno
 
 ## Fluxo de Autenticação
 
-A maioria dos endpoints exige um JWT no header `Authorization`.
+A maioria dos endpoints exige um JWT, lido do header `Authorization: Bearer <token>` ou do cookie `personalledger_session`.
 
 1.  **Login/Register**: Utilize a pasta `Auth/` para se autenticar.
-2.  **Gestão de Token**: Após o login, o Bruno está configurado para salvar o `sessionToken` automaticamente em uma variável de ambiente. O `opencollection.yml` usa `mode: bearer` com `token: "{{sessionToken}}"`.
+2.  **Gestão de Token**: O backend entrega o token via cookie HTTP-only `personalledger_session`. A coleção Bruno extrai o token do header `Set-Cookie` automaticamente para uso com Bearer.
 
 ## Grupos de Endpoints
 
@@ -27,7 +27,7 @@ A maioria dos endpoints exige um JWT no header `Authorization`.
 - `GET /api/v1/settings/profile`: Perfil completo.
 - `PATCH /api/v1/settings/profile`: Atualização de perfil.
 - `PATCH /api/v1/settings/change-password`: Alteração de senha.
-- `DELETE /api/v1/settings/account`: Exclusão de conta.
+- `DELETE /api/v1/settings/account`: Exclusão de conta (exige `currentPassword` no body).
 
 ### 3. Categorias e Tags (`Categories`, `Tags`)
 - `GET /api/v1/categories`: Listagem de categorias.
@@ -80,5 +80,11 @@ Os seguintes recursos existiram em versões anteriores mas foram removidos do ba
 - ~~`Transactions/ImportCSV`~~ e ~~`Transactions/ExportCSV`~~
 
 ## Nota de Desenvolvimento
+
+> **Nota de segurança:**
+> - Senhas devem ter no mínimo 12 caracteres.
+> - Campos sensíveis (`cpf`, `cnpj`, `phone`) são mascarados nas respostas de usuário.
+> - Cookies de sessão usam `Secure` e `SameSite=Strict` em produção.
+> - Tokens revogados via logout são invalidados imediatamente (blocklist `revoked_tokens`).
 
 Os arquivos da coleção (`.yml` na raiz da pasta de cada recurso) são texto puro e devem ser commitados sempre que um novo endpoint for adicionado ou alterado no backend, mantendo a documentação sincronizada com a implementação.
