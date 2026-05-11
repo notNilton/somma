@@ -43,8 +43,6 @@ jobs:
 
       - name: Build and push Backend image
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
-        env:
-          DOCKER_BUILDKIT: "1"
         run: |
           VERSION=$(cat apps/backend/VERSION)
           docker build -f apps/backend/Dockerfile \
@@ -90,8 +88,6 @@ jobs:
 
       - name: Build and push Database image
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
-        env:
-          DOCKER_BUILDKIT: "1"
         run: |
           docker build -f database/Dockerfile \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/database:latest" \
