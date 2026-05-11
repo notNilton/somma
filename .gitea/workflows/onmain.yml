@@ -36,19 +36,6 @@ jobs:
           fi
           echo "BACKEND_CHANGED=$BACKEND_CHANGED" >> "$GITHUB_OUTPUT"
 
-      - name: Build binary
-        if: steps.check.outputs.BACKEND_CHANGED == 'true'
-        working-directory: apps/backend
-        env:
-          GOWORK: "off"
-          GOCACHE: /tmp/go-build
-          GOMODCACHE: /tmp/go-mod-cache
-        run: |
-          VERSION=$(cat VERSION)
-          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor \
-            -ldflags "-X github.com/nilbyte/personalledger/backend/internal/version.Version=$VERSION" \
-            -o main ./cmd/api
-
       - name: Login to Gitea registry
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
         run: |
@@ -57,10 +44,11 @@ jobs:
       - name: Build and push Backend image
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
         env:
-          DOCKER_BUILDKIT: "0"
+          DOCKER_BUILDKIT: "1"
         run: |
           VERSION=$(cat apps/backend/VERSION)
           docker build -f apps/backend/Dockerfile \
+            --build-arg VERSION=${VERSION} \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest" \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}" \
             .
@@ -103,7 +91,7 @@ jobs:
       - name: Build and push Database image
         if: steps.check.outputs.DATABASE_CHANGED == 'true'
         env:
-          DOCKER_BUILDKIT: "0"
+          DOCKER_BUILDKIT: "1"
         run: |
           docker build -f database/Dockerfile \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/database:latest" \

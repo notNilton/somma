@@ -59,7 +59,7 @@ func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 	t.Cleanup(func() { pool.Close() })
 
 	mux := http.NewServeMux()
-	routes.Register(mux, pool, JWTKey, cache.New())
+	routes.Register(mux, pool, JWTKey, cache.New(), false)
 
 	return pool, mux
 }
@@ -146,7 +146,7 @@ func DecodeJSON(t *testing.T, rec *httptest.ResponseRecorder, v any) {
 
 // NewHandler cria um Handler isolado para testes que precisam injetar deps direto.
 func NewHandler(pool *pgxpool.Pool) *handlers.Handler {
-	return handlers.New(pool, JWTKey, cache.New())
+	return handlers.New(pool, JWTKey, cache.New(), false)
 }
 
 func ensureMigrations(dsn string) error {
