@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
   ArrowDownLeft,
@@ -24,6 +24,7 @@ import {
   formatMonthLabelPtBr,
   useTransactionsList,
 } from "../transactions/-queries";
+import { mergeQueuedCategories, mergeQueuedVehicles } from "../../lib/offline-sync";
 
 interface DashboardData {
   userName: string;
@@ -34,7 +35,6 @@ interface DashboardData {
 }
 
 export function HomePage() {
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "INCOME" | "EXPENSE">(
     "all",
@@ -72,22 +72,20 @@ export function HomePage() {
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
-    queryFn: () => api.get<TxCategory[]>("/api/v1/categories"),
+    queryFn: () => api.get<TxCategory[]>("/api/v1/categories").then((data) => mergeQueuedCategories(data)),
     staleTime: 1000 * 60 * 5,
   });
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ["vehicles"],
-    queryFn: () => api.get<{ id: string; name: string }[]>("/api/v1/vehicles"),
+    queryFn: () =>
+      api.get<{ id: string; name: string }[]>("/api/v1/vehicles").then((data) =>
+        mergeQueuedVehicles(data),
+      ),
     staleTime: 1000 * 60 * 5,
   });
 
   const { data: budgets = [] } = useBudgetPlans();
-
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
-  };
 
   const sortedTransactions = useMemo(
     () => [...transactions].sort((a, b) => b.date.localeCompare(a.date)),
@@ -144,7 +142,7 @@ export function HomePage() {
           vehicles={vehicles}
           budgets={budgets}
           onClose={() => setIsCreateOpen(false)}
-          onCreated={invalidate}
+          onCreated={() => undefined}
         />
         <Fab
           label="Nova transação"

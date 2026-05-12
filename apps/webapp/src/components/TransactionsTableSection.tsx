@@ -26,6 +26,12 @@ const STATUS_LABEL: Record<string, string> = {
   CANCELED: 'Cancelada',
 };
 
+const SYNC_LABEL: Record<string, string> = {
+  pending: 'Pendente local',
+  synced: 'Sincronizado',
+  error: 'Erro de sync',
+};
+
 function channelTone(channel?: string) {
   if (channel === 'CARD_CREDIT') return 'border-amber-500/20 bg-amber-500/10 text-amber-700';
   if (channel === 'PIX') return 'border-sky-500/20 bg-sky-500/10 text-sky-700';
@@ -37,6 +43,13 @@ function statusTone(status?: string) {
   if (status === 'COMPLETED') return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700';
   if (status === 'PENDING') return 'border-amber-500/20 bg-amber-500/10 text-amber-700';
   if (status === 'CANCELED') return 'border-rose-500/20 bg-rose-500/10 text-rose-700';
+  return 'border-slate-300/80 bg-white/75 text-slate-600';
+}
+
+function syncTone(syncStatus?: string) {
+  if (syncStatus === 'pending') return 'border-amber-500/20 bg-amber-500/10 text-amber-700';
+  if (syncStatus === 'error') return 'border-rose-500/20 bg-rose-500/10 text-rose-700';
+  if (syncStatus === 'synced') return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700';
   return 'border-slate-300/80 bg-white/75 text-slate-600';
 }
 
@@ -435,6 +448,13 @@ export default function TransactionsTableSection({
                       >
                         {STATUS_LABEL[transaction.status ?? 'COMPLETED'] ?? 'Concluída'}
                       </span>
+                      {transaction.syncStatus ? (
+                        <span
+                          className={`inline-flex items-center border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.22em] ${syncTone(transaction.syncStatus)}`}
+                        >
+                          {SYNC_LABEL[transaction.syncStatus] ?? 'Sync'}
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="mt-3 text-xs text-slate-600">
@@ -499,6 +519,13 @@ export default function TransactionsTableSection({
                         >
                           {STATUS_LABEL[transaction.status ?? 'COMPLETED'] ?? 'Concluída'}
                         </span>
+                        {transaction.syncStatus ? (
+                          <span
+                            className={`ml-2 inline-flex items-center border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.22em] ${syncTone(transaction.syncStatus)}`}
+                          >
+                            {SYNC_LABEL[transaction.syncStatus] ?? 'Sync'}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-4 py-4 text-right">
                         <PrivacyAmount

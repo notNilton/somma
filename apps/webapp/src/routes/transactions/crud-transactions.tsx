@@ -12,6 +12,7 @@ import { api } from '../../lib/api';
 import { formatCurrency, cleanNumeric, formatKm } from '../../lib/formatters';
 import CustomSelect from '../../components/ui/CustomSelect';
 import { flattenCategories } from '../../lib/categories';
+import { mergeQueuedCategories, mergeQueuedVehicles } from '../../lib/offline-sync';
 
 export const Route = createFileRoute('/transactions/crud-transactions')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -95,13 +96,13 @@ function CrudTransactionsPage() {
 
   const { data: allCategories = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => api.get<Category[]>('/api/v1/categories'),
+    queryFn: () => api.get<Category[]>('/api/v1/categories').then((data) => mergeQueuedCategories(data)),
     staleTime: 1000 * 60 * 5,
   });
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: () => api.get<Vehicle[]>('/api/v1/vehicles'),
+    queryFn: () => api.get<Vehicle[]>('/api/v1/vehicles').then((data) => mergeQueuedVehicles(data)),
     staleTime: 1000 * 60 * 5,
   });
 

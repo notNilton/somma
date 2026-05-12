@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowDownLeft, ArrowUpRight, Fuel } from "lucide-react";
-import { api } from "../lib/api";
 import { cleanNumeric, formatCurrency, formatKm } from "../lib/formatters";
 import CustomSelect from "./ui/CustomSelect";
 import Modal from "./ui/Modal";
 import { flattenCategories } from "../lib/categories";
+import {
+  createSyncQueueId,
+  enqueueSyncQueueItem,
+} from "../lib/offline-sync";
 
 export type TransactionCreateMode = "expense" | "income" | "fuel";
 type Method = "normal" | "debit" | "credit" | "pix";
@@ -72,6 +76,7 @@ export function TransactionModal({
   onClose,
   onCreated,
 }: Props) {
+  const queryClient = useQueryClient();
   const [activeMode, setActiveMode] = useState<TransactionCreateMode>(mode);
   const [method, setMethod] = useState<Method>("normal");
   const [date, setDate] = useState(
@@ -128,6 +133,9 @@ export function TransactionModal({
     date !== "" &&
     (activeMode !== "fuel" || vehicleId !== "");
   const showPaymentMethod = activeMode !== "income";
+  const updateTransactionCaches = (updater: (current: unknown) => unknown) => {
+    queryClient.setQueriesData({ queryKey: ["transactions"] }, updater);
+  };
 
   const submit = async () => {
     if (!canSubmit || isLoading) return;
@@ -161,9 +169,36 @@ export function TransactionModal({
         payload.currentKm = Number(currentKm);
       }
 
-      await api.post("/api/v1/transactions", payload);
-      onCreated();
+      const tempId = createSyncQueueId();
+      const optimisticTransaction = {
+        id: tempId,
+        ...payload,
+        amount: Number(amount) / 100,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isActive: true,
+        syncStatus: "pending",
+      };
+
+      updateTransactionCaches((current) => {
+        if (!Array.isArray(current)) return current;
+        return [optimisticTransaction, ...current];
+      });
+
+      enqueueSyncQueueItem({
+        id: tempId,
+        kind: "transaction.create",
+        method: "POST",
+        path: "/api/v1/transactions",
+        payload,
+        entityId: tempId,
+        tempEntityId: tempId,
+        createdAt: new Date().toISOString(),
+        attempts: 0,
+      });
+
       onClose();
+      onCreated();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Erro ao salvar transação.",

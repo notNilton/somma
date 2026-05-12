@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, CarFront, Hash, Calendar, Fuel } from "lucide-react";
-import { api } from "../lib/api";
 import { SUPPORTED_BRANDS, getBrandIcon } from "../lib/vehicle-brands";
 import Modal from "./ui/Modal";
+import { createSyncQueueId, enqueueSyncQueueItem } from "../lib/offline-sync";
 
 interface Vehicle {
   id: string;
@@ -29,6 +30,7 @@ export function VehicleModal({
   mode = "create",
   initialData,
 }: VehicleModalProps) {
+  const queryClient = useQueryClient();
   const isEditing = mode === "edit";
   const [name, setName] = useState(initialData?.name ?? "");
   const [licensePlate, setLicensePlate] = useState(
@@ -54,6 +56,10 @@ export function VehicleModal({
     }
   }, [isOpen, initialData]);
 
+  const updateVehicleCaches = (updater: (current: unknown) => unknown) => {
+    queryClient.setQueriesData({ queryKey: ["vehicles"] }, updater);
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setIsLoading(true);
@@ -69,11 +75,32 @@ export function VehicleModal({
         tank: tank ? Number(tank) : 50,
       };
 
-      if (isEditing && initialData) {
-        await api.patch(`/api/v1/vehicles/${initialData.id}`, payload);
-      } else {
-        await api.post("/api/v1/vehicles", payload);
-      }
+      const entityId = isEditing && initialData ? initialData.id : createSyncQueueId();
+      const optimisticVehicle = {
+        id: entityId,
+        ...payload,
+        syncStatus: "pending",
+      };
+
+      updateVehicleCaches((current) => {
+        if (!Array.isArray(current)) return current;
+        const next = current.filter((item) => {
+          if (!item || typeof item !== "object") return true;
+          return (item as Record<string, unknown>).id !== entityId;
+        });
+        return [optimisticVehicle, ...next];
+      });
+
+      enqueueSyncQueueItem({
+        id: entityId,
+        kind: isEditing ? "vehicle.update" : "vehicle.create",
+        method: isEditing ? "PATCH" : "POST",
+        path: isEditing ? `/api/v1/vehicles/${initialData?.id}` : "/api/v1/vehicles",
+        payload,
+        entityId,
+        createdAt: new Date().toISOString(),
+        attempts: 0,
+      });
 
       onSuccess();
       onClose();

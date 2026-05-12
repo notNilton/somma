@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 import Modal from './ui/Modal';
-import { cleanNumeric } from '../lib/formatters';
 import type { BudgetPlan } from '../lib/budgets';
+import {
+  createSyncQueueId,
+  enqueueSyncQueueItem,
+} from '../lib/offline-sync';
 
 interface BudgetModalProps {
   isOpen: boolean;
@@ -40,6 +42,7 @@ export function BudgetModal({ isOpen, onClose, editingBudget }: BudgetModalProps
   const queryClient = useQueryClient();
   const [form, setForm] = useState<BudgetFormState>(makeDefaultForm);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -56,32 +59,89 @@ export function BudgetModal({ isOpen, onClose, editingBudget }: BudgetModalProps
     }
   }, [isOpen, editingBudget]);
 
-  const upsertMutation = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        name: form.name.trim(),
-        targetDate: form.targetDate,
-        items: form.items
-          .filter((item) => item.name.trim() !== '')
-          .map((item, index) => ({
-            name: item.name.trim(),
-            sortOrder: index,
-          })),
-      };
+  const updateBudgetCaches = (updater: (current: unknown) => unknown) => {
+    queryClient.setQueriesData({ queryKey: ['budgets'] }, updater);
+  };
 
-      if (editingBudget) {
-        return api.patchBudgets<BudgetPlan>(editingBudget.id, payload);
-      }
-      return api.postBudgets<BudgetPlan>(payload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      onClose();
-    },
-    onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar orçamento.');
-    },
-  });
+  const handleSave = () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    setError(null);
+
+    const payload = {
+      name: form.name.trim(),
+      targetDate: form.targetDate,
+      items: form.items
+        .filter((item) => item.name.trim() !== '')
+        .map((item, index) => ({
+          name: item.name.trim(),
+          sortOrder: index,
+        })),
+    };
+
+    if (!payload.name) {
+      setError('Informe um nome para o orçamento.');
+      setIsSaving(false);
+      return;
+    }
+
+    const entityId = editingBudget?.id ?? createSyncQueueId();
+    const optimisticBudget: BudgetPlan = {
+      id: entityId,
+      userId: editingBudget?.userId ?? '',
+      name: payload.name,
+      targetDate: payload.targetDate,
+      notes: editingBudget?.notes ?? null,
+      isActive: true,
+      deletedAt: null,
+      createdAt: editingBudget?.createdAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      total: editingBudget?.total ?? 0,
+      totalCents: editingBudget?.totalCents ?? 0,
+      spent: editingBudget?.spent ?? 0,
+      spentCents: editingBudget?.spentCents ?? 0,
+      remaining: editingBudget?.remaining ?? 0,
+      remainingCents: editingBudget?.remainingCents ?? 0,
+      progress: editingBudget?.progress ?? 0,
+      items: payload.items.map((item, index) => ({
+        id: `${entityId}-item-${index}`,
+        budgetId: entityId,
+        categoryId: null,
+        name: item.name,
+        amount: 0,
+        amountCents: 0,
+        spent: 0,
+        spentCents: 0,
+        remaining: 0,
+        remainingCents: 0,
+        progress: 0,
+        sortOrder: item.sortOrder,
+      })),
+    };
+
+    updateBudgetCaches((current) => {
+      if (!Array.isArray(current)) return current;
+      const next = current.filter((budget) => {
+        if (!budget || typeof budget !== 'object') return true;
+        return (budget as Record<string, unknown>).id !== entityId;
+      });
+      return [optimisticBudget, ...next];
+    });
+
+    enqueueSyncQueueItem({
+      id: entityId,
+      kind: editingBudget ? 'budget.update' : 'budget.create',
+      method: editingBudget ? 'PATCH' : 'POST',
+      path: editingBudget ? `/api/v1/budgets/${editingBudget.id}` : '/api/v1/budgets',
+      payload,
+      entityId,
+      createdAt: new Date().toISOString(),
+      attempts: 0,
+    });
+
+    onClose();
+    setIsSaving(false);
+  };
 
   const addItem = () => {
     setForm((current) => ({ ...current, items: [...current.items, makeDefaultItem()] }));
@@ -120,11 +180,11 @@ export function BudgetModal({ isOpen, onClose, editingBudget }: BudgetModalProps
           </button>
           <button
             type="button"
-            onClick={() => upsertMutation.mutate()}
-            disabled={upsertMutation.isPending}
+            onClick={handleSave}
+            disabled={isSaving}
             className="transactions-primary inline-flex w-full items-center justify-center gap-2 px-4 py-3 text-sm font-semibold disabled:opacity-60 sm:w-auto sm:py-2"
           >
-            {upsertMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {editingBudget ? 'Salvar' : 'Criar'}
           </button>
         </>

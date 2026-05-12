@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api";
+import { mergeQueuedBudgets, mergeQueuedTransactions } from "./offline-sync";
 
 export interface BudgetItem {
   id: string;
@@ -39,7 +40,7 @@ export interface BudgetPlan {
 export function useBudgetPlans() {
   return useQuery({
     queryKey: ["budgets"],
-    queryFn: () => api.getBudgets<BudgetPlan[]>(),
+    queryFn: () => api.getBudgets<BudgetPlan[]>().then((data) => mergeQueuedBudgets(data)),
     staleTime: 1000 * 30,
   });
 }
@@ -48,7 +49,15 @@ export function useBudgetTransactions(budgetId?: string) {
   return useQuery({
     queryKey: ["budgets", budgetId, "transactions"],
     queryFn: () =>
-      api.get<any[]>(`/api/v1/transactions?budgetId=${budgetId}&limit=1000`),
+      api.get<any[]>(`/api/v1/transactions?budgetId=${budgetId}&limit=1000`).then((data) =>
+        mergeQueuedTransactions(data, {
+          search: '',
+          filterType: 'all',
+          selectedCategory: 'all',
+          selectedStatus: undefined,
+          selectedClassification: undefined,
+        }),
+      ),
     enabled: !!budgetId,
     staleTime: 1000 * 30,
   });

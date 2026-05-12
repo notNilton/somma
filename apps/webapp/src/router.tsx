@@ -1,6 +1,7 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 import { QueryClient } from '@tanstack/react-query';
 import { routeTree } from './routeTree.gen';
+import { restorePersistedQueryClient } from './lib/query-cache-persistence';
 
 export function getRouter() {
   const queryClient = new QueryClient({
@@ -11,6 +12,8 @@ export function getRouter() {
       },
     },
   });
+
+  restorePersistedQueryClient(queryClient);
 
   const router = createTanStackRouter({
     routeTree,

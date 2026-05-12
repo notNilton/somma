@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Tag, Palette } from "lucide-react";
-import { api } from "../lib/api";
 import Modal from "./ui/Modal";
+import {
+  createSyncQueueId,
+  enqueueSyncQueueItem,
+} from "../lib/offline-sync";
 
 export type CategoryType = "INCOME" | "EXPENSE";
 
@@ -26,6 +30,7 @@ export function CategoryModal({
   type,
   initialData,
 }: CategoryModalProps) {
+  const queryClient = useQueryClient();
   const isEditing = mode === "edit";
 
   const [name, setName] = useState(initialData?.name ?? "");
@@ -52,6 +57,11 @@ export function CategoryModal({
     }
   }, [isOpen, initialData, type]);
 
+  const updateCategoryCaches = (updater: (current: unknown) => unknown) => {
+    queryClient.setQueriesData({ queryKey: ["categories"] }, updater);
+    queryClient.setQueriesData({ queryKey: ["settings-categories"] }, updater);
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setIsLoading(true);
@@ -68,10 +78,44 @@ export function CategoryModal({
         throw new Error("Informe um nome para a categoria.");
       }
 
+      const entityId = isEditing && initialData ? initialData.id : createSyncQueueId();
+      const optimisticCategory = {
+        id: entityId,
+        ...payload,
+        syncStatus: "pending",
+      };
+
+      updateCategoryCaches((current) => {
+        if (!Array.isArray(current)) return current;
+        const next = current.filter((item) => {
+          if (!item || typeof item !== "object") return true;
+          return (item as Record<string, unknown>).id !== entityId;
+        });
+        return [optimisticCategory, ...next];
+      });
+
       if (isEditing && initialData) {
-        await api.patch(`/api/v1/categories/${initialData.id}`, payload);
+        enqueueSyncQueueItem({
+          id: entityId,
+          kind: "category.update",
+          method: "PATCH",
+          path: `/api/v1/categories/${initialData.id}`,
+          payload,
+          entityId,
+          createdAt: new Date().toISOString(),
+          attempts: 0,
+        });
       } else {
-        await api.post("/api/v1/categories", payload);
+        enqueueSyncQueueItem({
+          id: entityId,
+          kind: "category.create",
+          method: "POST",
+          path: "/api/v1/categories",
+          payload,
+          entityId,
+          createdAt: new Date().toISOString(),
+          attempts: 0,
+        });
       }
 
       onSuccess();

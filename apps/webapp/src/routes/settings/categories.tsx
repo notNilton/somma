@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tag, Plus, Loader2, Pencil, Trash2, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import SettingsShell from '../../components/SettingsShell';
@@ -8,6 +8,10 @@ import SectionPageHeader from '../../components/SectionPageHeader';
 import { api } from '../../lib/api';
 import { CategoryModal } from '../../components/CategoryModal';
 import { flattenCategories } from '../../lib/categories';
+import {
+  enqueueSyncQueueItem,
+  mergeQueuedCategories,
+} from '../../lib/offline-sync';
 
 interface Category {
   id: string;
@@ -30,7 +34,7 @@ function CategoriesSettingsPage() {
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ['settings-categories'],
-    queryFn: () => api.get<Category[]>('/api/v1/categories'),
+    queryFn: () => api.get<Category[]>('/api/v1/categories').then((data) => mergeQueuedCategories(data)),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -62,15 +66,6 @@ function CategoriesSettingsPage() {
     [flatCategories, normalizedSearch],
   );
 
-  const deleteCategoryMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return api.delete(`/api/v1/categories/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings-categories'] });
-    },
-  });
-
   const openCategoryModal = (type: 'INCOME' | 'EXPENSE') => {
     setEditingCategory(null);
     setCategoryModalType(type);
@@ -85,7 +80,30 @@ function CategoriesSettingsPage() {
 
   const handleDeleteCategory = (cat: Category) => {
     if (!window.confirm(`Excluir a categoria "${cat.name}"?`)) return;
-    deleteCategoryMutation.mutate(cat.id);
+    queryClient.setQueriesData({ queryKey: ['settings-categories'] }, (current) => {
+      if (!Array.isArray(current)) return current;
+      return current.filter((item) => {
+        if (!item || typeof item !== 'object') return true;
+        return (item as Record<string, unknown>).id !== cat.id;
+      });
+    });
+    queryClient.setQueriesData({ queryKey: ['categories'] }, (current) => {
+      if (!Array.isArray(current)) return current;
+      return current.filter((item) => {
+        if (!item || typeof item !== 'object') return true;
+        return (item as Record<string, unknown>).id !== cat.id;
+      });
+    });
+    enqueueSyncQueueItem({
+      id: cat.id,
+      kind: 'category.delete',
+      method: 'DELETE',
+      path: `/api/v1/categories/${cat.id}`,
+      entityId: cat.id,
+      payload: {},
+      createdAt: new Date().toISOString(),
+      attempts: 0,
+    });
   };
 
   return (
@@ -192,8 +210,7 @@ function CategoriesSettingsPage() {
                           e.preventDefault();
                           handleDeleteCategory(cat);
                         }}
-                        disabled={deleteCategoryMutation.isPending}
-                        className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth disabled:opacity-40"
+                        className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth"
                         title="Excluir"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -287,8 +304,7 @@ function CategoriesSettingsPage() {
                           e.preventDefault();
                           handleDeleteCategory(cat);
                         }}
-                        disabled={deleteCategoryMutation.isPending}
-                        className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth disabled:opacity-40"
+                        className="p-1.5 rounded-lg hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-smooth"
                         title="Excluir"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -308,7 +324,7 @@ function CategoriesSettingsPage() {
           setIsCategoryModalOpen(false);
           setEditingCategory(null);
         }}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['settings-categories'] })}
+        onSuccess={() => undefined}
         type={categoryModalType}
         mode={editingCategory ? 'edit' : 'create'}
         initialData={

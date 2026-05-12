@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import {
   ArrowDownLeft,
@@ -17,13 +17,13 @@ import BudgetPlansSection from "../components/BudgetPlansSection";
 import DashboardPanel from "../components/DashboardPanel";
 import SectionShell from "../components/SectionShell";
 import PrivacyAmount from "../components/PrivacyAmount";
-import { api } from "../lib/api";
 import { useBudgetPlans } from "../lib/budgets";
 import type { BudgetPlan } from "../lib/budgets";
 import { formatMonthLabelPtBr } from "../lib/formatters";
 import { cn } from "../lib/utils";
 import { BudgetModal } from "../components/BudgetModal";
 import BudgetDetailView from "../components/BudgetDetailView";
+import { enqueueSyncQueueItem } from "../lib/offline-sync";
 
 export const Route = createFileRoute("/budgets")({
   component: BudgetsPage,
@@ -158,14 +158,6 @@ function BudgetsPage() {
     [budgets, selectedBudgetId],
   );
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["budgets"] });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.deleteBudgets<void>(id),
-    onSuccess: invalidate,
-  });
-
   const openCreate = () => {
     setEditingBudget(null);
     setShowModal(true);
@@ -179,6 +171,29 @@ function BudgetsPage() {
   const closeModal = () => {
     setShowModal(false);
     setEditingBudget(null);
+  };
+
+  const handleDelete = (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este orçamento?")) return;
+
+    queryClient.setQueriesData({ queryKey: ["budgets"] }, (current) => {
+      if (!Array.isArray(current)) return current;
+      return current.filter((budget) => {
+        if (!budget || typeof budget !== "object") return true;
+        return (budget as Record<string, unknown>).id !== id;
+      });
+    });
+
+    enqueueSyncQueueItem({
+      id,
+      kind: "budget.delete",
+      method: "DELETE",
+      path: `/api/v1/budgets/${id}`,
+      entityId: id,
+      payload: {},
+      createdAt: new Date().toISOString(),
+      attempts: 0,
+    });
   };
 
   const totalPlannedCents = budgets.reduce(

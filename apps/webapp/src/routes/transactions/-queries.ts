@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
+import { readSyncQueue } from '../../lib/offline-sync';
 
 export interface TxCategory {
   id: string;
@@ -35,6 +36,8 @@ export interface Tx {
   vehicleId?: string;
   category?: TxCategory;
   card?: TxCard | null;
+  syncStatus?: 'pending' | 'synced' | 'error';
+  syncError?: string;
 }
 
 export function startOfMonthLocal(): Date {
@@ -122,6 +125,92 @@ export function splitByToday(list: Tx[]): { current: Tx[]; future: Tx[]; today: 
   };
 }
 
+function queueItemToTransaction(item: ReturnType<typeof readSyncQueue>[number]): Tx {
+  const payload = item.payload;
+  return {
+    id: item.entityId,
+    description: String(payload?.description ?? 'Lançamento'),
+    amount: Number(payload?.amount ?? 0),
+    date: String(payload?.date ?? new Date().toISOString()),
+    type: payload?.type === 'INCOME' ? 'INCOME' : 'EXPENSE',
+    classification: typeof payload?.classification === 'string' ? payload?.classification : 'COMMON',
+    channel: typeof payload?.channel === 'string' ? payload?.channel : 'BANK',
+    isRecurring: Boolean(payload?.isRecurring),
+    categoryId: typeof payload?.categoryId === 'string' ? payload?.categoryId : undefined,
+    vehicleId: typeof payload?.vehicleId === 'string' ? payload?.vehicleId : undefined,
+    syncStatus: 'pending',
+  };
+}
+
+function matchesQueuedTransaction(
+  tx: Tx,
+  opts: {
+    search: string;
+    filterType: 'all' | 'INCOME' | 'EXPENSE';
+    selectedCategory: string;
+    selectedStatus?: string;
+    selectedClassification?: string;
+    from?: string;
+    to?: string;
+  },
+) {
+  if (opts.filterType !== 'all' && tx.type !== opts.filterType) return false;
+  if (opts.selectedCategory !== 'all' && tx.categoryId !== opts.selectedCategory) return false;
+  if (opts.selectedStatus && opts.selectedStatus !== 'all' && tx.status !== opts.selectedStatus) {
+    return false;
+  }
+  if (
+    opts.selectedClassification &&
+    opts.selectedClassification !== 'all' &&
+    tx.classification !== opts.selectedClassification
+  ) {
+    return false;
+  }
+  if (opts.from && tx.date < opts.from) return false;
+  if (opts.to && tx.date > opts.to) return false;
+
+  if (opts.search) {
+    const search = opts.search.toLowerCase();
+    const description = tx.description.toLowerCase();
+    const categoryName = tx.category?.name?.toLowerCase() ?? '';
+    const categoryDescription = tx.category?.description?.toLowerCase() ?? '';
+    if (
+      !description.includes(search) &&
+      !categoryName.includes(search) &&
+      !categoryDescription.includes(search)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function mergeQueuedTransactions(
+  list: Tx[],
+  opts: {
+    search: string;
+    filterType: 'all' | 'INCOME' | 'EXPENSE';
+    selectedCategory: string;
+    selectedStatus?: string;
+    selectedClassification?: string;
+    from?: string;
+    to?: string;
+  },
+) {
+  const queueTransactions = readSyncQueue()
+    .filter((item) => item.kind === 'transaction.create')
+    .map(queueItemToTransaction)
+    .filter((tx) => matchesQueuedTransaction(tx, opts));
+
+  const byId = new Map<string, Tx>();
+  [...queueTransactions, ...list].forEach((tx) => {
+    byId.set(tx.id, tx);
+  });
+
+  return Array.from(byId.values());
+}
+
 export function useTransactionsList(opts: {
   search: string;
   filterType: 'all' | 'INCOME' | 'EXPENSE';
@@ -140,7 +229,7 @@ export function useTransactionsList(opts: {
     ],
     queryFn: async () => {
       const data = await api.get<Tx[]>(`/api/v1/transactions?${buildTxParams({ ...opts })}`);
-      return data;
+      return mergeQueuedTransactions(data, opts);
     },
     staleTime: 1000 * 30,
   });
@@ -159,6 +248,17 @@ export function useMonthExpenses() {
           selectedCategory: 'all',
           extra: { from, to },
         })}`,
+      ).then((data) =>
+        mergeQueuedTransactions(
+          data,
+          {
+            search: '',
+            filterType: 'EXPENSE',
+            selectedCategory: 'all',
+            from,
+            to,
+          },
+        ),
       ),
     staleTime: 1000 * 30,
   });
@@ -184,6 +284,14 @@ export function useFutureTransactions(opts: {
           selectedCategory: opts.selectedCategory,
           extra: { from, to },
         })}`,
+      ).then((data) =>
+        mergeQueuedTransactions(data, {
+          search: opts.search,
+          filterType: opts.filterType,
+          selectedCategory: opts.selectedCategory,
+          from,
+          to,
+        }),
       ),
     staleTime: 1000 * 30,
     enabled: opts.enabled,

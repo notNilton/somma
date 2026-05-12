@@ -8,7 +8,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import BottomNav from "../components/BottomNav";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
+import OfflineSyncBridge from "../components/OfflineSyncBridge";
 import { PrivacyProvider } from "../lib/privacy";
+import { QueryCachePersistenceBridge } from "../lib/query-cache-persistence";
 import { auth } from "../lib/auth";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
@@ -53,6 +55,7 @@ function RootComponent() {
       <div className="fixed inset-0 overflow-hidden font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)] bg-background relative">
         <QueryClientProvider client={queryClient}>
           <PrivacyProvider>
+            <QueryCachePersistenceBridge queryClient={queryClient} />
             <Outlet />
           </PrivacyProvider>
         </QueryClientProvider>
@@ -64,6 +67,8 @@ function RootComponent() {
     <div className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)] min-h-screen flex flex-col relative">
       <QueryClientProvider client={queryClient}>
         <PrivacyProvider>
+          <QueryCachePersistenceBridge queryClient={queryClient} />
+          <OfflineSyncBridge queryClient={queryClient} />
           <div className="hidden sm:block">
             <Header />
           </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CarFront, Plus, History, Edit2, Trash2, Loader2 } from 'lucide-react';
 import SettingsShell from '../../components/SettingsShell';
 import { SectionLoadingState } from '../../components/SectionFeedback';
@@ -9,6 +9,7 @@ import PrivacyAmount from '../../components/PrivacyAmount';
 import { api } from '../../lib/api';
 import { VehicleModal } from '../../components/VehicleModal';
 import { SUPPORTED_BRANDS, getBrandIcon } from '../../lib/vehicle-brands';
+import { enqueueSyncQueueItem, mergeQueuedVehicles } from '../../lib/offline-sync';
 
 export const Route = createFileRoute('/settings/vehicles')({
   component: VehiclesPage,
@@ -139,7 +140,7 @@ function VehiclesPage() {
 
   const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicles'],
-    queryFn: () => api.get<Vehicle[]>('/api/v1/vehicles'),
+    queryFn: () => api.get<Vehicle[]>('/api/v1/vehicles').then((data) => mergeQueuedVehicles(data)),
   });
 
   // Auto-select first vehicle for history
@@ -150,13 +151,6 @@ function VehiclesPage() {
     queryFn: () =>
       activeHistoryId ? api.get<RefuelingLog[]>(`/api/v1/vehicles/${activeHistoryId}/refuelings`) : [],
     enabled: !!activeHistoryId,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/api/v1/vehicles/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-    },
   });
 
   const handleAdd = () => {
@@ -177,7 +171,24 @@ function VehiclesPage() {
         'Tem certeza que deseja excluir este veículo? Totais de abastecimento serão mantidos mas o veículo não aparecerá mais.',
       )
     ) {
-      deleteMutation.mutate(id);
+      queryClient.setQueriesData({ queryKey: ['vehicles'] }, (current) => {
+        if (!Array.isArray(current)) return current;
+        return current.filter((vehicle) => {
+          if (!vehicle || typeof vehicle !== 'object') return true;
+          return (vehicle as Record<string, unknown>).id !== id;
+        });
+      });
+
+      enqueueSyncQueueItem({
+        id,
+        kind: 'vehicle.delete',
+        method: 'DELETE',
+        path: `/api/v1/vehicles/${id}`,
+        entityId: id,
+        payload: {},
+        createdAt: new Date().toISOString(),
+        attempts: 0,
+      });
     }
   };
 
@@ -346,7 +357,7 @@ function VehiclesPage() {
         key={selectedVehicle?.id ?? 'new'}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['vehicles'] })}
+        onSuccess={() => undefined}
         mode={modalMode}
         initialData={selectedVehicle}
       />
