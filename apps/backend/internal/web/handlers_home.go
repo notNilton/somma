@@ -31,6 +31,7 @@ type txView struct {
 	Description string
 	Amount      float64
 	Type        string
+	DateStr     string
 }
 
 func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
@@ -89,7 +90,7 @@ func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 		rows.Scan(&id, &desc, &amountCents, &txType, &date)
 		dateStr := date.Format("2006-01-02")
 		txByDay[dateStr] = append(txByDay[dateStr], txView{
-			ID: id, Description: desc, Amount: money.ToReais(amountCents), Type: txType,
+			ID: id, Description: desc, Amount: money.ToReais(amountCents), Type: txType, DateStr: dateStr,
 		})
 		switch txType {
 		case "INCOME", "RETURN":

@@ -33,6 +33,8 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 
 	// Create transaction from home
 	mux.HandleFunc("POST /transactions", webAuth(wh.CreateTransactionHome))
+	mux.HandleFunc("POST /transactions/{id}/edit", webAuth(wh.UpdateTransactionWeb))
+	mux.HandleFunc("POST /transactions/{id}/delete", webAuth(wh.DeleteTransactionWeb))
 
 	// ============================================================
 	// API routes (JSON) — kept for compatibility

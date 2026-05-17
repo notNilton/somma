@@ -207,23 +207,23 @@ func (h *Handler) UpdateTransactionWeb(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
 	if err := r.ParseForm(); err != nil {
-		http.Redirect(w, r, "/transactions/"+id+"/edit", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	dto, err := h.parseTransactionForm(r)
 	if err != nil {
-		http.Redirect(w, r, "/transactions/"+id+"/edit", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	if err := h.updateTransaction(r.Context(), user.ID, id, dto); err != nil {
-		http.Redirect(w, r, "/transactions/"+id+"/edit", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	h.cache.DeletePrefix(cache.DashboardPrefix(user.ID))
-	http.Redirect(w, r, "/transactions", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (h *Handler) DeleteTransactionWeb(w http.ResponseWriter, r *http.Request) {
@@ -244,7 +244,7 @@ func (h *Handler) DeleteTransactionWeb(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		http.Redirect(w, r, "/transactions", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -255,7 +255,7 @@ func (h *Handler) DeleteTransactionWeb(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	http.Redirect(w, r, "/transactions", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // ============================================================
