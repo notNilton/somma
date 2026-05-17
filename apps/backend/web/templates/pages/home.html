@@ -19,15 +19,15 @@
 <body class="bg-gray-50 text-gray-800 min-h-screen">
 
   <nav class="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur">
-    <div class="mx-auto max-w-3xl px-4 h-16 flex items-center justify-between">
+    <div class="mx-auto max-w-3xl px-4 h-14 sm:h-16 flex items-center justify-between">
       <a href="/" class="flex items-center gap-2">
-        <div class="h-9 w-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-base">PL</div>
-        <span class="font-semibold text-xl tracking-tight">Personalledger</span>
+        <div class="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm sm:text-base">PL</div>
+        <span class="font-semibold text-lg sm:text-xl tracking-tight hidden sm:inline">Personalledger</span>
       </a>
       <div class="flex items-center gap-3">
-        <span class="text-lg text-gray-500">{{ .User.Name }}</span>
+        <span class="text-base sm:text-lg text-gray-500 truncate max-w-[120px] sm:max-w-none">{{ .User.Name }}</span>
         <form action="/logout" method="POST" class="inline">
-          <button type="submit" class="text-lg text-gray-500 hover:text-red-600 font-medium">Sair</button>
+          <button type="submit" class="text-base sm:text-lg text-gray-500 hover:text-red-600 font-medium">Sair</button>
         </form>
       </div>
     </div>
@@ -35,66 +35,72 @@
 
   <main class="mx-auto max-w-3xl px-4 py-6">
     <!-- Month selector -->
-    <div class="flex items-center justify-between mb-6">
-      <a href="/?month={{ .PrevMonth }}" class="p-3 rounded-xl hover:bg-gray-100 text-gray-500">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    <div class="flex items-center justify-between mb-4 sm:mb-6">
+      <a href="/?month={{ .PrevMonth }}" class="p-2 sm:p-3 rounded-xl hover:bg-gray-100 text-gray-500">
+        <svg width="20" height="20" class="sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       </a>
-      <h1 class="text-3xl font-bold tracking-tight text-gray-900">{{ .MonthLabel }}</h1>
-      <a href="/?month={{ .NextMonth }}" class="p-3 rounded-xl hover:bg-gray-100 text-gray-500">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">{{ .MonthLabel }}</h1>
+      <a href="/?month={{ .NextMonth }}" class="p-2 sm:p-3 rounded-xl hover:bg-gray-100 text-gray-500">
+        <svg width="20" height="20" class="sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
     </div>
 
     <!-- Days -->
     <div class="space-y-3">
       {{ range .Days }}
-      <div class="day-card flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-4 py-3.5">
-        <!-- Day number -->
-        <div class="flex flex-col items-center min-w-[3rem]">
-          <span class="text-sm font-semibold text-gray-400 uppercase">{{ .Weekday }}</span>
-          <span class="text-3xl font-bold text-gray-800">{{ .DayNum }}</span>
-        </div>
+      <div class="day-card flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-2xl border border-gray-200 bg-white px-3 sm:px-4 py-3 sm:py-3.5">
+        <!-- Top row: Day + Transactions -->
+        <div class="flex items-start sm:items-center gap-3 sm:gap-4 flex-1">
+          <!-- Day number -->
+          <div class="flex flex-col items-center min-w-[2.5rem] sm:min-w-[3rem]">
+            <span class="text-xs sm:text-sm font-semibold text-gray-400 uppercase">{{ .Weekday }}</span>
+            <span class="text-2xl sm:text-3xl font-bold text-gray-800">{{ .DayNum }}</span>
+          </div>
 
-        <!-- Transactions row -->
-        <div class="flex-1 flex flex-wrap gap-x-4 gap-y-1.5 items-center">
-          {{ range .Transactions }}
-          <span class="tx-badge inline-flex items-center gap-2 text-base"
-                onclick="openEditModal('{{ .ID }}', {{ .Amount }}, '{{ .Type }}', '{{ .DateStr }}')">
-            {{ if eq .Type "EXPENSE" }}
-              <span class="h-6 w-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs">D</span>
-              <span class="text-red-600 font-semibold">-{{ formatMoney .Amount }}</span>
-            {{ else if eq .Type "INCOME" }}
-              <span class="h-6 w-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs">R</span>
-              <span class="text-emerald-600 font-semibold">+{{ formatMoney .Amount }}</span>
-            {{ else if eq .Type "INVESTMENT" }}
-              <span class="h-6 w-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">I</span>
-              <span class="text-blue-600 font-semibold">-{{ formatMoney .Amount }}</span>
-            {{ else if eq .Type "CREDIT" }}
-              <span class="h-6 w-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-xs">C</span>
-              <span class="text-amber-600 font-semibold">-{{ formatMoney .Amount }}</span>
-            {{ else if eq .Type "RETURN" }}
-              <span class="h-6 w-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">V</span>
-              <span class="text-purple-600 font-semibold">+{{ formatMoney .Amount }}</span>
+          <!-- Transactions row -->
+          <div class="flex-1 flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1 sm:gap-y-1.5 items-center">
+            {{ range .Transactions }}
+            <span class="tx-badge inline-flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base"
+                  onclick="openEditModal('{{ .ID }}', {{ .Amount }}, '{{ .Type }}', '{{ .DateStr }}')">
+              {{ if eq .Type "EXPENSE" }}
+                <span class="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-[10px] sm:text-xs">D</span>
+                <span class="text-red-600 font-semibold">-{{ formatMoney .Amount }}</span>
+              {{ else if eq .Type "INCOME" }}
+                <span class="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-[10px] sm:text-xs">R</span>
+                <span class="text-emerald-600 font-semibold">+{{ formatMoney .Amount }}</span>
+              {{ else if eq .Type "INVESTMENT" }}
+                <span class="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-[10px] sm:text-xs">I</span>
+                <span class="text-blue-600 font-semibold">-{{ formatMoney .Amount }}</span>
+              {{ else if eq .Type "CREDIT" }}
+                <span class="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-[10px] sm:text-xs">C</span>
+                <span class="text-amber-600 font-semibold">-{{ formatMoney .Amount }}</span>
+              {{ else if eq .Type "RETURN" }}
+                <span class="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-[10px] sm:text-xs">V</span>
+                <span class="text-purple-600 font-semibold">+{{ formatMoney .Amount }}</span>
+              {{ end }}
+            </span>
             {{ end }}
-          </span>
-          {{ end }}
+          </div>
         </div>
 
-        <!-- Quick-add buttons -->
-        <div class="flex gap-1.5">
-          <button onclick="openModal('{{ .DateStr }}','EXPENSE','Despesa')" class="h-9 px-3 rounded-lg bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 transition">D</button>
-          <button onclick="openModal('{{ .DateStr }}','INCOME','Renda')" class="h-9 px-3 rounded-lg bg-emerald-50 text-emerald-600 text-sm font-bold hover:bg-emerald-100 transition">R</button>
-          <button onclick="openModal('{{ .DateStr }}','INVESTMENT','Investimento')" class="h-9 px-3 rounded-lg bg-blue-50 text-blue-600 text-sm font-bold hover:bg-blue-100 transition">I</button>
-          <button onclick="openModal('{{ .DateStr }}','CREDIT','Crédito')" class="h-9 px-3 rounded-lg bg-amber-50 text-amber-600 text-sm font-bold hover:bg-amber-100 transition">C</button>
-          <button onclick="openModal('{{ .DateStr }}','RETURN','Retorno')" class="h-9 px-3 rounded-lg bg-purple-50 text-purple-600 text-sm font-bold hover:bg-purple-100 transition">V</button>
-        </div>
+        <!-- Bottom row on mobile: Buttons + Balance -->
+        <div class="flex items-center justify-between sm:justify-normal sm:gap-3">
+          <!-- Quick-add buttons -->
+          <div class="flex gap-1 sm:gap-1.5">
+            <button onclick="openModal('{{ .DateStr }}','EXPENSE','Despesa')" class="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-red-50 text-red-600 text-xs sm:text-sm font-bold hover:bg-red-100 transition">D</button>
+            <button onclick="openModal('{{ .DateStr }}','INCOME','Renda')" class="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-emerald-50 text-emerald-600 text-xs sm:text-sm font-bold hover:bg-emerald-100 transition">R</button>
+            <button onclick="openModal('{{ .DateStr }}','INVESTMENT','Investimento')" class="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-blue-50 text-blue-600 text-xs sm:text-sm font-bold hover:bg-blue-100 transition">I</button>
+            <button onclick="openModal('{{ .DateStr }}','CREDIT','Crédito')" class="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-amber-50 text-amber-600 text-xs sm:text-sm font-bold hover:bg-amber-100 transition">C</button>
+            <button onclick="openModal('{{ .DateStr }}','RETURN','Retorno')" class="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-purple-50 text-purple-600 text-xs sm:text-sm font-bold hover:bg-purple-100 transition">V</button>
+          </div>
 
-        <!-- Balance -->
-        <div class="min-w-[5.5rem] text-right">
-          <p class="text-sm text-gray-400 font-medium">Saldo</p>
-          <p class="text-lg font-bold {{ if lt .RunningBalanceCents 0 }}text-red-600{{ else }}text-gray-800{{ end }}">
-            {{ formatMoney .RunningBalance }}
-          </p>
+          <!-- Balance -->
+          <div class="min-w-[4.5rem] sm:min-w-[5.5rem] text-right">
+            <p class="text-xs sm:text-sm text-gray-400 font-medium">Saldo</p>
+            <p class="text-base sm:text-lg font-bold {{ if lt .RunningBalanceCents 0 }}text-red-600{{ else }}text-gray-800{{ end }}">
+              {{ formatMoney .RunningBalance }}
+            </p>
+          </div>
         </div>
       </div>
       {{ end }}
