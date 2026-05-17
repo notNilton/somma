@@ -60,6 +60,22 @@ func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 	prevMonth := firstDay.AddDate(0, -1, 0).Format("2006-01")
 	nextMonth := firstDay.AddDate(0, 1, 0).Format("2006-01")
 
+	// Calculate running balance from previous months
+	var priorBalanceCents int64
+	err = h.db.QueryRow(r.Context(), `
+		SELECT COALESCE(SUM(CASE WHEN type IN ('INCOME', 'RETURN') THEN amount_cents ELSE -amount_cents END), 0)
+		FROM transactions
+		WHERE user_id = $1 AND is_active = true AND date < $2
+	`, user.ID, firstDay).Scan(&priorBalanceCents)
+	if err != nil {
+		h.engine.Render(w, r, "home", map[string]any{
+			"Title": "Personalledger",
+			"User":  user,
+			"Error": "Erro ao carregar saldo anterior",
+		})
+		return
+	}
+
 	// Fetch all transactions for the month
 	rows, err := h.db.Query(r.Context(), `
 		SELECT id, description, amount_cents, type, date
@@ -82,7 +98,7 @@ func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 
 	// Map date string -> transactions
 	txByDay := make(map[string][]txView)
-	var totalBalanceCents int64
+	var monthBalanceCents int64
 	for rows.Next() {
 		var id, desc, txType string
 		var amountCents int64
@@ -94,16 +110,16 @@ func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 		})
 		switch txType {
 		case "INCOME", "RETURN":
-			totalBalanceCents += amountCents
+			monthBalanceCents += amountCents
 		default:
-			totalBalanceCents -= amountCents
+			monthBalanceCents -= amountCents
 		}
 	}
 
 	// Build day views
 	var days []dayView
 	weekdays := []string{"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"}
-	runningBalance := int64(0)
+	runningBalance := priorBalanceCents
 	for d := 1; d <= lastDay.Day(); d++ {
 		dayDate := time.Date(monthTime.Year(), monthTime.Month(), d, 0, 0, 0, 0, time.UTC)
 		dateStr := dayDate.Format("2006-01-02")
@@ -132,6 +148,8 @@ func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 
 	monthLabel := firstDay.Format("January 2006")
 	monthLabel = fmt.Sprintf("%s/%s", monthLabel[:3], strconv.Itoa(monthTime.Year())[2:])
+
+	totalBalanceCents := priorBalanceCents + monthBalanceCents
 
 	h.cache.DeletePrefix(cache.DashboardPrefix(user.ID))
 
