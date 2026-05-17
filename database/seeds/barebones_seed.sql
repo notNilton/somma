@@ -31,7 +31,7 @@ VALUES
         '65999990001',
         '123.456.789-00',
         FALSE,
-        '$2a$12$.XnRfSRpVjfhFU0UQ22nIeNP1sFTsC4behpNxSjCfPUepv2wklE2u'
+        '$2a$12$iq.G1.ngHpYLHTFgUNOyQ.wpNq.qJNPOy8sF/uEU8LxRfYjCCStYO'
     )
 ON CONFLICT (email) DO UPDATE
 SET

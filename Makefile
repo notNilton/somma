@@ -31,13 +31,13 @@ REMOVE_VOLUME ?= 0
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend webapp migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones install test lint clean
+.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones test clean
 
 help:
 	@printf '%s\n' 'Personalledger local dev'
 	@printf '\n%s\n' 'Fluxo principal:'
-	@printf '  make up              Sobe Postgres, cria .env, migra, semeia e inicia backend + webapp\n'
-	@printf '  make dev             Inicia backend + webapp, assumindo dependencias locais no ar\n'
+	@printf '  make up              Sobe Postgres, cria .env, migra, semeia e inicia backend\n'
+	@printf '  make dev             Inicia backend, assumindo dependencias locais no ar\n'
 	@printf '  make db-setup        Sobe o banco, aplica migrations e insere dados iniciais (seeds)\n'
 	@printf '  make deps-up         Sobe dependencias locais: Postgres e MinIO se ENABLE_MINIO=1\n'
 	@printf '  make deps-down       Para dependencias locais\n'
@@ -53,10 +53,7 @@ help:
 	@printf '  make db-seed-barebones Aplica o seed basico com usuario, contas e veiculo\n'
 	@printf '\n%s\n' 'App:'
 	@printf '  make backend         Roda a API Go em localhost:%s\n' '$(BACKEND_PORT)'
-	@printf '  make webapp          Roda o Vite em localhost:%s\n' '$(WEBAPP_PORT)'
-	@printf '  make install         Instala dependencias do webapp\n'
-	@printf '  make test            Roda testes Go e Vitest\n'
-	@printf '  make lint            Roda lint do webapp\n'
+	@printf '  make test            Roda testes Go\n'
 	@printf '\n%s\n' 'MinIO opcional:'
 	@printf '  make minio-up        Sobe MinIO manualmente\n'
 	@printf '  ENABLE_MINIO=1 make up inclui MinIO nas dependencias locais\n'
@@ -66,9 +63,7 @@ up: db-setup dev
 dev:
 	@set -euo pipefail; \
 	trap 'jobs -pr | xargs -r kill 2>/dev/null || true' INT TERM EXIT; \
-	$(MAKE) --no-print-directory backend & \
-	$(MAKE) --no-print-directory webapp & \
-	wait
+	$(MAKE) --no-print-directory backend
 
 deps-up: db-up
 	@if [ "$(ENABLE_MINIO)" = "1" ]; then \
@@ -185,12 +180,6 @@ backend: env
 	fi; \
 	PORT="$(BACKEND_PORT)" DATABASE_URL="$(DATABASE_URL)" JWT_SECRET="$(JWT_SECRET)" WEBAPP_URL="$(WEBAPP_URL)" ENV="$(ENV)" $$AIR_CMD -c .air.toml
 
-webapp:
-	@set -euo pipefail; \
-	cd apps/webapp; \
-	if [ ! -d node_modules ]; then npm install; fi; \
-	VITE_API_URL="$(API_URL)" npm run dev -- --host 0.0.0.0 --port "$(WEBAPP_PORT)"
-
 migrate-up:
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate up
 
@@ -212,16 +201,9 @@ db-seed-barebones: migrate-up
 seed-complete: db-seed-complete
 seed-barebones: db-seed-barebones
 
-install:
-	@cd apps/webapp && npm install
-
 test:
 	@cd apps/backend && go test ./...
 	@cd database && go test ./...
-	@cd apps/webapp && npm test
-
-lint:
-	@cd apps/webapp && npm run lint
 
 clean:
-	@rm -rf apps/backend/tmp apps/webapp/dist
+	@rm -rf apps/backend/tmp

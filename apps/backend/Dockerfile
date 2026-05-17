@@ -16,6 +16,7 @@ RUN go mod download
 
 COPY apps/backend/cmd/ ./cmd/
 COPY apps/backend/internal/ ./internal/
+COPY apps/backend/web/ ./web/
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags "-X github.com/nilbyte/personalledger/backend/internal/version.Version=${VERSION}" \
@@ -29,6 +30,7 @@ RUN apk --no-cache add ca-certificates tzdata && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=builder /out/main ./main
+COPY --from=builder /src/apps/backend/web ./web
 
 USER appuser
 

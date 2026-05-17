@@ -22,19 +22,8 @@ services:
       ENV: production
       PORT: 3300
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      WEBAPP_URL: ${WEBAPP_URL:-http://localhost:3400}
+      WEBAPP_URL: ${WEBAPP_URL:-http://localhost:3300}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
     depends_on:
       migrate:
         condition: service_completed_successfully
-
-  webapp:
-    build:
-      context: .
-      dockerfile: apps/webapp/Dockerfile
-    container_name: personalledger-webapp
-    restart: always
-    ports:
-      - "3400:80"
-    depends_on:
-      - backend

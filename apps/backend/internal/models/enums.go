@@ -1,8 +1,11 @@
 package models
 
 const (
-	TransactionTypeINCOME  = "INCOME"
-	TransactionTypeEXPENSE = "EXPENSE"
+	TransactionTypeINCOME      = "INCOME"
+	TransactionTypeEXPENSE     = "EXPENSE"
+	TransactionTypeINVESTMENT  = "INVESTMENT"
+	TransactionTypeCREDIT      = "CREDIT"
+	TransactionTypeRETURN      = "RETURN"
 
 	TransactionStatusPENDING   = "PENDING"
 	TransactionStatusCOMPLETED = "COMPLETED"
@@ -36,6 +39,8 @@ const (
 
 var ValidTransactionTypes = map[string]bool{
 	TransactionTypeINCOME: true, TransactionTypeEXPENSE: true,
+	TransactionTypeINVESTMENT: true, TransactionTypeCREDIT: true,
+	TransactionTypeRETURN: true,
 }
 
 var ValidTransactionStatuses = map[string]bool{

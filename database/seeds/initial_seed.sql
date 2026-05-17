@@ -26,7 +26,7 @@ VALUES
         '65999990001',
         '123.456.789-00',
         FALSE,
-        '$2a$12$.XnRfSRpVjfhFU0UQ22nIeNP1sFTsC4behpNxSjCfPUepv2wklE2u'
+        '$2a$12$iq.G1.ngHpYLHTFgUNOyQ.wpNq.qJNPOy8sF/uEU8LxRfYjCCStYO'
     ),
     (
         'bf5b4d17-6db3-41aa-b86a-c5d1f90f1152',

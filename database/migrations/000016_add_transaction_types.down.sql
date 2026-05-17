@@ -1,0 +1,2 @@
+-- PostgreSQL does not support removing values from an ENUM type easily.
+-- This migration is intentionally empty; to revert, recreate the ENUM without the new values.

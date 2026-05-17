@@ -11,7 +11,6 @@ jobs:
     outputs:
       BACKEND_CHANGED: ${{ steps.detect.outputs.BACKEND_CHANGED }}
       DATABASE_CHANGED: ${{ steps.detect.outputs.DATABASE_CHANGED }}
-      WEBAPP_CHANGED: ${{ steps.detect.outputs.WEBAPP_CHANGED }}
       ANY_CHANGED: ${{ steps.detect.outputs.ANY_CHANGED }}
       FORCE_ALL: ${{ steps.detect.outputs.FORCE_ALL }}
     steps:
@@ -31,7 +30,6 @@ jobs:
 
           BACKEND_CHANGED=false
           DATABASE_CHANGED=false
-          WEBAPP_CHANGED=false
           FORCE_ALL=false
 
           if echo "$CHANGED_FILES" | grep -q '^.gitea/workflows/'; then
@@ -46,19 +44,14 @@ jobs:
             DATABASE_CHANGED=true
           fi
 
-          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^apps/webapp/'; then
-            WEBAPP_CHANGED=true
-          fi
-
           ANY_CHANGED=false
-          if [ "$BACKEND_CHANGED" = "true" ] || [ "$DATABASE_CHANGED" = "true" ] || [ "$WEBAPP_CHANGED" = "true" ]; then
+          if [ "$BACKEND_CHANGED" = "true" ] || [ "$DATABASE_CHANGED" = "true" ]; then
             ANY_CHANGED=true
           fi
 
           {
             echo "BACKEND_CHANGED=$BACKEND_CHANGED"
             echo "DATABASE_CHANGED=$DATABASE_CHANGED"
-            echo "WEBAPP_CHANGED=$WEBAPP_CHANGED"
             echo "ANY_CHANGED=$ANY_CHANGED"
             echo "FORCE_ALL=$FORCE_ALL"
           } >> "$GITHUB_OUTPUT"
@@ -102,27 +95,6 @@ jobs:
           GOCACHE: /tmp/go-build
           GOMODCACHE: /tmp/go-mod-cache
         run: go build -mod=vendor ./...
-
-  build-webapp:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.WEBAPP_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
-    runs-on: typescript
-    steps:
-      - name: Check out repository code
-        run: |
-          git config --global credential.helper store
-          echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
-          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
-            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
-
-      - name: Build Webapp
-        working-directory: apps/webapp
-        env:
-          NPM_CONFIG_CACHE: /tmp/npm-cache
-        run: |
-          npm ci --cache "$NPM_CONFIG_CACHE" --prefer-offline
-          npm run build
-          echo "✅ Webapp build successful"
 
   validate-compose:
     needs: detect-changes
