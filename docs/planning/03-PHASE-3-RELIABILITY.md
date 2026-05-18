@@ -2,7 +2,7 @@
 
 > **Status: 🔄 Em andamento** — Testes unitários parciais ✅ | Testes de integração ⏳ | Playwright ⏳ | Reports ⏳
 
-A Fase 3 eleva o padrão de confiabilidade do Personalledger: cobertura de testes ampla, validações robustas na API, melhoria da UX de relatórios e primeiro passo rumo ao uso offline.
+A Fase 3 eleva o padrão de confiabilidade do Tallyoh: cobertura de testes ampla, validações robustas na API, melhoria da UX de relatórios e primeiro passo rumo ao uso offline.
 
 ---
 

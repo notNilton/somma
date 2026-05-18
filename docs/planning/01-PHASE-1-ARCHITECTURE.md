@@ -4,7 +4,7 @@
 
 > ⚠️ **Aviso de Simplificação:** O sistema foi intencionalmente enxugado em 2025. Funcionalidades descritas neste documento como `accounts`, `transfers` e `cards` foram removidas nas migrations `000007` e `000011`. Consulte o `00-MASTER-TODO.md` e os `design specs` atualizados para o estado real.
 
-A Fase 1 estabeleceu a fundação arquitetural do **Personalledger**: um sistema de partidas dobradas (double-entry bookkeeping) de alta precisão, entregue como monorepo com CI/CD automatizado.
+A Fase 1 estabeleceu a fundação arquitetural do **Tallyoh**: um sistema de partidas dobradas (double-entry bookkeeping) de alta precisão, entregue como monorepo com CI/CD automatizado.
 
 ---
 

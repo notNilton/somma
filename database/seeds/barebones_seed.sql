@@ -1,4 +1,4 @@
--- Seed baseline minimal para Personalledger
+-- Seed baseline minimal para Tallyoh
 -- Usuario, contas bancarias e veiculo para subir a aplicacao sem historico financeiro.
 
 -- 0. Limpeza em ordem respeitando FKs

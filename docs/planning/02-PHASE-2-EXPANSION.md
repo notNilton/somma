@@ -4,7 +4,7 @@
 
 > ⚠️ **Aviso de Simplificação:** Este documento descreve funcionalidades que foram implementadas mas posteriormente removidas para manter o sistema enxuto. Cartões (`cards`), transferências (`transfers`), planejamento de metas (`planning_plans`), colaboração (`account_access`) e manutenções de veículos (`vehicle_maintenances`) foram dropados nas migrations `000007` e `000011`. Orçamentos foram redesenhados na `000014` para derivar valores das transações. Consulte os documentos atuais para o estado real.
 
-A Fase 2 originalmente expandiu o Personalledger com módulos especializados. Grande parte desses módulos foi removida na simplificação de 2025.
+A Fase 2 originalmente expandiu o Tallyoh com módulos especializados. Grande parte desses módulos foi removida na simplificação de 2025.
 
 ---
 

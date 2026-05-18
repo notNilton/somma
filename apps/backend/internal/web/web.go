@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nilbyte/personalledger/backend/internal/money"
+	"github.com/nilbyte/tallyoh/backend/internal/money"
 )
 
 // Engine holds the parsed templates and helper functions.

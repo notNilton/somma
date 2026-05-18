@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
-	"github.com/nilbyte/personalledger/backend/internal/models"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
 

@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nilbyte/personalledger/backend/internal/cache"
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
-	"github.com/nilbyte/personalledger/backend/internal/models"
-	"github.com/nilbyte/personalledger/backend/internal/money"
+	"github.com/nilbyte/tallyoh/backend/internal/cache"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/models"
+	"github.com/nilbyte/tallyoh/backend/internal/money"
 )
 
 // ============================================================
@@ -69,7 +69,7 @@ func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 	`, user.ID, firstDay).Scan(&priorBalanceCents)
 	if err != nil {
 		h.engine.Render(w, r, "home", map[string]any{
-			"Title": "Personalledger",
+			"Title": "Tallyoh",
 			"User":  user,
 			"Error": "Erro ao carregar saldo anterior",
 		})
@@ -88,7 +88,7 @@ func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 	`, user.ID, firstDay, lastDay)
 	if err != nil {
 		h.engine.Render(w, r, "home", map[string]any{
-			"Title": "Personalledger",
+			"Title": "Tallyoh",
 			"User":  user,
 			"Error": "Erro ao carregar transações",
 		})
@@ -154,7 +154,7 @@ func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 	h.cache.DeletePrefix(cache.DashboardPrefix(user.ID))
 
 	h.engine.Render(w, r, "home", map[string]any{
-		"Title":       "Personalledger",
+		"Title":       "Tallyoh",
 		"User":        user,
 		"Month":       month,
 		"MonthLabel":  monthLabel,

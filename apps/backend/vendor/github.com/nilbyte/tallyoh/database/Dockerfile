@@ -1,25 +1,22 @@
 FROM golang:1.24-alpine AS builder
 
-WORKDIR /app
+WORKDIR /src/database
 
-COPY database/go.mod ./
+RUN apk --no-cache add ca-certificates
+
+COPY database/ ./
 
 ENV GOWORK=off
-RUN go mod download
 
-COPY database/ .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o migrate ./cmd/migrate
 
-RUN go build -o migrate ./cmd/migrate
-
-# ---
-
-FROM alpine:3.19 AS runner
+FROM alpine:3.19
 
 WORKDIR /app
 
 RUN apk --no-cache add ca-certificates
 
-COPY --from=builder /app/migrate .
+COPY --from=builder /src/database/migrate .
 COPY database/migrations/ /database/migrations/
 COPY database/seeds/ /database/seeds/
 

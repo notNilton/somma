@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
-	"github.com/nilbyte/personalledger/backend/internal/models"
-	"github.com/nilbyte/personalledger/backend/internal/money"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/models"
+	"github.com/nilbyte/tallyoh/backend/internal/money"
 )
 
 func (h *Handler) GetMonthlyEvolution(w http.ResponseWriter, r *http.Request) {

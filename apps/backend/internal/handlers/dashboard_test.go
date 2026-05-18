@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/nilbyte/personalledger/backend/internal/testutil"
+	"github.com/nilbyte/tallyoh/backend/internal/testutil"
 )
 
 func TestGetDashboard_EmptyUser(t *testing.T) {

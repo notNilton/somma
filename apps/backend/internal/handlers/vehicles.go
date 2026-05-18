@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
-	"github.com/nilbyte/personalledger/backend/internal/models"
-	"github.com/nilbyte/personalledger/backend/internal/money"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/models"
+	"github.com/nilbyte/tallyoh/backend/internal/money"
 )
 
 type createVehicleDto struct {

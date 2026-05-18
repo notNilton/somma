@@ -8,7 +8,7 @@
 
 ## Sintomas observados
 
-1. Container `personalledger_backend_prod` em restart loop contínuo
+1. Container `tallyoh_backend_prod` em restart loop contínuo
 2. Log do container:
    ```
    exec ./main: no such file or directory
@@ -40,7 +40,7 @@ Adicionadas variáveis de ambiente ao step `Build binary` em `.gitea/workflows/o
     GOWORK: "off"
   run: |
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor \
-      -ldflags "-X github.com/nilbyte/personalledger/backend/internal/version.Version=${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
+      -ldflags "-X github.com/nilbyte/tallyoh/backend/internal/version.Version=${{ needs.bump-versions.outputs.BACKEND_VERSION }}" \
       -o main ./cmd/api
 
 # build-database
@@ -59,37 +59,37 @@ Adicionadas variáveis de ambiente ao step `Build binary` em `.gitea/workflows/o
 
 ### O que acontecia
 
-O `docker-compose.backend.yml` do servidor tinha apenas o serviço `personalledger-backend`. Não havia nenhum serviço de migration no compose. O banco subia vazio e o backend tentava usar tabelas que não existiam.
+O `docker-compose.backend.yml` do servidor tinha apenas o serviço `tallyoh-backend`. Não havia nenhum serviço de migration no compose. O banco subia vazio e o backend tentava usar tabelas que não existiam.
 
 ### Fix aplicado
 
-Adicionado serviço `personalledger-migrate` ao `docker-compose.backend.yml`:
+Adicionado serviço `tallyoh-migrate` ao `docker-compose.backend.yml`:
 
 ```yaml
 services:
-  personalledger-migrate:
-    image: gitea.nilbyte.com.br/nilByte/personalledger/database:latest
-    container_name: personalledger_migrate_prod
+  tallyoh-migrate:
+    image: gitea.nilbyte.com.br/nilByte/tallyoh/database:latest
+    container_name: tallyoh_migrate_prod
     restart: "no"
     environment:
       - DATABASE_URL=postgresql://...
     depends_on:
-      personalledger-db:
+      tallyoh-db:
         condition: service_healthy
     networks:
-      - personalledger-internal
+      - tallyoh-internal
 
-  personalledger-backend:
+  tallyoh-backend:
     # ...
     depends_on:
-      personalledger-migrate:
+      tallyoh-migrate:
         condition: service_completed_successfully
 ```
 
 O `restart: "no"` é intencional — o container de migration deve rodar uma vez, aplicar as migrations pendentes e encerrar. O `depends_on` em cadeia garante a ordem:
 
 ```
-personalledger-db (healthy) → personalledger-migrate (completed) → personalledger-backend (up)
+tallyoh-db (healthy) → tallyoh-migrate (completed) → tallyoh-backend (up)
 ```
 
 ---
@@ -107,12 +107,12 @@ dial tcp 172.24.0.4:5432: connect: connection refused
 E depois:
 
 ```
-dial tcp: lookup personalledger_db_prod on 127.0.0.11:53: server misbehaving
+dial tcp: lookup tallyoh_db_prod on 127.0.0.11:53: server misbehaving
 ```
 
 ### Por que acontecia
 
-O `manage-personalledger.sh` subia o banco separadamente com `docker-compose.db.yml` e depois subia backend+webapp com `docker-compose.backend.yml -f docker-compose.webapp.yml --remove-orphans`. O flag `--remove-orphans` **removia o container `personalledger_db_prod`** por ele não estar nos compose files de backend/webapp. Quando o migrate tentava conectar, o banco já tinha sido destruído.
+O `manage-tallyoh.sh` subia o banco separadamente com `docker-compose.db.yml` e depois subia backend+webapp com `docker-compose.backend.yml -f docker-compose.webapp.yml --remove-orphans`. O flag `--remove-orphans` **removia o container `tallyoh_db_prod`** por ele não estar nos compose files de backend/webapp. Quando o migrate tentava conectar, o banco já tinha sido destruído.
 
 Além disso, `sleep 3` era insuficiente para o PostgreSQL inicializar do zero.
 
@@ -128,11 +128,11 @@ healthcheck:
   retries: 10
 ```
 
-**2. Script `manage-personalledger.sh` — subir tudo junto:**
+**2. Script `manage-tallyoh.sh` — subir tudo junto:**
 
 ```sh
 start|up)
-    docker network create personalledger-internal 2>/dev/null || true
+    docker network create tallyoh-internal 2>/dev/null || true
     docker compose $COMPOSE_FILES up -d
     ;;
 ```
@@ -146,7 +146,7 @@ Todos os 3 compose files usados juntos — Docker Compose resolve o `depends_on`
 ### O que acontecia
 
 ```sh
-sh scripts/manage-personalledger.sh seed
+sh scripts/manage-tallyoh.sh seed
 # ✅ Migrations applied (version 4)
 # Database Setup Finished.
 ```
@@ -155,7 +155,7 @@ O seed "rodava" mas só aplicava migrations. Nenhum dado de seed era inserido.
 
 ### Por que acontecia
 
-O case `seed` no `manage-personalledger.sh` rodava o container sem argumento:
+O case `seed` no `manage-tallyoh.sh` rodava o container sem argumento:
 
 ```sh
 docker run --rm ... gitea.nilbyte.com.br/.../database:latest
@@ -167,12 +167,12 @@ Sem argumento, o container executa o `CMD` padrão do Dockerfile: `./migrate up`
 
 ```sh
 migrate)
-    docker run --rm --network personalledger-internal --env-file apps/personalledger/.env \
-      gitea.nilbyte.com.br/nilByte/personalledger/database:latest ./migrate up
+    docker run --rm --network tallyoh-internal --env-file apps/tallyoh/.env \
+      gitea.nilbyte.com.br/nilByte/tallyoh/database:latest ./migrate up
     ;;
 seed)
-    docker run --rm --network personalledger-internal --env-file apps/personalledger/.env \
-      gitea.nilbyte.com.br/nilByte/personalledger/database:latest ./migrate seed
+    docker run --rm --network tallyoh-internal --env-file apps/tallyoh/.env \
+      gitea.nilbyte.com.br/nilByte/tallyoh/database:latest ./migrate seed
     ;;
 ```
 
@@ -182,10 +182,10 @@ seed)
 
 ```
 [+] up 4/4
- ✔ Container personalledger_db_prod      Healthy    6.4s
- ✔ Container personalledger_migrate_prod Exited     7.0s   ← ✅ Migrations applied (version 4)
- ✔ Container personalledger_webapp_prod  Created
- ✔ Container personalledger_backend_prod Created
+ ✔ Container tallyoh_db_prod      Healthy    6.4s
+ ✔ Container tallyoh_migrate_prod Exited     7.0s   ← ✅ Migrations applied (version 4)
+ ✔ Container tallyoh_webapp_prod  Created
+ ✔ Container tallyoh_backend_prod Created
 ```
 
 Backend rodando, banco com schema correto, logs:

@@ -1,4 +1,4 @@
-// Personalledger — HTMX Utilities
+// Tallyoh — HTMX Utilities
 
 (function() {
   'use strict';

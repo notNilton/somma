@@ -1,4 +1,4 @@
-# Database Layer - Personalledger
+# Database Layer - Tallyoh
 
 Este diretório contém toda a lógica de gerenciamento de banco de dados do projeto.
 

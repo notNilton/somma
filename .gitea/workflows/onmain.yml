@@ -12,7 +12,7 @@ jobs:
     runs-on: go
     env:
       REGISTRY: "gitea.nilbyte.com.br"
-      IMAGE_NAMESPACE: "nilbyte/personalledger"
+      IMAGE_NAMESPACE: "nilbyte/tallyoh"
     steps:
       - name: Check out repository code
         run: |
@@ -57,7 +57,7 @@ jobs:
     runs-on: basic
     env:
       REGISTRY: "gitea.nilbyte.com.br"
-      IMAGE_NAMESPACE: "nilbyte/personalledger"
+      IMAGE_NAMESPACE: "nilbyte/tallyoh"
     steps:
       - name: Check out repository code
         run: |
@@ -120,8 +120,8 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} '
             cd /srv/nilbyte/infrastructure &&
-            docker compose -f apps/infra/personalledger/docker-compose.backend.yml pull &&
-            docker compose -f apps/infra/personalledger/docker-compose.backend.yml up -d
+            docker compose -f apps/infra/tallyoh/docker-compose.backend.yml pull &&
+            docker compose -f apps/infra/tallyoh/docker-compose.backend.yml up -d
           '
 
       - name: Bump versions for next release

@@ -2,7 +2,7 @@
 
 > **Status: ⏳ Planejada**
 
-A Fase 6 transforma o Personalledger de um app mono-usuário em uma plataforma compartilhada. Um usuário poderá ter seu contexto "Pessoal" e participar de um contexto "Família Silva" ou "MEI" — com dados completamente isolados e permissões granulares entre os membros.
+A Fase 6 transforma o Tallyoh de um app mono-usuário em uma plataforma compartilhada. Um usuário poderá ter seu contexto "Pessoal" e participar de um contexto "Família Silva" ou "MEI" — com dados completamente isolados e permissões granulares entre os membros.
 
 ---
 

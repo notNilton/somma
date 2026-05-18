@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/nilbyte/personalledger/backend/internal/testutil"
+	"github.com/nilbyte/tallyoh/backend/internal/testutil"
 )
 
 func TestGetVehicleExpenseStats_WithFuel(t *testing.T) {

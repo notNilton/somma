@@ -1,4 +1,4 @@
-# Database Layer - Personalledger
+# Database Layer - Tallyoh
 
 Este diretório contém toda a lógica de gerenciamento de banco de dados do projeto.
 
@@ -32,6 +32,8 @@ Para popular apenas o cenário mínimo com usuário, contas e veículo:
 ```bash
 go run ./database/cmd/migrate seed-barebones
 ```
+
+No `Makefile`, `make seed` é um atalho para o seed completo.
 
 ## Desenvolvimento
 

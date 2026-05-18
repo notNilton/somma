@@ -19,7 +19,7 @@ COPY apps/backend/internal/ ./internal/
 COPY apps/backend/web/ ./web/
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags "-X github.com/nilbyte/personalledger/backend/internal/version.Version=${VERSION}" \
+    -ldflags "-X github.com/nilbyte/tallyoh/backend/internal/version.Version=${VERSION}" \
     -o /out/main ./cmd/api
 
 FROM alpine:3.19

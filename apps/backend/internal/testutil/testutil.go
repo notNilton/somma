@@ -16,9 +16,9 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nilbyte/personalledger/backend/internal/cache"
-	"github.com/nilbyte/personalledger/backend/internal/handlers"
-	"github.com/nilbyte/personalledger/backend/internal/routes"
+	"github.com/nilbyte/tallyoh/backend/internal/cache"
+	"github.com/nilbyte/tallyoh/backend/internal/handlers"
+	"github.com/nilbyte/tallyoh/backend/internal/routes"
 )
 
 var JWTKey = []byte("test-secret-key")
@@ -35,7 +35,7 @@ func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 	dsn := os.Getenv("DATABASE_URL")
 	usingDefaultDSN := dsn == ""
 	if dsn == "" {
-		dsn = "postgres://postgres:postgres@localhost:5454/personalledger_test?sslmode=disable"
+		dsn = "postgres://postgres:postgres@localhost:5454/tallyoh_test?sslmode=disable"
 	}
 	dsn = normalizeDSN(dsn)
 

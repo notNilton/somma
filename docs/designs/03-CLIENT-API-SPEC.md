@@ -1,6 +1,6 @@
 # 03 - Especificação de API Client (Bruno)
 
-O diretório `client-api/` contém uma coleção do [Bruno](https://www.usebruno.com/) para interação direta com o backend do Personalledger. Esta coleção reflete a **arquitetura enxuta atual** — endpoints removidos (contas, cartões, transferências, calendário) foram eliminados da documentação.
+O diretório `client-api/` contém uma coleção do [Bruno](https://www.usebruno.com/) para interação direta com o backend do Tallyoh. Esta coleção reflete a **arquitetura enxuta atual** — endpoints removidos (contas, cartões, transferências, calendário) foram eliminados da documentação.
 
 ## Pré-requisitos
 
@@ -10,10 +10,10 @@ O diretório `client-api/` contém uma coleção do [Bruno](https://www.usebruno
 
 ## Fluxo de Autenticação
 
-A maioria dos endpoints exige um JWT, lido do header `Authorization: Bearer <token>` ou do cookie `personalledger_session`.
+A maioria dos endpoints exige um JWT, lido do header `Authorization: Bearer <token>` ou do cookie `tallyoh_session`.
 
 1.  **Login/Register**: Utilize a pasta `Auth/` para se autenticar.
-2.  **Gestão de Token**: O backend entrega o token via cookie HTTP-only `personalledger_session`. A coleção Bruno extrai o token do header `Set-Cookie` automaticamente para uso com Bearer.
+2.  **Gestão de Token**: O backend entrega o token via cookie HTTP-only `tallyoh_session`. A coleção Bruno extrai o token do header `Set-Cookie` automaticamente para uso com Bearer.
 
 ## Grupos de Endpoints
 

@@ -10,10 +10,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nilbyte/personalledger/backend/internal/cache"
-	"github.com/nilbyte/personalledger/backend/internal/handlers"
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
-	"github.com/nilbyte/personalledger/backend/internal/money"
+	"github.com/nilbyte/tallyoh/backend/internal/cache"
+	"github.com/nilbyte/tallyoh/backend/internal/handlers"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/money"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -357,7 +357,7 @@ func (h *Handler) setSessionCookie(w http.ResponseWriter, r *http.Request, token
 		sameSite = http.SameSiteStrictMode
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     "personalledger_session",
+		Name:     "tallyoh_session",
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
@@ -375,7 +375,7 @@ func (h *Handler) clearSessionCookie(w http.ResponseWriter, r *http.Request) {
 		sameSite = http.SameSiteStrictMode
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     "personalledger_session",
+		Name:     "tallyoh_session",
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,

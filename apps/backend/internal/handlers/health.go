@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/nilbyte/personalledger/backend/internal/version"
+	"github.com/nilbyte/tallyoh/backend/internal/version"
 )
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {

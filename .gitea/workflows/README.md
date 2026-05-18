@@ -1,6 +1,6 @@
 # CI/CD — Gitea Actions
 
-Pipeline de integração e entrega contínua do Personalledger, rodando no act_runner hospedado no VPS `niflheim`.
+Pipeline de integração e entrega contínua do Tallyoh, rodando no act_runner hospedado no VPS `niflheim`.
 
 ---
 
@@ -286,7 +286,7 @@ Runner container (rede nilbyte-git)
    c. docker compose up -d
 ```
 
-### Comandos disponíveis no manage-personalledger.sh
+### Comandos disponíveis no manage-tallyoh.sh
 
 | Comando | Ação |
 |---------|------|

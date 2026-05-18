@@ -1,12 +1,12 @@
-# Referências: Contabilidade e Finanças (Personalledger)
+# Referências: Contabilidade e Finanças (Tallyoh)
 
-Este documento compila a base teórica, as metodologias e os princípios financeiros que sustentam o **Personalledger**. O sistema foi projetado sobre os pilares da contabilidade clássica e estratégias modernas de gestão de patrimônio.
+Este documento compila a base teórica, as metodologias e os princípios financeiros que sustentam o **Tallyoh**. O sistema foi projetado sobre os pilares da contabilidade clássica e estratégias modernas de gestão de patrimônio.
 
 ---
 
 ## 📚 1. Contabilidade de Partidas Dobradas (Double-Entry Bookkeeping)
 
-O Personalledger utiliza o sistema de partidas dobradas para garantir a integridade dos dados financeiros. Cada transação é um fluxo de valor de uma conta de origem para uma de destino.
+O Tallyoh utiliza o sistema de partidas dobradas para garantir a integridade dos dados financeiros. Cada transação é um fluxo de valor de uma conta de origem para uma de destino.
 
 1. **Summa de Arithmetica, Geometria, Proportioni et Proportionalita**
    - *Autor:* Luca Pacioli (1494).
@@ -14,7 +14,7 @@ O Personalledger utiliza o sistema de partidas dobradas para garantir a integrid
 
 2. **Accounting Made Simple: Accounting Explained in 100 Pages or Less**
    - *Autor:* Mike Piper (2012).
-   - *Contexto:* Uma introdução moderna e simplificada aos princípios contábeis básicos que regem a estrutura de Balanço Patrimonial e Demonstração de Resultados (DRE) aplicada no Personalledger.
+   - *Contexto:* Uma introdução moderna e simplificada aos princípios contábeis básicos que regem a estrutura de Balanço Patrimonial e Demonstração de Resultados (DRE) aplicada no Tallyoh.
 
 ---
 
@@ -24,11 +24,11 @@ A lógica de orçamentos e planejamento do sistema foi inspirada em métodos com
 
 1. **Zero-Based Budgeting (ZBB)**
    - *Conceito:* "Dar um trabalho para cada centavo". Ao início de cada mês, cada real de renda é alocado a uma categoria (gastos, poupança ou investimento), deixando o saldo final planejado em zero.
-   - *Implementação no Personalledger:* O módulo de `budgets` permite definir limites por categoria baseados no ZBB.
+   - *Implementação no Tallyoh:* O módulo de `budgets` permite definir limites por categoria baseados no ZBB.
 
 2. **Envelope Budgeting (Método dos Envelopes)**
    - *Conceito:* Divisão física (ou virtual) do dinheiro em categorias específicas. Se o envelope de "Lazer" está vazio, não há mais gastos nessa área até o próximo mês.
-   - *Implementação no Personalledger:* O status visual dos orçamentos (barras de progresso) simula o preenchimento dos envelopes.
+   - *Implementação no Tallyoh:* O status visual dos orçamentos (barras de progresso) simula o preenchimento dos envelopes.
 
 3. **Profit First: Transform Your Business from a Cash-Eating Monster to a Money-Making Machine**
    - *Autor:* Mike Michalowicz (2014).
@@ -40,14 +40,14 @@ A lógica de orçamentos e planejamento do sistema foi inspirada em métodos com
 
 1. **The Psychology of Money (A Psicologia Financeira)**
    - *Autor:* Morgan Housel (2020).
-   - *Contexto:* Guia as premissas de UX do Personalledger, focando em comportamento e consistência em vez de apenas cálculos matemáticos complexos.
+   - *Contexto:* Guia as premissas de UX do Tallyoh, focando em comportamento e consistência em vez de apenas cálculos matemáticos complexos.
 
 2. **FIRE Movement (Financial Independence, Retire Early)**
-   - *Contexto:* O Personalledger oferece ferramentas de acompanhamento de patrimônio líquido (Net Worth) e metas de longo prazo inspiradas na regra dos 4% e cálculo de custo de vida projetado.
+   - *Contexto:* O Tallyoh oferece ferramentas de acompanhamento de patrimônio líquido (Net Worth) e metas de longo prazo inspiradas na regra dos 4% e cálculo de custo de vida projetado.
 
 ---
 
 ## 📐 4. Padrões e Normas
 
 - **ISO 4217:** Código de moedas (ex: BRL, USD) utilizado na tabela de contas e transações.
-- **BR GAAP / IFRS:** Embora simplificado para uso pessoal, o Personalledger segue a lógica de competência (data do gasto) vs. caixa (data do pagamento) em transações parceladas.
+- **BR GAAP / IFRS:** Embora simplificado para uso pessoal, o Tallyoh segue a lógica de competência (data do gasto) vs. caixa (data do pagamento) em transações parceladas.

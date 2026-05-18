@@ -74,8 +74,8 @@
     ├── apps/
     │   ├── backend/      # Antigo super-app-api
     │   ├── backoffice/   # Antigo super-app-backoffice
-    │   ├── personalledger-go/    # App Standalone (antigo super-app-mobile)
-    │   └── personalledger-sdk/   # SDK simplificado
+    │   ├── tallyoh-go/    # App Standalone (antigo super-app-mobile)
+    │   └── tallyoh-sdk/   # SDK simplificado
     ├── .gitea/           # Workflows de CI/CD centralizados
     ├── pnpm-workspace.yaml
     └── package.json

@@ -2,7 +2,7 @@
 
 > **Status: ⏳ Planejada**
 
-A Fase 5 conecta o Personalledger ao ecossistema financeiro externo: importação de extratos no padrão Open Finance (OFX), integrações via webhooks, auditoria completa de alterações e garantia de idempotência para operações em lote.
+A Fase 5 conecta o Tallyoh ao ecossistema financeiro externo: importação de extratos no padrão Open Finance (OFX), integrações via webhooks, auditoria completa de alterações e garantia de idempotência para operações em lote.
 
 ---
 

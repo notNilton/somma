@@ -3,7 +3,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/nilbyte/personalledger/backend/internal/models"
+	"github.com/nilbyte/tallyoh/backend/internal/models"
 )
 
 func (h *Handler) ListCategoriesPage(w http.ResponseWriter, r *http.Request) {

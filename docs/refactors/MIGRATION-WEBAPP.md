@@ -1,7 +1,7 @@
 # Guia de Migração: Qualquer Frontend → TanStack (para LLMs)
 
 Este documento instrui uma LLM a migrar um frontend backoffice/webapp para a stack TanStack
-exatamente como está implementado no Personalledger. Siga a ordem das seções.
+exatamente como está implementado no Tallyoh. Siga a ordem das seções.
 
 ---
 
@@ -139,7 +139,7 @@ export const api = {
 ### 2. Auth — `src/lib/auth.ts`
 
 ```typescript
-const TOKEN_KEY = 'personalledger_token';
+const TOKEN_KEY = 'tallyoh_token';
 
 export const auth = {
   getToken: ()             => localStorage.getItem(TOKEN_KEY),

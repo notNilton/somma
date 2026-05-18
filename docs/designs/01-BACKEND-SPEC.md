@@ -1,6 +1,6 @@
 # 01 - Especificação de Backend e API
 
-O backend do Personalledger é uma API REST de alta performance desenvolvida em Go 1.24. Ele gerencia o ciclo de vida financeiro (categorias, transações, orçamentos, veículos e analytics) utilizando o princípio de partidas dobradas e garantindo precisão monetária via armazenamento em centavos.
+O backend do Tallyoh é uma API REST de alta performance desenvolvida em Go 1.24. Ele gerencia o ciclo de vida financeiro (categorias, transações, orçamentos, veículos e analytics) utilizando o princípio de partidas dobradas e garantindo precisão monetária via armazenamento em centavos.
 
 > **Nota:** O sistema foi simplificado. Não há mais endpoints para contas bancárias, cartões, transferências, calendário ou planejamento de metas de longo prazo. Orçamentos são derivados diretamente das transações.
 
@@ -27,11 +27,11 @@ O backend do Personalledger é uma API REST de alta performance desenvolvida em 
 
 ## Endpoints da API
 
-Todos os endpoints (exceto Login/Register/Health) exigem autenticação via cookie `personalledger_session` ou header `Authorization: Bearer <token>`.
+Todos os endpoints (exceto Login/Register/Health) exigem autenticação via cookie `tallyoh_session` ou header `Authorization: Bearer <token>`.
 
 ### Autenticação (`Auth`)
 - `POST /api/auth/register`: Criação de nova conta (senha mín. 12 chars). Retorna `{ok:true}` + cookie.
-- `POST /api/auth/login`: Autenticação. Retorna `{ok:true}` + cookie `personalledger_session`.
+- `POST /api/auth/login`: Autenticação. Retorna `{ok:true}` + cookie `tallyoh_session`.
 
 ### Perfil (`Users`)
 - `GET /api/users/me`: Dados do usuário logado.

@@ -1,6 +1,6 @@
 # Post 03/05: UX e Segurança — O Modo de Privacidade 👁️‍🗨️
 
-**📸 Sugestão de Mídia:** Um GIF curto do dashboard do Personalledger: ao clicar no botão "olho", todos os valores financeiros ficam borrados (blur).
+**📸 Sugestão de Mídia:** Um GIF curto do dashboard do Tallyoh: ao clicar no botão "olho", todos os valores financeiros ficam borrados (blur).
 
 ---
 
@@ -8,7 +8,7 @@
 
 Você se sente confortável abrindo o seu app financeiro no ônibus, no café ou no escritório? 🧐
 
-Ao projetar a interface do **Personalledger**, percebi que a maior barreira para o uso constante de ferramentas de gestão financeira pessoal não é a complexidade, mas a **exposição**. Ninguém quer que a pessoa ao lado veja seu saldo bancário ou quanto gasta em delivery.
+Ao projetar a interface do **Tallyoh**, percebi que a maior barreira para o uso constante de ferramentas de gestão financeira pessoal não é a complexidade, mas a **exposição**. Ninguém quer que a pessoa ao lado veja seu saldo bancário ou quanto gasta em delivery.
 
 **A Minha Solução de UX:**
 Implementei o **Modo de Privacidade (Privacy Mode)** com um clique.

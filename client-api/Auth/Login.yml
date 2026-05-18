@@ -21,11 +21,11 @@ runtime:
   scripts:
     - type: after-response
       code: |-
-        // Token is delivered via HTTP-only cookie 'personalledger_session'.
+        // Token is delivered via HTTP-only cookie 'tallyoh_session'.
         // For Bruno testing, extract the token from the Set-Cookie header or use a pre-known token.
         if (res.status === 200 || res.status === 201) {
           const cookie = res.headers["set-cookie"] || "";
-          const match = cookie.match(/personalledger_session=([^;]+)/);
+          const match = cookie.match(/tallyoh_session=([^;]+)/);
           if (match) {
             bru.setEnvVar("accessToken", match[1]);
           }

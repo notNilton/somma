@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
 )
 
 type contextKey string
@@ -123,7 +123,7 @@ func tokenFromRequest(r *http.Request) (string, bool) {
 	if len(header) > 7 && header[:7] == "Bearer " {
 		return header[7:], true
 	}
-	c, err := r.Cookie("personalledger_session")
+	c, err := r.Cookie("tallyoh_session")
 	if err == nil && c.Value != "" {
 		return c.Value, true
 	}

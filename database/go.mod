@@ -1,4 +1,4 @@
-module github.com/nilbyte/personalledger/database
+module github.com/nilbyte/tallyoh/database
 
 go 1.24.0
 

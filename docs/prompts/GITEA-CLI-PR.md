@@ -65,7 +65,7 @@ Não forneça nenhuma explicação, saudação ou texto fora do bloco de código
 
 ```bash
 tea pr create \
-  --repo personalledger/personalledger \
+  --repo tallyoh/tallyoh \
   --title "<prefixo>: <título>" \
   --labels "<labels>" \
   --description "$(cat <<'EOF'
@@ -93,7 +93,7 @@ EOF
 ```
 
 ```bash
-tea api -X PATCH repos/personalledger/personalledger/pulls/<numero_pr> \
+tea api -X PATCH repos/tallyoh/tallyoh/pulls/<numero_pr> \
   -f "title=<prefixo>: <título>" \
   -F "body=@-" <<'EOF'
 ### 🎯 Contexto

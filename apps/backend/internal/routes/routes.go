@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nilbyte/personalledger/backend/internal/cache"
-	"github.com/nilbyte/personalledger/backend/internal/handlers"
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
-	"github.com/nilbyte/personalledger/backend/internal/web"
+	"github.com/nilbyte/tallyoh/backend/internal/cache"
+	"github.com/nilbyte/tallyoh/backend/internal/handlers"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/web"
 )
 
 func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cache, isProduction bool, wh *web.Handler) {

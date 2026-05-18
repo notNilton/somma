@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nilbyte/personalledger/backend/internal/cache"
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
-	"github.com/nilbyte/personalledger/backend/internal/money"
+	"github.com/nilbyte/tallyoh/backend/internal/cache"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/money"
 )
 
 func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {

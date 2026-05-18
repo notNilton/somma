@@ -1,4 +1,4 @@
--- Seed data for Personalledger
+-- Seed data for Tallyoh
 -- Versao minima coerente com o sistema simplificado atual.
 
 BEGIN;
@@ -181,7 +181,7 @@ VALUES
     ('tra-b9', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'bud-3', 'bitem-9', 'INCOME', 'COMMON', 'DEBIT', 'BANK', 'COMPLETED', FALSE, 22000, NULL, NULL, TIMESTAMPTZ '2026-04-01 08:00:00-04', 'Aporte Passeios', NULL, FALSE, TRUE, 'BRL'),
 
     -- Transações Reais
-    ('tra-1',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-3',  NULL,     NULL,      'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE, 1200000, NULL, NULL, TIMESTAMPTZ '2026-04-01 09:00:00-04', 'Salario Personalledger',        'Competencia abril',                 TRUE,  TRUE, 'BRL'),
+    ('tra-1',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-3',  NULL,     NULL,      'INCOME',  'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE, 1200000, NULL, NULL, TIMESTAMPTZ '2026-04-01 09:00:00-04', 'Salario Tallyoh',        'Competencia abril',                 TRUE,  TRUE, 'BRL'),
     ('tra-2',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-12', NULL,     NULL,      'INCOME',  'COMMON',      'DEBIT',  'BANK',       'COMPLETED', FALSE,  275000, NULL, NULL, TIMESTAMPTZ '2026-04-03 16:30:00-04', 'Freelance pago',         'Projeto entregue',                  TRUE,  TRUE, 'BRL'),
     ('tra-3',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-11', 'bud-1',  'bitem-1', 'EXPENSE', 'COMMON',      'DEBIT',  'PIX',        'COMPLETED', FALSE,    4850, NULL, NULL, TIMESTAMPTZ '2026-04-02 12:15:00-04', 'Almoco executivo',       NULL,                                TRUE,  TRUE, 'BRL'),
     ('tra-4',  'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7',  NULL,     NULL,      'EXPENSE', 'COMMON',      'CREDIT', 'CARD_CREDIT','COMPLETED', TRUE,     5590, NULL, NULL, TIMESTAMPTZ '2026-04-02 20:00:00-04', 'Netflix',                'Assinatura mensal',                 FALSE, TRUE, 'BRL'),

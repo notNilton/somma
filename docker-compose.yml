@@ -3,18 +3,18 @@ services:
     build:
       context: .
       dockerfile: database/Dockerfile
-    container_name: personalledger-migrate
+    container_name: tallyoh-migrate
     restart: "no"
     environment:
       # A URL deve ser injetada pelo ambiente de deploy
-      # Formato: postgresql://personalledger:<senha>@nilbyte_postgres_prod:5432/personalledger?sslmode=disable
+      # Formato: postgresql://tallyoh:<senha>@nilbyte_postgres_prod:5432/tallyoh?sslmode=disable
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
 
   backend:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
-    container_name: api.personalledger.nilbyte
+    container_name: api.tallyoh.nilbyte
     restart: always
     ports:
       - "3300:3300"

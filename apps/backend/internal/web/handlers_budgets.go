@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nilbyte/personalledger/backend/internal/money"
+	"github.com/nilbyte/tallyoh/backend/internal/money"
 )
 
 func (h *Handler) ListBudgetsPage(w http.ResponseWriter, r *http.Request) {

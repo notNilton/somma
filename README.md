@@ -1,4 +1,4 @@
-# Personalledger
+# Tallyoh
 
 Plataforma de gerenciamento financeiro pessoal baseada em partidas dobradas (double-entry bookkeeping). Controle de transações, categorias, orçamentos derivados, veículos e análise evolutiva de gastos.
 
@@ -56,7 +56,7 @@ O `make up` sobe o PostgreSQL local, cria `apps/backend/.env` quando necessario,
 
 ```env
 PORT=3000
-DATABASE_URL=postgresql://postgres:postgres@localhost:5454/personalledger?sslmode=disable
+DATABASE_URL=postgresql://postgres:postgres@localhost:5454/tallyoh?sslmode=disable
 JWT_SECRET=sua-chave-secreta
 WEBAPP_URL=http://localhost:3400
 ENV=development
@@ -72,7 +72,7 @@ make seed-complete     # aplica o seed completo
 make seed-barebones    # aplica o seed básico
 ```
 
-Para um fluxo isolado so de banco local, use [docs/local-db.md](/var/home/notNilton/Workspace/nilByte/personalledger/docs/local-db.md) com `make deps-up`, `make db-reset` e os alvos de migration.
+Para um fluxo isolado so de banco local, use [docs/local-db.md](/var/home/notNilton/Workspace/nilByte/tallyoh/docs/local-db.md) com `make deps-up`, `make db-reset` e os alvos de migration.
 
 Para criar uma nova migration, adicionar dois arquivos em `database/migrations/`:
 
@@ -100,8 +100,8 @@ VPS niflheim (Ubuntu)
    ▼
 Caddy (container, http:// apenas — sem certificados próprios)
    ├── gitea.nilbyte.com.br         → gitea:3000
-   ├── api.personalledger.nilbyte.com.br   → personalledger_backend_prod:3000
-   └── personalledger.nilbyte.com.br       → personalledger_webapp_prod:80
+   ├── api.tallyoh.nilbyte.com.br   → tallyoh_backend_prod:3000
+   └── tallyoh.nilbyte.com.br       → tallyoh_webapp_prod:80
 ```
 
 O tráfego externo entra via **Cloudflare Tunnel** (`cloudflared` rodando no servidor), não por portas abertas diretamente na internet. O Cloudflare termina TLS e envia HTTP para o Caddy internamente. Por isso o Caddy usa blocos `http://` no Caddyfile — ele nunca precisa de certificados.
@@ -113,7 +113,7 @@ O tráfego externo entra via **Cloudflare Tunnel** (`cloudflared` rodando no ser
 | Rede | Propósito |
 |------|-----------|
 | `nilbyte-git` | Gitea + act_runner (CI) |
-| `personalledger-internal` | DB + backend + webapp do Personalledger |
+| `tallyoh-internal` | DB + backend + webapp do Tallyoh |
 
 O **Caddy** está conectado a todas as redes para fazer o proxy reverso. O gateway da rede `nilbyte-git` é `172.20.0.1`.
 
@@ -200,44 +200,44 @@ O servidor usa um script de orquestração com compose files separados:
 
 ```bash
 # Subir stack completa
-./personalledger.sh start
+./tallyoh.sh start
 
 # Parar
-./personalledger.sh stop
+./tallyoh.sh stop
 
 # Puxar novas imagens e reiniciar
-./personalledger.sh pull && ./personalledger.sh restart
+./tallyoh.sh pull && ./tallyoh.sh restart
 
 # Logs
-./personalledger.sh logs
+./tallyoh.sh logs
 ```
 
-Os compose files ficam em `apps/personalledger/` no servidor:
+Os compose files ficam em `apps/tallyoh/` no servidor:
 
 | Arquivo | Serviço |
 |---------|---------|
-| `docker-compose.db.yml` | `personalledger_db_prod` (PostgreSQL) |
-| `docker-compose.backend.yml` | `personalledger_migrate_prod` + `personalledger_backend_prod` |
-| `docker-compose.webapp.yml` | `personalledger_webapp_prod` (nginx) |
+| `docker-compose.db.yml` | `tallyoh_db_prod` (PostgreSQL) |
+| `docker-compose.backend.yml` | `tallyoh_migrate_prod` + `tallyoh_backend_prod` |
+| `docker-compose.webapp.yml` | `tallyoh_webapp_prod` (nginx) |
 
 ### Migrations automáticas no deploy
 
-O `docker-compose.backend.yml` inclui um serviço `personalledger-migrate` que roda antes do backend:
+O `docker-compose.backend.yml` inclui um serviço `tallyoh-migrate` que roda antes do backend:
 
 ```yaml
-personalledger-migrate:
-  image: gitea.nilbyte.com.br/nilByte/personalledger/database:latest
+tallyoh-migrate:
+  image: gitea.nilbyte.com.br/nilByte/tallyoh/database:latest
   restart: "no"
 
-personalledger-backend:
+tallyoh-backend:
   depends_on:
-    personalledger-migrate:
+    tallyoh-migrate:
       condition: service_completed_successfully
 ```
 
 Fluxo ao fazer deploy:
-1. `./personalledger.sh pull` — puxa novas imagens (backend, webapp, database)
-2. `./personalledger.sh restart` — sobe `personalledger-migrate`, espera terminar com sucesso, aí sobe `personalledger-backend`
+1. `./tallyoh.sh pull` — puxa novas imagens (backend, webapp, database)
+2. `./tallyoh.sh restart` — sobe `tallyoh-migrate`, espera terminar com sucesso, aí sobe `tallyoh-backend`
 
 Migrations nunca precisam ser rodadas manualmente no servidor.
 
@@ -250,13 +250,13 @@ O Gitea expõe SSH na porta **2222**. O SSH **não passa pelo Cloudflare** — o
 O Gitea é acessível diretamente pelo nome do container. A porta interna do container é 22:
 
 ```bash
-ssh://git@gitea:22/nilByte/personalledger.git
+ssh://git@gitea:22/nilByte/tallyoh.git
 ```
 
 Ou via `localhost` se rodar fora de container no próprio host:
 
 ```bash
-ssh://git@localhost:2222/nilByte/personalledger.git
+ssh://git@localhost:2222/nilByte/tallyoh.git
 ```
 
 #### De uma máquina externa com Tailscale (recomendado)
@@ -264,7 +264,7 @@ ssh://git@localhost:2222/nilByte/personalledger.git
 O servidor está na VPN Tailscale com o hostname `niflhel`. O tráfego vai direto pelo túnel VPN, contornando o Cloudflare:
 
 ```bash
-git clone ssh://git@niflhel:2222/nilByte/personalledger.git
+git clone ssh://git@niflhel:2222/nilByte/tallyoh.git
 
 # Testar conexão
 ssh -T git@niflhel -p 2222

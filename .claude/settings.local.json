@@ -5,9 +5,9 @@
       "Bash(npx prisma:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(wc -l \"c:/Users/notNilton/Workspace/nilbyte/personalledger/apps/backend/src\"/**/*.service.ts)",
+      "Bash(wc -l \"c:/Users/notNilton/Workspace/nilbyte/tallyoh/apps/backend/src\"/**/*.service.ts)",
       "Bash(npx jest:*)",
-      "Bash(node -e \"require\\(''''@personalledger/database''''\\)\")"
+      "Bash(node -e \"require\\(''''@tallyoh/database''''\\)\")"
     ]
   }
 }

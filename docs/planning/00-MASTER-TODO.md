@@ -1,4 +1,4 @@
-# Personalledger — Master TODO
+# Tallyoh — Master TODO
 
 Plataforma de gestão financeira pessoal baseada em partidas dobradas. Controle de transações, categorias, orçamentos, frota pessoal e análise evolutiva de gastos.
 

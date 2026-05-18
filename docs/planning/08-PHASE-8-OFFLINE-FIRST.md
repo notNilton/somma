@@ -2,7 +2,7 @@
 
 > **Status: ⏳ Planejada**
 
-A Fase 8 transforma o Personalledger em um app **offline-first**: a interface responde primeiro com estado local instantaneo e a sincronizacao com o backend acontece depois, em segundo plano.
+A Fase 8 transforma o Tallyoh em um app **offline-first**: a interface responde primeiro com estado local instantaneo e a sincronizacao com o backend acontece depois, em segundo plano.
 
 O objetivo nao e mover toda a regra de negocio para o dispositivo. O objetivo e separar:
 

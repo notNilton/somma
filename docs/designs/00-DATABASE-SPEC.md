@@ -1,6 +1,6 @@
-# 00 - Arquitetura de Banco de Dados (Personalledger Enxuto)
+# 00 - Arquitetura de Banco de Dados (Tallyoh Enxuto)
 
-O Personalledger opera com um modelo de banco intencionalmente enxuto, focado em transações como fonte da verdade. Orçamentos não possuem valores fixos — são derivados dinamicamente das transações vinculadas a cada item de orçamento.
+O Tallyoh opera com um modelo de banco intencionalmente enxuto, focado em transações como fonte da verdade. Orçamentos não possuem valores fixos — são derivados dinamicamente das transações vinculadas a cada item de orçamento.
 
 **Direção Principal**
 O modelo atual é centrado no usuário (`user_id`) e elimina complexidades legadas como contas bancárias, cartões e transferências explícitas.
@@ -43,11 +43,11 @@ Isso elimina inconsistências entre orçamento e extrato, mas exige que o usuár
 
 ## 3. Módulo de Frota (Vehicles)
 
-O Personalledger mantém `vehicles` com dados cadastrais. Abastecimentos e manutenções são transações comuns (`classification = 'FUEL'` ou `'MAINTENANCE'`) vinculadas ao veículo. Não há tabelas separadas para `refueling_logs` ou `vehicle_maintenances`.
+O Tallyoh mantém `vehicles` com dados cadastrais. Abastecimentos e manutenções são transações comuns (`classification = 'FUEL'` ou `'MAINTENANCE'`) vinculadas ao veículo. Não há tabelas separadas para `refueling_logs` ou `vehicle_maintenances`.
 
 ## 4. Chaves e Índices
 
-Atualmente o Personalledger usa `TEXT` com UUID. Manter essa estratégia para chaves públicas.
+Atualmente o Tallyoh usa `TEXT` com UUID. Manter essa estratégia para chaves públicas.
 
 **Índices principais:**
 - `idx_transactions_user_id_date` — queries de extrato

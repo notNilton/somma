@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nilbyte/personalledger/backend/internal/cache"
-	"github.com/nilbyte/personalledger/backend/internal/config"
-	"github.com/nilbyte/personalledger/backend/internal/jobs"
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
-	"github.com/nilbyte/personalledger/backend/internal/routes"
-	"github.com/nilbyte/personalledger/backend/internal/web"
-	"github.com/nilbyte/personalledger/database"
+	"github.com/nilbyte/tallyoh/backend/internal/cache"
+	"github.com/nilbyte/tallyoh/backend/internal/config"
+	"github.com/nilbyte/tallyoh/backend/internal/jobs"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/routes"
+	"github.com/nilbyte/tallyoh/backend/internal/web"
+	"github.com/nilbyte/tallyoh/database"
 )
 
 func main() {

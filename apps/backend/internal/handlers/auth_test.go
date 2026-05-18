@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nilbyte/personalledger/backend/internal/testutil"
+	"github.com/nilbyte/tallyoh/backend/internal/testutil"
 )
 
 func TestRegister_Success(t *testing.T) {
@@ -109,7 +109,7 @@ func TestLogin_SetsSessionCookie(t *testing.T) {
 	cookieHeader := rec.Header().Values("Set-Cookie")
 	found := false
 	for _, header := range cookieHeader {
-		if strings.Contains(header, "personalledger_session=") {
+		if strings.Contains(header, "tallyoh_session=") {
 			found = true
 			break
 		}
@@ -172,7 +172,7 @@ func TestProtectedRoute_WithSessionCookie(t *testing.T) {
 
 	var sessionCookie string
 	for _, cookie := range loginRec.Result().Cookies() {
-		if cookie.Name == "personalledger_session" {
+		if cookie.Name == "tallyoh_session" {
 			sessionCookie = cookie.Value
 			break
 		}
@@ -182,7 +182,7 @@ func TestProtectedRoute_WithSessionCookie(t *testing.T) {
 	}
 
 	req := httptest.NewRequest("GET", "/users/me", nil)
-	req.AddCookie(&http.Cookie{Name: "personalledger_session", Value: sessionCookie})
+	req.AddCookie(&http.Cookie{Name: "tallyoh_session", Value: sessionCookie})
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 

@@ -1,6 +1,6 @@
 # 02 - Especificação de Webapp e Design System
 
-O Personalledger Webapp é uma Single Page Application (SPA) moderna focada em gestão financeira, utilizando React 19 e as melhores práticas do ecossistema TanStack para performance e tipagem rigorosa.
+O Tallyoh Webapp é uma Single Page Application (SPA) moderna focada em gestão financeira, utilizando React 19 e as melhores práticas do ecossistema TanStack para performance e tipagem rigorosa.
 
 > **Nota:** O webapp foi simplificado. Não há mais módulos `/wallet`, `/activity` ou `/planning` separados. O fluxo principal concentra-se em Dashboard, Transações, Orçamentos e Configurações.
 

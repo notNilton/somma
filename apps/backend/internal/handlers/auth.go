@@ -10,11 +10,11 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/nilbyte/personalledger/backend/internal/middleware"
+	"github.com/nilbyte/tallyoh/backend/internal/middleware"
 	"golang.org/x/crypto/bcrypt"
 )
 
-const sessionCookieName = "personalledger_session"
+const sessionCookieName = "tallyoh_session"
 
 type registerDto struct {
 	Email    string  `json:"email"`

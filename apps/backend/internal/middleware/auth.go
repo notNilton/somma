@@ -13,7 +13,7 @@ import (
 type contextKey string
 
 const claimsKey contextKey = "claims"
-const sessionCookieName = "personalledger_session"
+const sessionCookieName = "tallyoh_session"
 
 type AuthClaims struct {
 	UserID string
