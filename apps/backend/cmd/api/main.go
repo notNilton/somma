@@ -13,7 +13,6 @@ import (
 	"github.com/nilbyte/tallyoh/backend/internal/jobs"
 	"github.com/nilbyte/tallyoh/backend/internal/middleware"
 	"github.com/nilbyte/tallyoh/backend/internal/routes"
-	"github.com/nilbyte/tallyoh/backend/internal/web"
 	"github.com/nilbyte/tallyoh/database"
 )
 
@@ -45,20 +44,9 @@ func main() {
 	scheduler := jobs.New(db, ctx)
 	scheduler.Start()
 
-	log.Printf("CHECKPOINT: Initializing web templates")
-	webEngine, err := web.NewEngine("web/templates")
-	if err != nil {
-		log.Fatalf("FATAL: failed to initialize web templates: %v", err)
-	}
-	webHandler := web.NewHandler(db, []byte(cfg.JWTSecret), webEngine, c, cfg.IsProduction())
-
 	log.Printf("CHECKPOINT: Registering routes")
 	mux := http.NewServeMux()
-
-	routes.Register(mux, db, []byte(cfg.JWTSecret), c, cfg.IsProduction(), webHandler)
-
-	// Static assets — use GET prefix to avoid method-pattern conflicts with GET /
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
+	routes.Register(mux, db, []byte(cfg.JWTSecret), c, cfg.IsProduction())
 
 	logger := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
