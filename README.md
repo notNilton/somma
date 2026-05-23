@@ -8,7 +8,7 @@ Plataforma de gerenciamento financeiro pessoal baseada em partidas dobradas (dou
 
 | Camada | Tecnologia |
 |--------|-----------|
-| Backend | Go 1.24 — `net/http` + `pgx/v5` |
+| Backend | Go 1.25 — `net/http` + `pgx/v5` |
 | Webapp | React 19 + TanStack Router + TanStack Query + Tailwind |
 | Banco | PostgreSQL 18 |
 | Migrations | `golang-migrate` |
@@ -20,13 +20,12 @@ Plataforma de gerenciamento financeiro pessoal baseada em partidas dobradas (dou
 ## Estrutura do Monorepo
 
 ```
-apps/
-  backend/          → API Go (cmd/api/main.go)
-  webapp/           → React SPA
+app/                → API Go (app/cmd/api/main.go)
 database/
   migrations/       → SQL migrations (golang-migrate)
   seeds/            → dados iniciais
   cmd/migrate/      → binário de migration standalone
+doc/                → coleção Bruno (documentação e testes da API)
 .gitea/
   workflows/
     pull_request.yml → CI em pull requests (valida build e compose)
@@ -50,12 +49,12 @@ database/
 make up
 ```
 
-O `make up` sobe o PostgreSQL local, cria `apps/backend/.env` quando necessario, aplica migrations e inicia backend + webapp.
+O `make up` sobe o PostgreSQL local, cria `app/.env` quando necessário, aplica migrations e inicia o backend.
 
 ### Variáveis de ambiente (backend)
 
 ```env
-PORT=3000
+PORT=3300
 DATABASE_URL=postgresql://postgres:postgres@localhost:5454/tallyoh?sslmode=disable
 JWT_SECRET=sua-chave-secreta
 WEBAPP_URL=http://localhost:3400
@@ -72,7 +71,7 @@ make seed-complete     # aplica o seed completo
 make seed-barebones    # aplica o seed básico
 ```
 
-Para um fluxo isolado so de banco local, use [docs/local-db.md](/var/home/notNilton/Workspace/nilByte/tallyoh/docs/local-db.md) com `make deps-up`, `make db-reset` e os alvos de migration.
+Para um fluxo isolado só de banco local, use `make deps-up`, `make db-reset` e os alvos de migration.
 
 Para criar uma nova migration, adicionar dois arquivos em `database/migrations/`:
 
@@ -100,7 +99,7 @@ VPS niflheim (Ubuntu)
    ▼
 Caddy (container, http:// apenas — sem certificados próprios)
    ├── gitea.nilbyte.com.br         → gitea:3000
-   ├── api.tallyoh.nilbyte.com.br   → tallyoh_backend_prod:3000
+   ├── api.tallyoh.nilbyte.com.br   → tallyoh_backend_prod:3300
    └── tallyoh.nilbyte.com.br       → tallyoh_webapp_prod:80
 ```
 
@@ -162,7 +161,6 @@ Roda em todo PR. Valida sem publicar imagens.
 | `detect-changes` | Identifica quais áreas mudaram |
 | `build-backend` | `go build -mod=vendor ./...` |
 | `build-database` | `go build -mod=vendor ./...` no módulo de migrations |
-| `build-webapp` | `npm ci && npm run build` |
 | `validate-compose` | `docker compose config` nos arquivos de compose |
 
 ### `onmain.yml` — branch `main`
@@ -172,21 +170,20 @@ Roda em todo push para `main`. Detecta quais áreas mudaram, bumpa versão só d
 | Job | O que faz |
 |-----|-----------|
 | `detect-changes` | Roda no runner `basic` e identifica se backend, database, webapp ou workflows mudou no commit atual |
-| `bump-versions` | Roda no runner `basic`, incrementa apenas as versões afetadas em `apps/backend/VERSION` e `apps/webapp/package.json`, commita e cria tags git |
+| `bump-versions` | Incrementa a versão em `app/VERSION`, commita e cria tag git |
 | `build-backend` | Compila binário Go, reaproveita cache de camadas Docker e publica `backend:latest` e `backend:vX.Y.Z` |
 | `update-database` | Gera e publica `database:latest` quando migrations/seed mudam |
-| `build-webapp` | `npm ci` com cache local, `npm run build`, reaproveita cache de camadas Docker e publica `webapp:latest` e `webapp:vX.Y.Z` |
-| `deploy` | Roda no runner `basic`, conecta por SSH e executa `docker compose pull` + `up -d` no VPS quando ao menos um build terminou com sucesso |
+| `deploy` | Conecta por SSH e executa `docker compose pull` + `up -d` no VPS quando ao menos um build terminou com sucesso |
 
 ### Dependências no CI (vendor)
 
-Tanto o backend (`apps/backend/vendor/`) quanto o módulo de database (`database/vendor/`) têm as dependências vendorizadas. O CI usa `go build -mod=vendor` — zero acesso à internet necessário para o build Go.
+Tanto o backend (`app/vendor/`) quanto o módulo de database (`database/vendor/`) têm as dependências vendorizadas. O CI usa `go build -mod=vendor` — zero acesso à internet necessário para o build Go.
 
 Para atualizar dependências:
 
 ```bash
 # Backend
-cd apps/backend && GOWORK=off go mod tidy && GOWORK=off go mod vendor
+cd app && GOWORK=off go mod tidy && GOWORK=off go mod vendor
 
 # Database
 cd database && GOWORK=off go mod tidy && GOWORK=off go mod vendor
