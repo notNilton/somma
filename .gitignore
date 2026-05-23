@@ -32,7 +32,7 @@ coverage
 
 # Go — binários e cache
 *.exe
-apps/backend/main
-apps/backend/migrate
-apps/backend/tmp/
+app/main
+app/migrate
+app/tmp/
 database/migrate
