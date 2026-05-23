@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-backend:
+  build-app:
     runs-on: runner
     env:
       REGISTRY: "gitea.nilbyte.com.br"
@@ -21,37 +21,78 @@ jobs:
       - name: Detect changes
         id: check
         run: |
-          BACKEND_CHANGED=false
+          APP_CHANGED=false
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
-            BACKEND_CHANGED=true
+            APP_CHANGED=true
           else
             if git rev-parse HEAD^ >/dev/null 2>&1; then
               CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
               if echo "$CHANGED_FILES" | grep -Eq '^(app/|database/.*\.go$|database/go\.mod$|database/go\.sum$|.gitea/workflows/)'; then
-                BACKEND_CHANGED=true
+                APP_CHANGED=true
               fi
             else
-              BACKEND_CHANGED=true
+              APP_CHANGED=true
             fi
           fi
-          echo "BACKEND_CHANGED=$BACKEND_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "APP_CHANGED=$APP_CHANGED" >> "$GITHUB_OUTPUT"
 
       - name: Login to Gitea registry
-        if: steps.check.outputs.BACKEND_CHANGED == 'true'
+        if: steps.check.outputs.APP_CHANGED == 'true'
         run: |
           echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
-      - name: Build and push Backend image
-        if: steps.check.outputs.BACKEND_CHANGED == 'true'
+      - name: Build and push App image
+        if: steps.check.outputs.APP_CHANGED == 'true'
         run: |
           VERSION=$(cat app/VERSION)
           docker build -f app/Dockerfile \
             --build-arg VERSION=${VERSION} \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest" \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/app:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/app:${VERSION}" \
             .
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest"
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/app:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/app:${VERSION}"
+
+  build-doc:
+    runs-on: runner
+    env:
+      REGISTRY: "gitea.nilbyte.com.br"
+      IMAGE_NAMESPACE: "nilbyte/tallyoh"
+    steps:
+      - name: Check out repository code
+        run: |
+          git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+
+      - name: Detect changes
+        id: check
+        run: |
+          DOC_CHANGED=false
+          if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
+            DOC_CHANGED=true
+          else
+            if git rev-parse HEAD^ >/dev/null 2>&1; then
+              CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+              if echo "$CHANGED_FILES" | grep -Eq '^(doc/|.gitea/workflows/)'; then
+                DOC_CHANGED=true
+              fi
+            else
+              DOC_CHANGED=true
+            fi
+          fi
+          echo "DOC_CHANGED=$DOC_CHANGED" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Gitea registry
+        if: steps.check.outputs.DOC_CHANGED == 'true'
+        run: |
+          echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
+
+      - name: Build and push Doc image
+        if: steps.check.outputs.DOC_CHANGED == 'true'
+        run: |
+          docker build -f doc/Dockerfile \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/doc:latest" \
+            doc/
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/doc:latest"
 
   update-database:
     runs-on: runner
