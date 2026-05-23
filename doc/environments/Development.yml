@@ -1,11 +1,11 @@
 name: Development
 variables:
   - name: baseUrl
-    value: http://localhost:3000
+    value: http://localhost:3300
   - name: userEmail
-    value: nilton.naab@gmail.com
+    value: dev@example.com
   - name: userPassword
-    value: "@2Organela"
+    value: "dev-password"
   - name: userId
     value: d290f1ee-6c54-4b01-90e6-d701748f0851
   - name: categoryId
