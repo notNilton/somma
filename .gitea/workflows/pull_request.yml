@@ -36,7 +36,7 @@ jobs:
             FORCE_ALL=true
           fi
 
-          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$)'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^(app/|database/.*\.go$|database/go\.mod$|database/go\.sum$)'; then
             BACKEND_CHANGED=true
           fi
 

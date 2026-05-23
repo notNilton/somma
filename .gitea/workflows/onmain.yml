@@ -27,7 +27,7 @@ jobs:
           else
             if git rev-parse HEAD^ >/dev/null 2>&1; then
               CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-              if echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|database/.*\.go$|database/go\.mod$|database/go\.sum$|.gitea/workflows/)'; then
+              if echo "$CHANGED_FILES" | grep -Eq '^(app/|database/.*\.go$|database/go\.mod$|database/go\.sum$|.gitea/workflows/)'; then
                 BACKEND_CHANGED=true
               fi
             else
@@ -44,8 +44,8 @@ jobs:
       - name: Build and push Backend image
         if: steps.check.outputs.BACKEND_CHANGED == 'true'
         run: |
-          VERSION=$(cat apps/backend/VERSION)
-          docker build -f apps/backend/Dockerfile \
+          VERSION=$(cat app/VERSION)
+          docker build -f app/Dockerfile \
             --build-arg VERSION=${VERSION} \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest" \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}" \
