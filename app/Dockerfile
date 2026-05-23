@@ -12,7 +12,7 @@ WORKDIR /src/app
 
 ARG VERSION=dev
 
-RUN go mod download
+RUN mkdir -p /out && go mod download
 
 COPY app/cmd/ ./cmd/
 COPY app/internal/ ./internal/
@@ -20,6 +20,10 @@ COPY app/internal/ ./internal/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags "-X github.com/nilbyte/tallyoh/backend/internal/version.Version=${VERSION}" \
     -o /out/main ./cmd/api
+
+WORKDIR /src/database
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o /out/migrate ./cmd/migrate
 
 FROM alpine:3.19
 
@@ -29,9 +33,14 @@ RUN apk --no-cache add ca-certificates tzdata && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=builder /out/main ./main
+COPY --from=builder /out/migrate ./migrate
+COPY database/migrations/ ./migrations/
+COPY app/entrypoint.sh ./entrypoint.sh
+
+RUN chmod +x ./entrypoint.sh ./migrate
 
 USER appuser
 
 EXPOSE 3300
 
-CMD ["./main"]
+CMD ["./entrypoint.sh"]
