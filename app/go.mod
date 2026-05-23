@@ -2,7 +2,7 @@ module github.com/nilbyte/tallyoh/backend
 
 go 1.25.0
 
-replace github.com/nilbyte/tallyoh/database => ../../database
+replace github.com/nilbyte/tallyoh/database => ../database
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
