@@ -13,7 +13,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: app/Dockerfile
     container_name: api.tallyoh.nilbyte
     restart: always
     ports:
@@ -28,13 +28,3 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  webapp:
-    build:
-      context: .
-      dockerfile: apps/webapp/Dockerfile
-    container_name: tallyoh-webapp
-    restart: always
-    ports:
-      - "3400:80"
-    depends_on:
-      - backend

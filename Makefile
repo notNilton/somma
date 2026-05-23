@@ -165,14 +165,14 @@ minio-down:
 	@printf 'MinIO local parado.\n'
 
 env:
-	@if [ ! -f apps/backend/.env ]; then \
-		cp apps/backend/.env.example apps/backend/.env; \
-		printf 'Criado apps/backend/.env a partir do exemplo.\n'; \
+	@if [ ! -f app/.env ]; then \
+		cp app/.env.example app/.env; \
+		printf 'Criado app/.env a partir do exemplo.\n'; \
 	fi
 
 backend: env
 	@set -euo pipefail; \
-	cd apps/backend; \
+	cd app; \
 	if command -v air >/dev/null 2>&1; then \
 		AIR_CMD=air; \
 	else \
@@ -202,8 +202,8 @@ seed-complete: db-seed-complete
 seed-barebones: db-seed-barebones
 
 test:
-	@cd apps/backend && go test ./...
+	@cd app && go test ./...
 	@cd database && go test ./...
 
 clean:
-	@rm -rf apps/backend/tmp
+	@rm -rf app/tmp
