@@ -10,7 +10,6 @@ jobs:
     runs-on: basic
     outputs:
       APP_CHANGED: ${{ steps.detect.outputs.APP_CHANGED }}
-      DATABASE_CHANGED: ${{ steps.detect.outputs.DATABASE_CHANGED }}
       DOC_CHANGED: ${{ steps.detect.outputs.DOC_CHANGED }}
       ANY_CHANGED: ${{ steps.detect.outputs.ANY_CHANGED }}
       FORCE_ALL: ${{ steps.detect.outputs.FORCE_ALL }}
@@ -30,7 +29,6 @@ jobs:
           CHANGED_FILES=$(git diff --name-only "$BASE_REF" HEAD)
 
           APP_CHANGED=false
-          DATABASE_CHANGED=false
           DOC_CHANGED=false
           FORCE_ALL=false
 
@@ -38,12 +36,8 @@ jobs:
             FORCE_ALL=true
           fi
 
-          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^(app/|database/.*\.go$|database/go\.mod$|database/go\.sum$)'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^app/'; then
             APP_CHANGED=true
-          fi
-
-          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^database/'; then
-            DATABASE_CHANGED=true
           fi
 
           if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^doc/'; then
@@ -51,13 +45,12 @@ jobs:
           fi
 
           ANY_CHANGED=false
-          if [ "$APP_CHANGED" = "true" ] || [ "$DATABASE_CHANGED" = "true" ] || [ "$DOC_CHANGED" = "true" ]; then
+          if [ "$APP_CHANGED" = "true" ] || [ "$DOC_CHANGED" = "true" ]; then
             ANY_CHANGED=true
           fi
 
           {
             echo "APP_CHANGED=$APP_CHANGED"
-            echo "DATABASE_CHANGED=$DATABASE_CHANGED"
             echo "DOC_CHANGED=$DOC_CHANGED"
             echo "ANY_CHANGED=$ANY_CHANGED"
             echo "FORCE_ALL=$FORCE_ALL"
@@ -77,26 +70,6 @@ jobs:
 
       - name: Build app
         working-directory: app
-        env:
-          GOWORK: "off"
-          GOCACHE: /tmp/go-build
-          GOMODCACHE: /tmp/go-mod-cache
-        run: go build -mod=vendor ./...
-
-  build-database:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.DATABASE_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
-    runs-on: go
-    steps:
-      - name: Check out repository code
-        run: |
-          git config --global credential.helper store
-          echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
-          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
-            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
-
-      - name: Build migrate binary
-        working-directory: database
         env:
           GOWORK: "off"
           GOCACHE: /tmp/go-build
