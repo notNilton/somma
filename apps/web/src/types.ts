@@ -1,17 +1,18 @@
-export type TxType = 'INCOME' | 'EXPENSE' | 'INVESTMENT' | 'CREDIT' | 'RETURN'
+export type TxType = 'INCOME' | 'EXPENSE'
+export type TxKind = 'INCOME' | 'EXPENSE' | 'SAVING' | 'CREDIT' | 'BUDGET'
 export type TxStatus = 'COMPLETED' | 'PENDING' | 'CANCELED'
-export type TxChannel = 'PIX' | 'BANK' | 'CARD_DEBIT' | 'CARD_CREDIT'
 
 export interface Transaction {
   id: string
   type: TxType
+  kind: TxKind
   status: TxStatus
-  channel: TxChannel
-  paymentMethod: 'DEBIT' | 'CREDIT'
   amount: number
   description: string
   date: string
-  isRecurring: boolean
+  notes?: string
+  budgetId?: string
+  categoryId?: string
   category?: { name?: string; color?: string }
 }
 
@@ -23,6 +24,16 @@ export interface Category {
   children?: Category[]
 }
 
+export interface Budget {
+  id: string
+  name: string
+  allocatedAmount: number
+  spent: number
+  remaining: number
+  progress: number
+  notes?: string
+}
+
 export interface FlatCategory {
   id: string
   name: string
@@ -30,12 +41,13 @@ export interface FlatCategory {
 }
 
 export interface CreateInput {
-  type: string
+  type: TxType
+  kind?: TxKind
   amount: number
   description: string
   date: string
-  status: string
-  paymentMethod: string
-  channel: string
+  status?: TxStatus
   categoryId?: string
+  budgetId?: string
+  notes?: string
 }
