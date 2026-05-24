@@ -4,18 +4,18 @@ WORKDIR /src
 
 RUN apk add --no-cache ca-certificates tzdata git
 
-COPY app/go.mod app/go.sum app/VERSION ./app/
+COPY apps/backend/go.mod apps/backend/go.sum apps/backend/VERSION ./apps/backend/
 COPY database/go.mod database/go.sum ./database/
 COPY database/ ./database/
 
-WORKDIR /src/app
+WORKDIR /src/apps/backend
 
 ARG VERSION=dev
 
 RUN mkdir -p /out && go mod download
 
-COPY app/cmd/ ./cmd/
-COPY app/internal/ ./internal/
+COPY apps/backend/cmd/ ./cmd/
+COPY apps/backend/internal/ ./internal/
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags "-X github.com/nilbyte/tallyoh/backend/internal/version.Version=${VERSION}" \
@@ -35,7 +35,7 @@ RUN apk --no-cache add ca-certificates tzdata && \
 COPY --from=builder /out/main ./main
 COPY --from=builder /out/migrate ./migrate
 COPY database/migrations/ ./migrations/
-COPY app/entrypoint.sh ./entrypoint.sh
+COPY apps/backend/entrypoint.sh ./entrypoint.sh
 
 RUN chmod +x ./entrypoint.sh ./migrate
 

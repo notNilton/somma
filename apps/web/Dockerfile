@@ -1,24 +1,11 @@
-FROM golang:1.25-alpine AS builder
-
-WORKDIR /src/web
-
-RUN apk add --no-cache ca-certificates
-
-COPY web/go.mod web/go.sum ./
-RUN go mod download
-
-COPY web/ ./
-
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/web ./cmd
-
-FROM alpine:3.19
-
+FROM node:22-alpine AS builder
 WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
 
-RUN apk --no-cache add ca-certificates
-
-COPY --from=builder /out/web .
-
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 3400
-
-CMD ["./web"]
