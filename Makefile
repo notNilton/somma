@@ -28,6 +28,8 @@ WEBAPP_URL ?= http://localhost:$(WEBAPP_PORT)
 API_URL ?= http://localhost:$(BACKEND_PORT)
 WEB_DEV_API_URL ?= http://host.docker.internal:$(BACKEND_PORT)
 DATABASE_URL ?= postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable
+CONTAINER_DATABASE_URL ?= postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_CONTAINER):5432/$(POSTGRES_DB)?sslmode=disable
+DEV_NETWORK ?= $(APP_NAME)-dev
 
 ENABLE_MINIO ?= 0
 MINIO_IMAGE ?= minio/minio:latest
@@ -38,17 +40,19 @@ MINIO_ROOT_PASSWORD ?= minioadmin
 MINIO_PORT ?= 9000
 MINIO_CONSOLE_PORT ?= 9001
 REMOVE_VOLUME ?= 0
+DOC_PORT ?= 8090
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend web migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones test clean
+.PHONY: help up dev deps-up deps-down deps-reset net db-up db-wait db-down db-reset db-setup minio-up minio-down env backend web doc migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones test clean
 
 help:
 	@printf '%s\n' 'Tallyoh local dev'
 	@printf '\n%s\n' 'Fluxo principal:'
-	@printf '  make up              Sobe Postgres, cria .env, migra, semeia e inicia backend\n'
-	@printf '  make dev             Inicia backend, assumindo dependencias locais no ar\n'
+	@printf '  make up              Sobe Postgres, migra, semeia e inicia todos os servicos em background\n'
+	@printf '  make backend         Inicia a API Go em localhost:$(BACKEND_PORT) (Docker + hot reload)\n'
 	@printf '  make web             Inicia o app SSR/HTMX em localhost:$(WEBAPP_PORT) (Docker + hot reload)\n'
+	@printf '  make doc             Inicia o Swagger UI em localhost:$(DOC_PORT)/doc\n'
 	@printf '  make db-setup        Sobe o banco, aplica migrations e insere dados iniciais (seeds)\n'
 	@printf '  make deps-up         Sobe dependencias locais: Postgres e MinIO se ENABLE_MINIO=1\n'
 	@printf '  make deps-down       Para dependencias locais\n'
@@ -63,14 +67,49 @@ help:
 	@printf '  make db-seed-complete   Aplica o seed completo com transacoes\n'
 	@printf '  make db-seed-barebones  Aplica o seed basico com usuario, contas e veiculo\n'
 	@printf '\n%s\n' 'App:'
-	@printf '  make backend         Roda a API Go em localhost:$(BACKEND_PORT)\n'
-	@printf '  make web             Roda o SSR HTMX em localhost:$(WEBAPP_PORT)\n'
 	@printf '  make test            Roda testes Go\n'
 	@printf '\n%s\n' 'MinIO opcional:'
 	@printf '  make minio-up        Sobe MinIO manualmente\n'
 	@printf '  ENABLE_MINIO=1 make up inclui MinIO nas dependencias locais\n'
 
-up: db-setup dev
+up: db-setup
+	@$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-backend-dev -f apps/backend/Dockerfile.dev apps/backend/
+	@$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-web-dev -f apps/web/Dockerfile.dev apps/web/
+	@-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-backend-dev $(APP_NAME)-web-dev $(APP_NAME)-doc-dev 2>/dev/null || true
+	@$(CONTAINER_ENGINE) run -d \
+		--network $(DEV_NETWORK) \
+		-v "$(CURDIR_UNIX)/apps/backend:/app" \
+		-p $(BACKEND_PORT):$(BACKEND_PORT) \
+		-e PORT=$(BACKEND_PORT) \
+		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
+		-e JWT_SECRET=$(JWT_SECRET) \
+		-e WEBAPP_URL=$(WEBAPP_URL) \
+		-e ENV=$(ENV) \
+		--name $(APP_NAME)-backend-dev \
+		$(APP_NAME)-backend-dev >/dev/null
+	@$(CONTAINER_ENGINE) run -d \
+		--network $(DEV_NETWORK) \
+		--add-host=host.docker.internal:host-gateway \
+		-v "$(CURDIR_UNIX)/apps/web:/app" \
+		-v "$(APP_NAME)-web-node-modules:/app/node_modules" \
+		-p $(WEBAPP_PORT):$(WEBAPP_PORT) \
+		-e API_URL=$(WEB_DEV_API_URL) \
+		--name $(APP_NAME)-web-dev \
+		$(APP_NAME)-web-dev >/dev/null
+	@$(CONTAINER_ENGINE) run -d \
+		--network $(DEV_NETWORK) \
+		-v "$(CURDIR_UNIX)/apps/doc/openapi.yml:/openapi.yml:ro" \
+		-p $(DOC_PORT):8080 \
+		-e SWAGGER_JSON=/openapi.yml \
+		-e BASE_URL=/doc \
+		-e DEEP_LINKING=true \
+		--name $(APP_NAME)-doc-dev \
+		swaggerapi/swagger-ui:latest >/dev/null
+	@printf 'Servicos iniciados:\n'
+	@printf '  Backend : http://localhost:$(BACKEND_PORT)\n'
+	@printf '  Web     : http://localhost:$(WEBAPP_PORT)\n'
+	@printf '  Doc     : http://localhost:$(DOC_PORT)/doc\n'
+	@printf 'Logs: docker logs -f <container>\n'
 
 dev:
 	@set -euo pipefail; \
@@ -94,17 +133,23 @@ deps-reset: db-reset
 		$(MAKE) --no-print-directory minio-down REMOVE_VOLUME=1; \
 	fi
 
-db-up:
+net:
+	@$(CONTAINER_ENGINE) network inspect $(DEV_NETWORK) >/dev/null 2>&1 || \
+		$(CONTAINER_ENGINE) network create $(DEV_NETWORK) >/dev/null
+
+db-up: net
 	@set -euo pipefail; \
 	command -v "$(CONTAINER_ENGINE)" >/dev/null 2>&1 || { printf 'Container engine not found: %s\n' "$(CONTAINER_ENGINE)" >&2; exit 1; }; \
 	if $(CONTAINER_ENGINE) container inspect "$(POSTGRES_CONTAINER)" >/dev/null 2>&1; then \
 		printf 'Starting existing Postgres container %s\n' "$(POSTGRES_CONTAINER)"; \
 		$(CONTAINER_ENGINE) start "$(POSTGRES_CONTAINER)" >/dev/null; \
+		$(CONTAINER_ENGINE) network connect $(DEV_NETWORK) "$(POSTGRES_CONTAINER)" 2>/dev/null || true; \
 	else \
 		printf 'Creating Postgres container %s on localhost:%s\n' "$(POSTGRES_CONTAINER)" "$(POSTGRES_PORT)"; \
 		$(CONTAINER_ENGINE) volume create "$(POSTGRES_VOLUME)" >/dev/null; \
 		$(CONTAINER_ENGINE) run -d \
 			--name "$(POSTGRES_CONTAINER)" \
+			--network $(DEV_NETWORK) \
 			-e POSTGRES_USER="$(POSTGRES_USER)" \
 			-e POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)" \
 			-e POSTGRES_DB="$(POSTGRES_DB)" \
@@ -177,33 +222,58 @@ minio-down:
 	@printf 'MinIO local parado.\n'
 
 env:
-	@if [ ! -f app/.env ]; then \
-		cp app/.env.example app/.env; \
-		printf 'Criado app/.env a partir do exemplo.\n'; \
+	@if [ ! -f apps/backend/.env ]; then \
+		cp apps/backend/.env.example apps/backend/.env; \
+		printf 'Criado apps/backend/.env a partir do exemplo.\n'; \
 	fi
 
-backend: env
-	@set -euo pipefail; \
-	cd app; \
-	if command -v air >/dev/null 2>&1; then \
-		AIR_CMD=air; \
-	else \
-		AIR_CMD='go run github.com/air-verse/air@latest'; \
-	fi; \
-	PORT="$(BACKEND_PORT)" DATABASE_URL="$(DATABASE_URL)" JWT_SECRET="$(JWT_SECRET)" WEBAPP_URL="$(WEBAPP_URL)" ENV="$(ENV)" $$AIR_CMD -c .air.toml
+# ── Backend (Docker + Air hot reload) ────────────────────────────────────────
+backend: env net
+	$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-backend-dev -f apps/backend/Dockerfile.dev apps/backend/
+	-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-backend-dev
+	-$(CONTAINER_ENGINE) ps -q --filter publish=$(BACKEND_PORT) | xargs -r $(CONTAINER_ENGINE) rm -f
+	$(CONTAINER_ENGINE) run --rm -it \
+		--network $(DEV_NETWORK) \
+		-v "$(CURDIR_UNIX)/apps/backend:/app" \
+		-p $(BACKEND_PORT):$(BACKEND_PORT) \
+		-e PORT=$(BACKEND_PORT) \
+		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
+		-e JWT_SECRET=$(JWT_SECRET) \
+		-e WEBAPP_URL=$(WEBAPP_URL) \
+		-e ENV=$(ENV) \
+		--name $(APP_NAME)-backend-dev \
+		$(APP_NAME)-backend-dev
 
-# ── Web (Docker + Air hot reload, sem precisar de Go local) ──────────────────
-web:
-	$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-web-dev -f web/Dockerfile.dev web/
+# ── Web (Vite + React, HMR) ──────────────────────────────────────────────────
+# node_modules ficam em volume separado para nao sobrescrever o mount do codigo.
+# Se mudar o package.json rode: docker volume rm $(APP_NAME)-web-node-modules
+web: net
+	$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-web-dev -f apps/web/Dockerfile.dev apps/web/
 	-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-web-dev
 	-$(CONTAINER_ENGINE) ps -q --filter publish=$(WEBAPP_PORT) | xargs -r $(CONTAINER_ENGINE) rm -f
 	$(CONTAINER_ENGINE) run --rm -it \
-		-v "$(CURDIR_UNIX)/web:/app" \
+		--network $(DEV_NETWORK) \
+		--add-host=host.docker.internal:host-gateway \
+		-v "$(CURDIR_UNIX)/apps/web:/app" \
+		-v "$(APP_NAME)-web-node-modules:/app/node_modules" \
 		-p $(WEBAPP_PORT):$(WEBAPP_PORT) \
-		-e PORT=$(WEBAPP_PORT) \
 		-e API_URL=$(WEB_DEV_API_URL) \
 		--name $(APP_NAME)-web-dev \
 		$(APP_NAME)-web-dev
+
+# ── Doc (Swagger UI com volume mount para hot reload) ────────────────────────
+doc: net
+	-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-doc-dev
+	-$(CONTAINER_ENGINE) ps -q --filter publish=$(DOC_PORT) | xargs -r $(CONTAINER_ENGINE) rm -f
+	$(CONTAINER_ENGINE) run --rm -it \
+		--network $(DEV_NETWORK) \
+		-v "$(CURDIR_UNIX)/apps/doc/openapi.yml:/openapi.yml:ro" \
+		-p $(DOC_PORT):8080 \
+		-e SWAGGER_JSON=/openapi.yml \
+		-e BASE_URL=/doc \
+		-e DEEP_LINKING=true \
+		--name $(APP_NAME)-doc-dev \
+		swaggerapi/swagger-ui:latest
 
 migrate-up:
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate up
@@ -227,8 +297,8 @@ seed-complete: db-seed-complete
 seed-barebones: db-seed-barebones
 
 test:
-	@cd app && go test ./...
+	@cd apps/backend && go test ./...
 	@cd database && go test ./...
 
 clean:
-	@rm -rf app/tmp
+	@rm -rf apps/backend/tmp

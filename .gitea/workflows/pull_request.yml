@@ -36,11 +36,11 @@ jobs:
             FORCE_ALL=true
           fi
 
-          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^app/'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^apps/backend/'; then
             APP_CHANGED=true
           fi
 
-          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^doc/'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^apps/doc/'; then
             DOC_CHANGED=true
           fi
 
@@ -69,7 +69,7 @@ jobs:
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Build app
-        working-directory: app
+        working-directory: apps/backend
         env:
           GOWORK: "off"
           GOCACHE: /tmp/go-build
@@ -90,7 +90,7 @@ jobs:
 
       - name: Validate openapi.yml
         run: |
-          python3 -c "import yaml, sys; yaml.safe_load(open('doc/openapi.yml')); print('openapi.yml válido')"
+          python3 -c "import yaml, sys; yaml.safe_load(open('apps/doc/openapi.yml')); print('openapi.yml válido')"
 
   validate-compose:
     needs: detect-changes

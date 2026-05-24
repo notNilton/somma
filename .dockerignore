@@ -3,14 +3,14 @@
 .gitea
 .idea
 .vscode
-doc
+apps/doc
 **/node_modules
 **/dist
 **/.turbo
 **/.cache
 **/.vite
 **/.env
-app/main
-app/tmp
+apps/backend/main
+apps/backend/tmp
 tmp
 *.log
