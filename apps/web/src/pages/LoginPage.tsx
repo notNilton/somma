@@ -26,25 +26,28 @@ export default function LoginPage() {
   return (
     <div className="login-wrapper">
       <div className="login-card">
-        <h1 className="login-brand">tallyoh</h1>
-        <form action={submitAction}>
+        <div className="login-header">
+          <h1 className="login-brand">tallyoh</h1>
+          <p className="login-subtitle">Entrar para acompanhar transacoes, credito, economia e orcamentos.</p>
+        </div>
+        <form className="login-form" action={submitAction}>
           {error && <div className="form-error">{error}</div>}
           <input
+            className="login-input"
             type="email"
             name="email"
             placeholder="Email"
             required
             autoFocus
-            style={{ marginBottom: '0.5rem' }}
           />
           <input
+            className="login-input"
             type="password"
             name="password"
             placeholder="Senha"
             required
-            style={{ marginBottom: '1rem' }}
           />
-          <button type="submit" disabled={isPending} style={{ width: '100%' }}>
+          <button className="login-submit" type="submit" disabled={isPending}>
             {isPending ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
