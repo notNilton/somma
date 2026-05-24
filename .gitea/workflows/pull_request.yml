@@ -113,7 +113,7 @@ jobs:
 
       - name: Build web image
         run: |
-          docker build -f apps/web/Dockerfile -t web-ci-check .
+          docker build -f apps/web/Dockerfile -t web-ci-check apps/web/
 
   validate-compose:
     needs: detect-changes

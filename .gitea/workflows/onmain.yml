@@ -134,7 +134,7 @@ jobs:
           docker build -f apps/web/Dockerfile \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:latest" \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:${VERSION}" \
-            .
+            apps/web/
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:${VERSION}"
 
