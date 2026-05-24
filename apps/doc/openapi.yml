@@ -28,141 +28,101 @@ components:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
         name: { type: string }
+        avatarUrl: { type: string }
+        privacyModeEnabled: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
     Category:
       type: object
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
-        type: { type: string, enum: [EXPENSE, INCOME] }
+        type: { type: string, enum: [INCOME, EXPENSE] }
+        description: { type: string }
         color: { type: string, example: "#FF5733" }
+        parentId: { type: string, format: uuid, nullable: true }
+        children:
+          type: array
+          items: { $ref: '#/components/schemas/Category' }
 
     CategoryCreate:
       type: object
-      required: [name, type, color]
+      required: [name, type]
       properties:
         name: { type: string }
-        type: { type: string, enum: [EXPENSE, INCOME] }
+        type: { type: string, enum: [INCOME, EXPENSE] }
+        description: { type: string }
         color: { type: string, example: "#FF5733" }
-
-    CategoryUpdate:
-      type: object
-      properties:
-        name: { type: string }
-        color: { type: string }
-
-    Tag:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        name: { type: string }
-        color: { type: string, example: "#FF5733" }
-
-    TagCreate:
-      type: object
-      required: [name, color]
-      properties:
-        name: { type: string }
-        color: { type: string }
-
-    TagUpdate:
-      type: object
-      properties:
-        name: { type: string }
-        color: { type: string }
+        parentId: { type: string, format: uuid, nullable: true }
 
     Transaction:
       type: object
       properties:
         id: { type: string, format: uuid }
-        categoryId: { type: string, format: uuid }
-        type: { type: string, enum: [EXPENSE, INCOME] }
+        userId: { type: string, format: uuid }
+        categoryId: { type: string, format: uuid, nullable: true }
+        budgetId: { type: string, format: uuid, nullable: true }
+        type: { type: string, enum: [INCOME, EXPENSE] }
+        kind: { type: string, enum: [INCOME, EXPENSE, SAVING, CREDIT, BUDGET] }
+        status: { type: string, enum: [COMPLETED, PENDING, CANCELED] }
         amount: { type: number, format: float }
-        description: { type: string }
         date: { type: string, format: date-time }
-        status: { type: string, enum: [COMPLETED, PENDING] }
-        paymentMethod: { type: string, enum: [DEBIT, CREDIT] }
-        channel: { type: string, enum: [PIX, TRANSFER, CASH] }
+        description: { type: string }
+        notes: { type: string, nullable: true }
+        currencyCode: { type: string, example: BRL }
+        category:
+          type: object
+          nullable: true
+          properties:
+            name: { type: string }
+            color: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
     TransactionCreate:
       type: object
-      required: [categoryId, type, amount, date, status, paymentMethod, channel]
+      required: [type, amount, date]
       properties:
-        categoryId: { type: string, format: uuid }
-        type: { type: string, enum: [EXPENSE, INCOME] }
-        amount: { type: number, format: float }
-        description: { type: string }
-        date: { type: string, format: date-time }
-        status: { type: string, enum: [COMPLETED, PENDING] }
-        paymentMethod: { type: string, enum: [DEBIT, CREDIT] }
-        channel: { type: string, enum: [PIX, TRANSFER, CASH] }
-
-    TransactionUpdate:
-      type: object
-      properties:
-        amount: { type: number, format: float }
-        description: { type: string }
-
-    BudgetItem:
-      type: object
-      properties:
-        name: { type: string }
         categoryId: { type: string, format: uuid, nullable: true }
-        sortOrder: { type: integer }
+        budgetId: { type: string, format: uuid, nullable: true }
+        type: { type: string, enum: [INCOME, EXPENSE] }
+        kind:
+          type: string
+          enum: [INCOME, EXPENSE, SAVING, CREDIT, BUDGET]
+          description: |
+            Padrão derivado do type se omitido.
+            INCOME só aceita kind INCOME.
+            EXPENSE aceita EXPENSE, SAVING, CREDIT ou BUDGET.
+        status: { type: string, enum: [COMPLETED, PENDING, CANCELED] }
+        amount: { type: number, format: float }
+        date: { type: string, format: date, example: "2026-05-01" }
+        description: { type: string }
+        notes: { type: string }
+        currencyCode: { type: string, example: BRL }
 
     Budget:
       type: object
       properties:
         id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
         name: { type: string }
-        targetDate: { type: string, format: date }
-        notes: { type: string }
-        items:
-          type: array
-          items: { $ref: '#/components/schemas/BudgetItem' }
+        allocatedAmount: { type: number, format: float }
+        spent: { type: number, format: float }
+        remaining: { type: number, format: float }
+        progress: { type: number, format: float, description: "0–100" }
+        notes: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
     BudgetCreate:
       type: object
-      required: [name, targetDate]
+      required: [name, allocatedAmount]
       properties:
         name: { type: string }
-        targetDate: { type: string, format: date }
+        allocatedAmount: { type: number, format: float }
         notes: { type: string }
-        items:
-          type: array
-          items: { $ref: '#/components/schemas/BudgetItem' }
-
-    BudgetUpdate:
-      type: object
-      properties:
-        name: { type: string }
-        targetDate: { type: string, format: date }
-        notes: { type: string }
-        items:
-          type: array
-          items: { $ref: '#/components/schemas/BudgetItem' }
-
-    Vehicle:
-      type: object
-      properties:
-        id: { type: string, format: uuid }
-        name: { type: string }
-        brand: { type: string }
-        model: { type: string }
-        year: { type: integer }
-        licensePlate: { type: string }
-        tank: { type: number, format: float }
-
-    VehicleCreate:
-      type: object
-      required: [name, brand, model, year, licensePlate, tank]
-      properties:
-        name: { type: string }
-        brand: { type: string }
-        model: { type: string }
-        year: { type: integer }
-        licensePlate: { type: string }
-        tank: { type: number, format: float }
 
 paths:
   /api/health:
@@ -213,6 +173,14 @@ paths:
         '200':
           description: Autenticado
 
+  /api/auth/logout:
+    post:
+      summary: Logout
+      tags: [Auth]
+      responses:
+        '204':
+          description: Sessão encerrada
+
   /api/users/me:
     get:
       summary: Usuário atual
@@ -223,6 +191,22 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/User' }
+    patch:
+      summary: Atualizar usuário atual
+      tags: [Users]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                avatarUrl: { type: string }
+                privacyModeEnabled: { type: boolean }
+      responses:
+        '200':
+          description: Atualizado
 
   /api/v1/settings/profile:
     get:
@@ -231,6 +215,9 @@ paths:
       responses:
         '200':
           description: Dados do perfil
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
     patch:
       summary: Atualizar perfil
       tags: [Settings]
@@ -241,7 +228,9 @@ paths:
               type: object
               properties:
                 name: { type: string }
-                phone: { type: string }
+                email: { type: string, format: email }
+                avatarUrl: { type: string }
+                privacyModeEnabled: { type: boolean }
       responses:
         '200':
           description: Perfil atualizado
@@ -259,9 +248,9 @@ paths:
               required: [currentPassword, newPassword]
               properties:
                 currentPassword: { type: string }
-                newPassword: { type: string }
+                newPassword: { type: string, minLength: 12 }
       responses:
-        '200':
+        '204':
           description: Senha alterada
 
   /api/v1/settings/account:
@@ -278,7 +267,7 @@ paths:
               properties:
                 currentPassword: { type: string }
       responses:
-        '200':
+        '204':
           description: Conta deletada
 
   /api/v1/categories:
@@ -287,7 +276,7 @@ paths:
       tags: [Categories]
       responses:
         '200':
-          description: Lista de categorias
+          description: Lista de categorias (com filhos agrupados)
           content:
             application/json:
               schema:
@@ -326,7 +315,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/CategoryUpdate' }
+            schema: { $ref: '#/components/schemas/CategoryCreate' }
       responses:
         '200':
           description: Atualizada
@@ -337,66 +326,41 @@ paths:
         '204':
           description: Deletada
 
-  /api/v1/tags:
-    get:
-      summary: Listar tags
-      tags: [Tags]
-      responses:
-        '200':
-          description: Lista de tags
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/Tag' }
-    post:
-      summary: Criar tag
-      tags: [Tags]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/TagCreate' }
-      responses:
-        '201':
-          description: Tag criada
-
-  /api/v1/tags/{tagId}:
-    parameters:
-      - name: tagId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
-    get:
-      summary: Buscar tag
-      tags: [Tags]
-      responses:
-        '200':
-          description: Tag
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Tag' }
-    patch:
-      summary: Atualizar tag
-      tags: [Tags]
-      requestBody:
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/TagUpdate' }
-      responses:
-        '200':
-          description: Atualizada
-    delete:
-      summary: Deletar tag
-      tags: [Tags]
-      responses:
-        '204':
-          description: Deletada
-
   /api/v1/transactions:
     get:
       summary: Listar transações
       tags: [Transactions]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: type
+          in: query
+          schema: { type: string, enum: [INCOME, EXPENSE] }
+        - name: kind
+          in: query
+          schema: { type: string, enum: [INCOME, EXPENSE, SAVING, CREDIT, BUDGET] }
+        - name: status
+          in: query
+          schema: { type: string, enum: [COMPLETED, PENDING, CANCELED] }
+        - name: categoryId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: budgetId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: from
+          in: query
+          schema: { type: string, format: date, example: "2026-01-01" }
+        - name: to
+          in: query
+          schema: { type: string, format: date, example: "2026-12-31" }
+        - name: search
+          in: query
+          schema: { type: string }
       responses:
         '200':
           description: Lista de transações
@@ -416,14 +380,22 @@ paths:
       responses:
         '201':
           description: Transação criada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Transaction' }
 
   /api/v1/transactions/future:
     get:
-      summary: Listar transações futuras
+      summary: Listar transações futuras ou pendentes
       tags: [Transactions]
       responses:
         '200':
-          description: Transações futuras
+          description: Transações futuras ou com status PENDING
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Transaction' }
 
   /api/v1/transactions/{transactionId}:
     parameters:
@@ -446,10 +418,13 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/TransactionUpdate' }
+            schema: { $ref: '#/components/schemas/TransactionCreate' }
       responses:
         '200':
           description: Atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Transaction' }
     delete:
       summary: Deletar transação
       tags: [Transactions]
@@ -461,13 +436,9 @@ paths:
     get:
       summary: Listar orçamentos
       tags: [Budgets]
-      parameters:
-        - name: month
-          in: query
-          schema: { type: string, example: "2025-01" }
       responses:
         '200':
-          description: Lista de orçamentos
+          description: Lista de orçamentos com gasto acumulado
           content:
             application/json:
               schema:
@@ -484,6 +455,9 @@ paths:
       responses:
         '201':
           description: Orçamento criado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Budget' }
 
   /api/v1/budgets/{budgetId}:
     parameters:
@@ -491,25 +465,19 @@ paths:
         in: path
         required: true
         schema: { type: string, format: uuid }
-    get:
-      summary: Buscar orçamento
-      tags: [Budgets]
-      responses:
-        '200':
-          description: Orçamento
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Budget' }
     patch:
       summary: Atualizar orçamento
       tags: [Budgets]
       requestBody:
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/BudgetUpdate' }
+            schema: { $ref: '#/components/schemas/BudgetCreate' }
       responses:
         '200':
           description: Atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Budget' }
     delete:
       summary: Deletar orçamento
       tags: [Budgets]
@@ -517,92 +485,25 @@ paths:
         '204':
           description: Deletado
 
-  /api/v1/vehicles:
+  /api/v1/dashboard:
     get:
-      summary: Listar veículos
-      tags: [Vehicles]
+      summary: Dashboard do mês
+      tags: [Dashboard]
+      parameters:
+        - name: month
+          in: query
+          schema: { type: string, example: "2026-05" }
       responses:
         '200':
-          description: Lista de veículos
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/Vehicle' }
-    post:
-      summary: Criar veículo
-      tags: [Vehicles]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/VehicleCreate' }
-      responses:
-        '201':
-          description: Veículo criado
-
-  /api/v1/vehicles/{vehicleId}:
-    parameters:
-      - name: vehicleId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
-    get:
-      summary: Buscar veículo
-      tags: [Vehicles]
-      responses:
-        '200':
-          description: Veículo
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Vehicle' }
-
-  /api/v1/vehicles/{vehicleId}/refuelings:
-    parameters:
-      - name: vehicleId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
-    get:
-      summary: Histórico de abastecimentos
-      tags: [Vehicles]
-      responses:
-        '200':
-          description: Abastecimentos
-
-  /api/v1/vehicles/{vehicleId}/maintenances:
-    parameters:
-      - name: vehicleId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
-    get:
-      summary: Histórico de manutenções
-      tags: [Vehicles]
-      responses:
-        '200':
-          description: Manutenções
-
-  /api/v1/vehicles/{vehicleId}/expenses-stats:
-    parameters:
-      - name: vehicleId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
-    get:
-      summary: Estatísticas de gastos do veículo
-      tags: [Vehicles]
-      responses:
-        '200':
-          description: Estatísticas
+          description: Resumo do mês (saldo, receita, despesa, transações recentes)
 
   /api/v1/dashboard/monthly-evolution:
     get:
-      summary: Evolução mensal
+      summary: Evolução mensal (últimos 6 meses)
       tags: [Dashboard]
       responses:
         '200':
-          description: Evolução mensal de transações
+          description: Evolução mensal de receitas e despesas
 
   /api/v1/dashboard/category-breakdown:
     get:
@@ -611,22 +512,22 @@ paths:
       parameters:
         - name: month
           in: query
-          schema: { type: string, example: "2025-01" }
+          schema: { type: string, example: "2026-05" }
         - name: type
           in: query
-          schema: { type: string, enum: [EXPENSE, INCOME] }
+          schema: { type: string, enum: [INCOME, EXPENSE] }
       responses:
         '200':
-          description: Breakdown por categoria
+          description: Totais por categoria no mês
 
   /api/v1/analytics/annual-evolution:
     get:
-      summary: Evolução anual
+      summary: Evolução anual (12 meses)
       tags: [Analytics]
       parameters:
         - name: year
           in: query
-          schema: { type: integer, example: 2025 }
+          schema: { type: integer, example: 2026 }
       responses:
         '200':
-          description: Dados de evolução anual
+          description: Dados de evolução anual por mês
