@@ -1,27 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '../api'
+import { transactionsApi, categoriesApi } from '../api'
+import { useAuth } from '../contexts/AuthContext'
 import { groupByDay, computeSummary } from '../lib/groupByDay'
+import { flattenCategories } from '../lib/categories'
 import DayGroupComponent from '../components/DayGroup'
 import SummaryCard from '../components/SummaryCard'
 import TransactionModal from '../components/TransactionModal'
-import type { Transaction, CreateInput, FlatCategory, Category } from '../types'
+import type { Transaction, CreateInput } from '../types'
 
-interface ModalState { open: boolean; date: string; type: string }
-
-function flattenCategories(cats: Category[]): FlatCategory[] {
-  const result: FlatCategory[] = []
-  for (const c of cats) {
-    result.push({ id: c.id, name: c.name, indent: false })
-    for (const ch of c.children ?? []) {
-      result.push({ id: ch.id, name: ch.name, indent: true })
-    }
-  }
-  return result
+interface ModalState {
+  open: boolean
+  date: string
+  type: string
 }
 
-export default function TransactionsPage({ onLogout }: { onLogout: () => void }) {
+export default function TransactionsPage() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
   const qc = useQueryClient()
+
   const now = new Date()
   const year = now.getFullYear()
   const month = now.getMonth()
@@ -30,23 +29,26 @@ export default function TransactionsPage({ onLogout }: { onLogout: () => void })
   const to = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
   const txKey = ['transactions', year, month]
 
-  const { data: txs = [], error: txError, isFetching } = useQuery({
+  const { data: txs = [], error: txError } = useQuery({
     queryKey: txKey,
-    queryFn: () => api.listTransactions(from, to),
+    queryFn: () => transactionsApi.list(from, to),
   })
 
   const { data: rawCats = [] } = useQuery({
     queryKey: ['categories'],
-    queryFn: api.listCategories,
+    queryFn: categoriesApi.list,
     staleTime: Infinity,
   })
 
   useEffect(() => {
-    if ((txError as Error)?.message === 'UNAUTHORIZED') onLogout()
-  }, [txError, onLogout])
+    if ((txError as Error)?.message === 'UNAUTHORIZED') {
+      logout()
+      navigate('/login', { replace: true })
+    }
+  }, [txError, logout, navigate])
 
   const createMutation = useMutation({
-    mutationFn: (input: CreateInput) => api.createTransaction(input),
+    mutationFn: (input: CreateInput) => transactionsApi.create(input),
     onMutate: async (input) => {
       await qc.cancelQueries({ queryKey: txKey })
       const previous = qc.getQueryData<Transaction[]>(txKey)
@@ -73,11 +75,13 @@ export default function TransactionsPage({ onLogout }: { onLogout: () => void })
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.deleteTransaction(id),
+    mutationFn: (id: string) => transactionsApi.remove(id),
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: txKey })
       const previous = qc.getQueryData<Transaction[]>(txKey)
-      qc.setQueryData<Transaction[]>(txKey, (old = []) => old.filter(t => t.id !== id))
+      qc.setQueryData<Transaction[]>(txKey, (old = []) =>
+        old.filter((t) => t.id !== id),
+      )
       return { previous }
     },
     onError: (_err, _id, ctx) => {
@@ -89,23 +93,19 @@ export default function TransactionsPage({ onLogout }: { onLogout: () => void })
   const [modal, setModal] = useState<ModalState>({ open: false, date: '', type: '' })
   const dialogRef = useRef<HTMLDialogElement>(null)
 
-  const openModal = (date: string, type: string) => {
+  function openModal(date: string, type: string) {
     setModal({ open: true, date, type })
     dialogRef.current?.showModal()
   }
-  const closeModal = () => {
+
+  function closeModal() {
     dialogRef.current?.close()
-    setModal(m => ({ ...m, open: false }))
+    setModal((m) => ({ ...m, open: false }))
   }
 
-  const handleCreate = async (input: CreateInput) => {
+  function handleCreate(input: CreateInput) {
     closeModal()
     createMutation.mutate(input)
-  }
-
-  const handleLogout = async () => {
-    await api.logout().catch(() => {})
-    onLogout()
   }
 
   const groups = groupByDay(txs, now)
@@ -114,21 +114,14 @@ export default function TransactionsPage({ onLogout }: { onLogout: () => void })
 
   return (
     <>
-      <nav className="app-nav">
-        <a className="brand" href="#">tallyoh</a>
-        <span className="nav-spacer" />
-        {isFetching && <span className="sync-dot syncing" title="Sincronizando..." />}
-        <button className="btn-logout" onClick={handleLogout}>Sair</button>
-      </nav>
-
       <div className="page-layout">
         <div className="tx-column">
-          {groups.map(g => (
+          {groups.map((g) => (
             <DayGroupComponent
               key={g.dateStr}
               group={g}
               onAdd={openModal}
-              onDelete={id => deleteMutation.mutate(id)}
+              onDelete={(id) => deleteMutation.mutate(id)}
             />
           ))}
         </div>
@@ -137,7 +130,12 @@ export default function TransactionsPage({ onLogout }: { onLogout: () => void })
         </div>
       </div>
 
-      <dialog ref={dialogRef} onClick={e => { if (e.target === dialogRef.current) closeModal() }}>
+      <dialog
+        ref={dialogRef}
+        onClick={(e) => {
+          if (e.target === dialogRef.current) closeModal()
+        }}
+      >
         {modal.open && (
           <TransactionModal
             date={modal.date}
