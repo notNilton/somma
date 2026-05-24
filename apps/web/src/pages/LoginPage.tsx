@@ -1,11 +1,13 @@
 import { useActionState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { authApi } from '../api'
 import { useAuth } from '../contexts/AuthContext'
+import { useLocale } from '../i18n'
 
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const { t } = useLocale()
 
   const [error, submitAction, isPending] = useActionState(
     async (_prev: string | null, formData: FormData): Promise<string | null> => {
@@ -17,7 +19,7 @@ export default function LoginPage() {
         navigate('/', { replace: true })
         return null
       } catch (err) {
-        return err instanceof Error ? err.message : 'Erro ao entrar'
+        return err instanceof Error ? err.message : t.login.genericError
       }
     },
     null,
@@ -28,7 +30,7 @@ export default function LoginPage() {
       <div className="login-card">
         <div className="login-header">
           <h1 className="login-brand">tallyoh</h1>
-          <p className="login-subtitle">Entrar para acompanhar transacoes, credito, economia e orcamentos.</p>
+          <p className="login-subtitle">{t.login.subtitle}</p>
         </div>
         <form className="login-form" action={submitAction}>
           {error && <div className="form-error">{error}</div>}
@@ -36,7 +38,7 @@ export default function LoginPage() {
             className="login-input"
             type="email"
             name="email"
-            placeholder="Email"
+            placeholder={t.login.emailPlaceholder}
             required
             autoFocus
           />
@@ -44,13 +46,16 @@ export default function LoginPage() {
             className="login-input"
             type="password"
             name="password"
-            placeholder="Senha"
+            placeholder={t.login.passwordPlaceholder}
             required
           />
           <button className="login-submit" type="submit" disabled={isPending}>
-            {isPending ? 'Entrando...' : 'Entrar'}
+            {isPending ? t.login.submitting : t.login.submit}
           </button>
         </form>
+        <p className="login-alt-link">
+          <Link to="/register">{t.login.registerLink}</Link>
+        </p>
       </div>
     </div>
   )
