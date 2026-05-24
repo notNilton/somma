@@ -94,3 +94,47 @@ jobs:
             apps/doc/
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/doc:latest"
 
+  build-web:
+    runs-on: runner
+    env:
+      REGISTRY: "gitea.nilbyte.com.br"
+      IMAGE_NAMESPACE: "nilbyte/tallyoh"
+    steps:
+      - name: Check out repository code
+        run: |
+          git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+
+      - name: Detect changes
+        id: check
+        run: |
+          WEB_CHANGED=false
+          if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
+            WEB_CHANGED=true
+          else
+            if git rev-parse HEAD^ >/dev/null 2>&1; then
+              CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+              if echo "$CHANGED_FILES" | grep -Eq '^(apps/web/|.gitea/workflows/)'; then
+                WEB_CHANGED=true
+              fi
+            else
+              WEB_CHANGED=true
+            fi
+          fi
+          echo "WEB_CHANGED=$WEB_CHANGED" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Gitea registry
+        if: steps.check.outputs.WEB_CHANGED == 'true'
+        run: |
+          echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
+
+      - name: Build and push Web image
+        if: steps.check.outputs.WEB_CHANGED == 'true'
+        run: |
+          VERSION=$(node -e "process.stdout.write(require('./apps/web/package.json').version)")
+          docker build -f apps/web/Dockerfile \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:${VERSION}" \
+            .
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:${VERSION}"
+

@@ -11,6 +11,7 @@ jobs:
     outputs:
       APP_CHANGED: ${{ steps.detect.outputs.APP_CHANGED }}
       DOC_CHANGED: ${{ steps.detect.outputs.DOC_CHANGED }}
+      WEB_CHANGED: ${{ steps.detect.outputs.WEB_CHANGED }}
       ANY_CHANGED: ${{ steps.detect.outputs.ANY_CHANGED }}
       FORCE_ALL: ${{ steps.detect.outputs.FORCE_ALL }}
     steps:
@@ -30,6 +31,7 @@ jobs:
 
           APP_CHANGED=false
           DOC_CHANGED=false
+          WEB_CHANGED=false
           FORCE_ALL=false
 
           if echo "$CHANGED_FILES" | grep -q '^.gitea/workflows/'; then
@@ -44,14 +46,19 @@ jobs:
             DOC_CHANGED=true
           fi
 
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^apps/web/'; then
+            WEB_CHANGED=true
+          fi
+
           ANY_CHANGED=false
-          if [ "$APP_CHANGED" = "true" ] || [ "$DOC_CHANGED" = "true" ]; then
+          if [ "$APP_CHANGED" = "true" ] || [ "$DOC_CHANGED" = "true" ] || [ "$WEB_CHANGED" = "true" ]; then
             ANY_CHANGED=true
           fi
 
           {
             echo "APP_CHANGED=$APP_CHANGED"
             echo "DOC_CHANGED=$DOC_CHANGED"
+            echo "WEB_CHANGED=$WEB_CHANGED"
             echo "ANY_CHANGED=$ANY_CHANGED"
             echo "FORCE_ALL=$FORCE_ALL"
           } >> "$GITHUB_OUTPUT"
@@ -91,6 +98,22 @@ jobs:
       - name: Validate openapi.yml
         run: |
           python3 -c "import yaml, sys; yaml.safe_load(open('apps/doc/openapi.yml')); print('openapi.yml válido')"
+
+  build-web:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.WEB_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
+    runs-on: basic
+    steps:
+      - name: Check out repository code
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          git clone --depth=1 --branch "${{ gitea.ref_name }}" \
+            "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+
+      - name: Build web image
+        run: |
+          docker build -f apps/web/Dockerfile -t web-ci-check .
 
   validate-compose:
     needs: detect-changes
