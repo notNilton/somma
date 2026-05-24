@@ -68,15 +68,9 @@ func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 func CleanTables(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	tables := []string{
-		"refueling_logs",
-		"vehicles",
-		"transaction_tags",
 		"transactions",
-		"budget_items",
 		"budgets",
-		"tags",
 		"categories",
-		"accounts",
 		"users",
 	}
 	for _, tbl := range tables {

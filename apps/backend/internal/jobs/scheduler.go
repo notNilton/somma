@@ -19,7 +19,6 @@ func New(db *pgxpool.Pool, ctx context.Context) *Scheduler {
 
 func (s *Scheduler) Start() {
 	log.Println("jobs: scheduler started")
-	go s.runEvery(time.Hour, "recurring-transactions", s.checkRecurringTransactions)
 	go s.runAt(0, 5, "budget-alerts", s.checkBudgetAlerts)
 }
 

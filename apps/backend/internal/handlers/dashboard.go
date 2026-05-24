@@ -42,14 +42,15 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 	h.db.QueryRow(r.Context(), `
 		SELECT COALESCE(SUM(
 			CASE
-				WHEN type = 'INCOME' AND affects_account = true THEN amount_cents
-				WHEN type = 'EXPENSE' AND affects_account = true THEN -amount_cents
+				WHEN type = 'INCOME' THEN amount_cents
+				WHEN type = 'EXPENSE' THEN -amount_cents
 				ELSE 0
 			END
 		), 0)
 		FROM transactions
 		WHERE user_id = $1
 		  AND is_active = true
+		  AND status = 'COMPLETED'
 	`, claims.UserID).Scan(&totalBalanceCents)
 
 	// Income e expenses do mês selecionado
@@ -59,8 +60,8 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		FROM transactions
 		WHERE user_id = $1
 		  AND is_active = true
-		  AND affects_account = true
 		  AND type IN ('INCOME', 'EXPENSE')
+		  AND status = 'COMPLETED'
 		  AND DATE_TRUNC('month', date) = DATE_TRUNC('month', $2::date)
 		GROUP BY type
 	`, claims.UserID, monthDate)
@@ -117,7 +118,7 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		FROM transactions
 		WHERE user_id = $1
 		  AND is_active = true
-		  AND affects_account = true
+		  AND status = 'COMPLETED'
 		  AND date >= NOW() - INTERVAL '7 days'
 		GROUP BY DATE(date)
 		ORDER BY day

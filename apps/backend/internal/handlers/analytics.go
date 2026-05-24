@@ -24,7 +24,7 @@ func (h *Handler) GetMonthlyEvolution(w http.ResponseWriter, r *http.Request) {
 		FROM transactions
 		WHERE user_id = $1
 		  AND is_active = true
-		  AND affects_account = true
+		  AND status = 'COMPLETED'
 		  AND type IN ('INCOME', 'EXPENSE')
 		  AND date >= DATE_TRUNC('month', NOW()) - INTERVAL '5 months'
 		GROUP BY month, type
@@ -111,7 +111,7 @@ func (h *Handler) GetCategoryBreakdown(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN categories c ON c.id = t.category_id
 		WHERE t.user_id = $1
 		  AND t.is_active = true
-		  AND t.affects_account = true
+		  AND t.status = 'COMPLETED'
 		  AND DATE_TRUNC('month', t.date) = DATE_TRUNC('month', $2::date)
 		  AND t.type = $3
 		GROUP BY c.id, c.name, c.color, t.type
@@ -174,7 +174,7 @@ func (h *Handler) GetAnnualEvolution(w http.ResponseWriter, r *http.Request) {
 		FROM transactions
 		WHERE user_id = $1
 		  AND is_active = true
-		  AND affects_account = true
+		  AND status = 'COMPLETED'
 		  AND type IN ('INCOME', 'EXPENSE')
 		  AND EXTRACT(YEAR FROM date) = $2
 		GROUP BY month, type

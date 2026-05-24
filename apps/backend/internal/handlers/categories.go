@@ -168,7 +168,7 @@ func (h *Handler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	err := h.db.QueryRow(r.Context(), `
 		UPDATE categories SET
 			name        = COALESCE(NULLIF($1,''), name),
-			type        = COALESCE(NULLIF($2,'')::transaction_type, type),
+			type        = COALESCE(NULLIF($2,'')::transaction_direction, type),
 			description = COALESCE($3, description),
 			color       = COALESCE($4, color),
 			updated_at  = NOW()

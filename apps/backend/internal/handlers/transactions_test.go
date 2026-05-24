@@ -85,6 +85,36 @@ func TestListTransactions_OnlyOwn(t *testing.T) {
 	}
 }
 
+func TestListTransactions_IncludesEndDate(t *testing.T) {
+	pool, mux := testutil.Setup(t)
+	testutil.CleanTables(t, pool)
+	tok := testutil.RegisterUser(t, mux, "txenddate@example.com", "secret123")
+
+	recCreate := testutil.Do(t, mux, "POST", "/api/v1/transactions", map[string]any{
+		"type":        "INCOME",
+		"amount":      20.00,
+		"date":        "2026-05-31",
+		"description": "Fechamento do mes",
+	}, tok)
+	if recCreate.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", recCreate.Code, recCreate.Body.String())
+	}
+
+	recList := testutil.Do(t, mux, "GET", "/api/v1/transactions?from=2026-05-01&to=2026-05-31", nil, tok)
+	if recList.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", recList.Code, recList.Body.String())
+	}
+
+	var list []map[string]any
+	testutil.DecodeJSON(t, recList, &list)
+	if len(list) != 1 {
+		t.Fatalf("expected 1 transaction on end date, got %d", len(list))
+	}
+	if list[0]["description"] != "Fechamento do mes" {
+		t.Fatalf("expected created transaction in list, got %v", list[0]["description"])
+	}
+}
+
 func TestDeleteTransaction_SoftDelete(t *testing.T) {
 	pool, mux := testutil.Setup(t)
 	testutil.CleanTables(t, pool)

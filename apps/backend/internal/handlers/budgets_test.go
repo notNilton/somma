@@ -13,13 +13,9 @@ func TestCreateBudgetAndList(t *testing.T) {
 	tok := testutil.RegisterUser(t, mux, "budget@example.com", "secret123")
 
 	rec := testutil.Do(t, mux, "POST", "/api/v1/budgets", map[string]any{
-		"name":       "Viagem para São Paulo",
-		"targetDate": "2026-07-15",
-		"notes":      "Reserva para viagem futura",
-		"items": []map[string]any{
-			{"name": "Hospedagem", "sortOrder": 0},
-			{"name": "Alimentação", "sortOrder": 1},
-		},
+		"name":            "Viagem para Sao Paulo",
+		"allocatedAmount": 9000.00,
+		"notes":           "Reserva para viagem futura",
 	}, tok)
 
 	if rec.Code != http.StatusCreated {
@@ -28,12 +24,11 @@ func TestCreateBudgetAndList(t *testing.T) {
 
 	var created map[string]any
 	testutil.DecodeJSON(t, rec, &created)
-	if created["name"] != "Viagem para São Paulo" {
+	if created["name"] != "Viagem para Sao Paulo" {
 		t.Fatalf("unexpected budget name: %v", created["name"])
 	}
-	items, ok := created["items"].([]any)
-	if !ok || len(items) != 2 {
-		t.Fatalf("expected 2 items, got %#v", created["items"])
+	if created["allocatedAmountCents"].(float64) != 900000 {
+		t.Fatalf("unexpected allocatedAmountCents: %v", created["allocatedAmountCents"])
 	}
 
 	listRec := testutil.Do(t, mux, "GET", "/api/v1/budgets", nil, tok)
@@ -46,8 +41,8 @@ func TestCreateBudgetAndList(t *testing.T) {
 	if len(list) != 1 {
 		t.Fatalf("expected 1 budget, got %d", len(list))
 	}
-	if list[0]["targetDate"] != "2026-07-15" {
-		t.Fatalf("unexpected targetDate: %v", list[0]["targetDate"])
+	if list[0]["remainingCents"].(float64) != 900000 {
+		t.Fatalf("unexpected remainingCents: %v", list[0]["remainingCents"])
 	}
 }
 
@@ -57,51 +52,37 @@ func TestBudgetEvolvesWithTransactions(t *testing.T) {
 	tok := testutil.RegisterUser(t, mux, "evolve@example.com", "secret123")
 
 	budgetRec := testutil.Do(t, mux, "POST", "/api/v1/budgets", map[string]any{
-		"name":       "Orçamento de Teste",
-		"targetDate": "2026-04-30",
-		"items": []map[string]any{
-			{"name": "Lazer", "sortOrder": 0},
-		},
+		"name":            "Orcamento de Teste",
+		"allocatedAmount": 1000.00,
 	}, tok)
 	var budget map[string]any
 	testutil.DecodeJSON(t, budgetRec, &budget)
-	items := budget["items"].([]any)
-	itemID := items[0].(map[string]any)["id"].(string)
+	budgetID := budget["id"].(string)
 
-	// 1. Alocar valor (INCOME para o budget)
+	// Gasto vinculado ao budget.
 	testutil.Do(t, mux, "POST", "/api/v1/transactions", map[string]any{
-		"type":         "INCOME",
-		"amount":       1000.00,
-		"date":         "2026-04-01",
-		"description":  "Aporte Lazer",
-		"budgetItemId": itemID,
+		"type":        "EXPENSE",
+		"kind":        "BUDGET",
+		"amount":      300.00,
+		"date":        "2026-04-05",
+		"description": "Cinema",
+		"budgetId":    budgetID,
 	}, tok)
 
-	// 2. Gastar valor (EXPENSE para o budget)
-	testutil.Do(t, mux, "POST", "/api/v1/transactions", map[string]any{
-		"type":         "EXPENSE",
-		"amount":       300.00,
-		"date":         "2026-04-05",
-		"description":  "Cinema",
-		"budgetItemId": itemID,
-	}, tok)
-
-	// 3. Verificar status
 	listRec := testutil.Do(t, mux, "GET", "/api/v1/budgets", nil, tok)
 	var list []map[string]any
 	testutil.DecodeJSON(t, listRec, &list)
 
-	item := list[0]["items"].([]any)[0].(map[string]any)
-	if item["amountCents"].(float64) != 100000 {
-		t.Fatalf("expected 100000 budgeted, got %v", item["amountCents"])
+	if list[0]["allocatedAmountCents"].(float64) != 100000 {
+		t.Fatalf("expected 100000 allocated, got %v", list[0]["allocatedAmountCents"])
 	}
-	if item["spentCents"].(float64) != 30000 {
-		t.Fatalf("expected 30000 spent, got %v", item["spentCents"])
+	if list[0]["spentCents"].(float64) != 30000 {
+		t.Fatalf("expected 30000 spent, got %v", list[0]["spentCents"])
 	}
-	if item["remainingCents"].(float64) != 70000 {
-		t.Fatalf("expected 70000 remaining, got %v", item["remainingCents"])
+	if list[0]["remainingCents"].(float64) != 70000 {
+		t.Fatalf("expected 70000 remaining, got %v", list[0]["remainingCents"])
 	}
-	if item["progress"].(float64) != 30.0 {
-		t.Fatalf("expected 30%% progress, got %v", item["progress"])
+	if list[0]["progress"].(float64) != 30.0 {
+		t.Fatalf("expected 30%% progress, got %v", list[0]["progress"])
 	}
 }
