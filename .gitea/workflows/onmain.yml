@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-app:
+  build-backend:
     runs-on: runner
     env:
       REGISTRY: "gitea.nilbyte.com.br"
@@ -21,37 +21,37 @@ jobs:
       - name: Detect changes
         id: check
         run: |
-          APP_CHANGED=false
+          BACKEND_CHANGED=false
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
-            APP_CHANGED=true
+            BACKEND_CHANGED=true
           else
             if git rev-parse HEAD^ >/dev/null 2>&1; then
               CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
               if echo "$CHANGED_FILES" | grep -Eq '^(apps/backend/|.gitea/workflows/)'; then
-                APP_CHANGED=true
+                BACKEND_CHANGED=true
               fi
             else
-              APP_CHANGED=true
+              BACKEND_CHANGED=true
             fi
           fi
-          echo "APP_CHANGED=$APP_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "BACKEND_CHANGED=$BACKEND_CHANGED" >> "$GITHUB_OUTPUT"
 
       - name: Login to Gitea registry
-        if: steps.check.outputs.APP_CHANGED == 'true'
+        if: steps.check.outputs.BACKEND_CHANGED == 'true'
         run: |
           echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
-      - name: Build and push App image
-        if: steps.check.outputs.APP_CHANGED == 'true'
+      - name: Build and push Backend image
+        if: steps.check.outputs.BACKEND_CHANGED == 'true'
         run: |
           VERSION=$(cat apps/backend/VERSION)
           docker build -f apps/backend/Dockerfile \
             --build-arg VERSION=${VERSION} \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/app:latest" \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/app:${VERSION}" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}" \
             .
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/app:latest"
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/app:${VERSION}"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}"
 
   build-doc:
     runs-on: runner
@@ -137,4 +137,3 @@ jobs:
             apps/web/
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:${VERSION}"
-

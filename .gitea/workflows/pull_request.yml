@@ -9,7 +9,7 @@ jobs:
   detect-changes:
     runs-on: basic
     outputs:
-      APP_CHANGED: ${{ steps.detect.outputs.APP_CHANGED }}
+      BACKEND_CHANGED: ${{ steps.detect.outputs.BACKEND_CHANGED }}
       DOC_CHANGED: ${{ steps.detect.outputs.DOC_CHANGED }}
       WEB_CHANGED: ${{ steps.detect.outputs.WEB_CHANGED }}
       ANY_CHANGED: ${{ steps.detect.outputs.ANY_CHANGED }}
@@ -29,7 +29,7 @@ jobs:
           BASE_REF=$(git merge-base HEAD origin/main)
           CHANGED_FILES=$(git diff --name-only "$BASE_REF" HEAD)
 
-          APP_CHANGED=false
+          BACKEND_CHANGED=false
           DOC_CHANGED=false
           WEB_CHANGED=false
           FORCE_ALL=false
@@ -39,7 +39,7 @@ jobs:
           fi
 
           if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^apps/backend/'; then
-            APP_CHANGED=true
+            BACKEND_CHANGED=true
           fi
 
           if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^apps/doc/'; then
@@ -51,21 +51,21 @@ jobs:
           fi
 
           ANY_CHANGED=false
-          if [ "$APP_CHANGED" = "true" ] || [ "$DOC_CHANGED" = "true" ] || [ "$WEB_CHANGED" = "true" ]; then
+          if [ "$BACKEND_CHANGED" = "true" ] || [ "$DOC_CHANGED" = "true" ] || [ "$WEB_CHANGED" = "true" ]; then
             ANY_CHANGED=true
           fi
 
           {
-            echo "APP_CHANGED=$APP_CHANGED"
+            echo "BACKEND_CHANGED=$BACKEND_CHANGED"
             echo "DOC_CHANGED=$DOC_CHANGED"
             echo "WEB_CHANGED=$WEB_CHANGED"
             echo "ANY_CHANGED=$ANY_CHANGED"
             echo "FORCE_ALL=$FORCE_ALL"
           } >> "$GITHUB_OUTPUT"
 
-  build-app:
+  build-backend:
     needs: detect-changes
-    if: needs.detect-changes.outputs.APP_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
+    if: needs.detect-changes.outputs.BACKEND_CHANGED == 'true' || needs.detect-changes.outputs.FORCE_ALL == 'true'
     runs-on: go
     steps:
       - name: Check out repository code
@@ -75,7 +75,7 @@ jobs:
           git clone --depth=1 --branch "${{ gitea.ref_name }}" \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-      - name: Build app
+      - name: Build backend
         working-directory: apps/backend
         env:
           GOWORK: "off"
