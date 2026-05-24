@@ -22,9 +22,23 @@ services:
       ENV: production
       PORT: 3300
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      WEBAPP_URL: ${WEBAPP_URL:-http://localhost:3400}
+      WEBAPP_URL: ${WEBAPP_URL:-http://web.tallyoh.nilbyte:3400}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
     depends_on:
       migrate:
         condition: service_completed_successfully
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: web.tallyoh.nilbyte
+    restart: always
+    ports:
+      - "3400:3400"
+    environment:
+      PORT: 3400
+      API_URL: ${API_URL:-http://api.tallyoh.nilbyte:3300}
+    depends_on:
+      - backend
 

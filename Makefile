@@ -1,8 +1,17 @@
-SHELL := /usr/bin/env bash
-
 APP_NAME ?= tallyoh
 
-CONTAINER_ENGINE ?= $(shell command -v docker >/dev/null 2>&1 && printf docker || printf podman)
+# ── Shell / OS detection ──────────────────────────────────────────────────────
+ifeq ($(OS),Windows_NT)
+  SHELL := bash
+  CONTAINER_ENGINE ?= docker
+  # Convert backslashes so Docker bind-mount paths work
+  CURDIR_UNIX := $(subst \,/,$(CURDIR))
+else
+  SHELL := /usr/bin/env bash
+  CONTAINER_ENGINE ?= $(shell command -v docker >/dev/null 2>&1 && printf docker || printf podman)
+  CURDIR_UNIX := $(CURDIR)
+endif
+
 POSTGRES_IMAGE ?= postgres:18-alpine
 POSTGRES_CONTAINER ?= $(APP_NAME)-db-local
 POSTGRES_VOLUME ?= $(APP_NAME)-postgres-local-data
@@ -16,7 +25,8 @@ WEBAPP_PORT ?= 3400
 ENV ?= development
 JWT_SECRET ?= dev-secret-change-in-production
 WEBAPP_URL ?= http://localhost:$(WEBAPP_PORT)
-API_URL ?=
+API_URL ?= http://localhost:$(BACKEND_PORT)
+WEB_DEV_API_URL ?= http://host.docker.internal:$(BACKEND_PORT)
 DATABASE_URL ?= postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable
 
 ENABLE_MINIO ?= 0
@@ -31,28 +41,30 @@ REMOVE_VOLUME ?= 0
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones test clean
+.PHONY: help up dev deps-up deps-down deps-reset db-up db-wait db-down db-reset db-setup minio-up minio-down env backend web migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones test clean
 
 help:
 	@printf '%s\n' 'Tallyoh local dev'
 	@printf '\n%s\n' 'Fluxo principal:'
 	@printf '  make up              Sobe Postgres, cria .env, migra, semeia e inicia backend\n'
 	@printf '  make dev             Inicia backend, assumindo dependencias locais no ar\n'
+	@printf '  make web             Inicia o app SSR/HTMX em localhost:$(WEBAPP_PORT) (Docker + hot reload)\n'
 	@printf '  make db-setup        Sobe o banco, aplica migrations e insere dados iniciais (seeds)\n'
 	@printf '  make deps-up         Sobe dependencias locais: Postgres e MinIO se ENABLE_MINIO=1\n'
 	@printf '  make deps-down       Para dependencias locais\n'
 	@printf '  make deps-reset      Para dependencias locais e remove volumes locais\n'
 	@printf '\n%s\n' 'Banco e dados:'
-	@printf '  make db-up           Sobe somente o Postgres local em localhost:%s\n' '$(POSTGRES_PORT)'
+	@printf '  make db-up           Sobe somente o Postgres local em localhost:$(POSTGRES_PORT)\n'
 	@printf '  make db-down         Para somente o Postgres local\n'
 	@printf '  make db-reset        Recria o Postgres local do zero\n'
 	@printf '  make migrate-up      Aplica migrations\n'
 	@printf '  make migrate-down    Reverte uma migration\n'
 	@printf '  make migrate-version Mostra a versao atual\n'
-	@printf '  make db-seed-complete Aplica o seed completo com transacoes\n'
-	@printf '  make db-seed-barebones Aplica o seed basico com usuario, contas e veiculo\n'
+	@printf '  make db-seed-complete   Aplica o seed completo com transacoes\n'
+	@printf '  make db-seed-barebones  Aplica o seed basico com usuario, contas e veiculo\n'
 	@printf '\n%s\n' 'App:'
-	@printf '  make backend         Roda a API Go em localhost:%s\n' '$(BACKEND_PORT)'
+	@printf '  make backend         Roda a API Go em localhost:$(BACKEND_PORT)\n'
+	@printf '  make web             Roda o SSR HTMX em localhost:$(WEBAPP_PORT)\n'
 	@printf '  make test            Roda testes Go\n'
 	@printf '\n%s\n' 'MinIO opcional:'
 	@printf '  make minio-up        Sobe MinIO manualmente\n'
@@ -69,7 +81,7 @@ deps-up: db-up
 	@if [ "$(ENABLE_MINIO)" = "1" ]; then \
 		$(MAKE) --no-print-directory minio-up; \
 	else \
-		printf '%s\n' 'MinIO nao esta habilitado para este projeto local. Use ENABLE_MINIO=1 make deps-up se precisar.'; \
+		printf '%s\n' 'MinIO nao esta habilitado. Use ENABLE_MINIO=1 make deps-up se precisar.'; \
 	fi
 
 deps-down: db-down
@@ -179,6 +191,19 @@ backend: env
 		AIR_CMD='go run github.com/air-verse/air@latest'; \
 	fi; \
 	PORT="$(BACKEND_PORT)" DATABASE_URL="$(DATABASE_URL)" JWT_SECRET="$(JWT_SECRET)" WEBAPP_URL="$(WEBAPP_URL)" ENV="$(ENV)" $$AIR_CMD -c .air.toml
+
+# ── Web (Docker + Air hot reload, sem precisar de Go local) ──────────────────
+web:
+	$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-web-dev -f web/Dockerfile.dev web/
+	-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-web-dev
+	-$(CONTAINER_ENGINE) ps -q --filter publish=$(WEBAPP_PORT) | xargs -r $(CONTAINER_ENGINE) rm -f
+	$(CONTAINER_ENGINE) run --rm -it \
+		-v "$(CURDIR_UNIX)/web:/app" \
+		-p $(WEBAPP_PORT):$(WEBAPP_PORT) \
+		-e PORT=$(WEBAPP_PORT) \
+		-e API_URL=$(WEB_DEV_API_URL) \
+		--name $(APP_NAME)-web-dev \
+		$(APP_NAME)-web-dev
 
 migrate-up:
 	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate up
