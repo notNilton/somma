@@ -13,7 +13,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: app/Dockerfile
+      dockerfile: apps/backend/Dockerfile
     container_name: api.tallyoh.nilbyte
     restart: always
     ports:
@@ -31,7 +31,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: web/Dockerfile
+      dockerfile: apps/web/Dockerfile
     container_name: web.tallyoh.nilbyte
     restart: always
     ports:
