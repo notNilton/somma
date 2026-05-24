@@ -1,12 +1,12 @@
 import type { Transaction, TxType } from '../types'
 
-const PT_WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-
 export interface DayGroup {
   dateStr: string
-  label: string
+  dayNum: number
   transactions: Transaction[]
   netAmount: number
+  typeTotals: Partial<Record<TxType, number>>
+  runningBalance: number
 }
 
 export interface Summary {
@@ -16,20 +16,13 @@ export interface Summary {
   netBalance: number
 }
 
-export function groupByDay(transactions: Transaction[], now: Date): DayGroup[] {
-  const year = now.getFullYear()
-  const month = now.getMonth()
+export function groupByDay(transactions: Transaction[], year: number, month: number): DayGroup[] {
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-
-  const todayStr = toDateStr(now)
-  const yesterday = new Date(now)
-  yesterday.setDate(now.getDate() - 1)
-  const yesterdayStr = toDateStr(yesterday)
 
   const map = new Map<string, DayGroup>()
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`
-    map.set(dateStr, { dateStr, label: label(dateStr, todayStr, yesterdayStr), transactions: [], netAmount: 0 })
+    map.set(dateStr, { dateStr, dayNum: d, transactions: [], netAmount: 0, typeTotals: {}, runningBalance: 0 })
   }
 
   for (const tx of transactions) {
@@ -38,9 +31,18 @@ export function groupByDay(transactions: Transaction[], now: Date): DayGroup[] {
     if (!g) continue
     g.transactions.push(tx)
     g.netAmount += netSign(tx.type) * tx.amount
+    g.typeTotals[tx.type] = (g.typeTotals[tx.type] ?? 0) + tx.amount
   }
 
-  return Array.from(map.values()).sort((a, b) => b.dateStr.localeCompare(a.dateStr))
+  // Compute running balance oldest → newest, then return newest first
+  const sorted = Array.from(map.values()).sort((a, b) => a.dateStr.localeCompare(b.dateStr))
+  let running = 0
+  for (const g of sorted) {
+    running += g.netAmount
+    g.runningBalance = running
+  }
+
+  return sorted.reverse()
 }
 
 export function computeSummary(transactions: Transaction[]): Summary {
@@ -63,18 +65,6 @@ function netSign(type: TxType): number {
   return 0
 }
 
-function toDateStr(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
-
 function pad(n: number): string {
   return String(n).padStart(2, '0')
-}
-
-function label(dateStr: string, todayStr: string, yesterdayStr: string): string {
-  if (dateStr === todayStr) return 'Hoje'
-  if (dateStr === yesterdayStr) return 'Ontem'
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  return `${PT_WEEKDAYS[date.getDay()]}, ${pad(d)}/${pad(m)}`
 }

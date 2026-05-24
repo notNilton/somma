@@ -1,77 +1,106 @@
-import { typeClass, typeInitial, signPrefix, formatMoney } from '../lib/format'
+import { useState } from 'react'
+import { formatMoney } from '../lib/format'
 import type { DayGroup } from '../lib/groupByDay'
+import type { TxType } from '../types'
+
+const ROW_TYPES: { type: TxType; letter: string; label: string }[] = [
+  { type: 'EXPENSE',    letter: 'D', label: 'Despesa'      },
+  { type: 'INCOME',     letter: 'R', label: 'Renda'        },
+  { type: 'INVESTMENT', letter: 'I', label: 'Investimento' },
+  { type: 'CREDIT',     letter: 'E', label: 'Economia'     },
+  { type: 'RETURN',     letter: 'T', label: 'Retorno'      },
+]
 
 interface Props {
   group: DayGroup
+  filterType: TxType | 'ALL'
+  isToday: boolean
   onAdd: (date: string, type: string) => void
   onDelete: (id: string) => void
 }
 
-export default function DayGroupComponent({ group, onAdd, onDelete }: Props) {
-  const { dateStr, label, transactions, netAmount } = group
-  const hasTx = transactions.length > 0
+export default function DayGroupComponent({ group, filterType, isToday, onAdd, onDelete }: Props) {
+  const [expanded, setExpanded] = useState<TxType | null>(null)
+
+  const visibleTypes = filterType === 'ALL' ? ROW_TYPES : ROW_TYPES.filter(r => r.type === filterType)
+  const saldoClass = group.runningBalance > 0 ? 'pos' : group.runningBalance < 0 ? 'neg' : 'zero'
+
+  function handleRowClick(type: TxType) {
+    if (group.typeTotals[type]) {
+      setExpanded(prev => prev === type ? null : type)
+    } else {
+      onAdd(group.dateStr, type)
+    }
+  }
 
   return (
-    <div className="day-group">
-      <div className="day-header">
-        <span className="day-label">{label}</span>
-        {netAmount !== 0 && (
-          <span className={`day-net ${netAmount > 0 ? 'pos' : 'neg'}`}>
-            {netAmount > 0 ? '+' : ''}{formatMoney(netAmount)}
-          </span>
-        )}
+    <div className={`tx-day-row${isToday ? ' is-today' : ''}`}>
+      <div className={`tx-day-num${isToday ? ' today' : ''}`}>
+        {group.dayNum}
       </div>
 
-      <div className={hasTx ? undefined : 'no-tx'}>
-        {hasTx && (
-          <div className="tx-card">
-            {transactions.map(tx => {
-              const isOptimistic = tx.id.startsWith('optimistic-')
-              return (
-                <div key={tx.id} className="tx-row" style={isOptimistic ? { opacity: 0.6 } : undefined}>
-                  <div
-                    className={`tx-icon ${typeClass(tx.type)}`}
-                    style={tx.category?.color ? { background: tx.category.color } : undefined}
-                  >
-                    {typeInitial(tx.type)}
-                  </div>
-                  <span className="tx-desc">{tx.description}</span>
-                  {tx.status === 'PENDING' && <span className="tx-badge pending">Pend.</span>}
-                  <span className={`tx-amount ${typeClass(tx.type)}`}>
-                    {signPrefix(tx.type)}{formatMoney(tx.amount)}
-                  </span>
-                  {!isOptimistic && (
-                    <button
-                      className="btn-del"
-                      title="Remover"
-                      onClick={() => { if (confirm('Remover?')) onDelete(tx.id) }}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
+      <div className="tx-type-list">
+        {visibleTypes.map(({ type, letter, label }) => {
+          const total = group.typeTotals[type] ?? 0
+          const hasItems = total > 0
+          const isExp = expanded === type
+          const txsOfType = group.transactions.filter(t => t.type === type)
 
-        <div className="quick-add">
-          {[
-            { type: 'EXPENSE',    cls: 'qa-expense',    label: 'D' },
-            { type: 'INCOME',     cls: 'qa-income',     label: 'R' },
-            { type: 'INVESTMENT', cls: 'qa-investment',  label: 'I' },
-            { type: 'CREDIT',     cls: 'qa-credit',     label: 'C' },
-          ].map(({ type, cls, label }) => (
-            <button
-              key={type}
-              className={`qa-btn ${cls}`}
-              title={type}
-              onClick={() => onAdd(dateStr, type)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+          return (
+            <div key={type}>
+              <div
+                className={`tx-type-row${hasItems ? ' has-tx' : ' empty'}`}
+                onClick={() => handleRowClick(type)}
+                title={hasItems ? `${label}: ${formatMoney(total)}` : `Adicionar ${label}`}
+              >
+                <span className={`tx-type-icon ${type.toLowerCase()}${hasItems ? '' : ' dim'}`}>
+                  {letter}
+                </span>
+                <span className={`tx-type-amt ${hasItems ? type.toLowerCase() : 'zero'}`}>
+                  {hasItems ? formatMoney(total) : 'R$ 0,00'}
+                </span>
+                {hasItems && (
+                  <span className="tx-expand-arrow">{isExp ? '▴' : '▾'}</span>
+                )}
+              </div>
+
+              {isExp && (
+                <div className="tx-type-detail">
+                  {txsOfType.map(tx => (
+                    <div
+                      key={tx.id}
+                      className="tx-detail-row"
+                      style={tx.id.startsWith('optimistic-') ? { opacity: 0.5 } : undefined}
+                    >
+                      <span className="tx-detail-desc">{tx.description || '—'}</span>
+                      {tx.status === 'PENDING' && <span className="tx-badge pending">Pend.</span>}
+                      <span className="tx-detail-amt">{formatMoney(tx.amount)}</span>
+                      {!tx.id.startsWith('optimistic-') && (
+                        <button
+                          className="tx-detail-del"
+                          onClick={e => {
+                            e.stopPropagation()
+                            if (confirm('Remover?')) onDelete(tx.id)
+                          }}
+                        >×</button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    className="tx-add-inline"
+                    onClick={e => { e.stopPropagation(); onAdd(group.dateStr, type) }}
+                  >
+                    + adicionar
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div className={`tx-saldo ${saldoClass}`}>
+        {group.runningBalance !== 0 ? formatMoney(group.runningBalance) : ''}
       </div>
     </div>
   )

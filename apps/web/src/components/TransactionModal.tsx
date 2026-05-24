@@ -12,10 +12,11 @@ interface Props {
 }
 
 const TX_TYPES: { value: TxType; cls: string }[] = [
-  { value: 'EXPENSE',    cls: 'expense' },
-  { value: 'INCOME',     cls: 'income' },
+  { value: 'EXPENSE',    cls: 'expense'    },
+  { value: 'INCOME',     cls: 'income'     },
   { value: 'INVESTMENT', cls: 'investment' },
-  { value: 'CREDIT',     cls: 'credit' },
+  { value: 'CREDIT',     cls: 'credit'     },
+  { value: 'RETURN',     cls: 'return'     },
 ]
 
 const CHANNELS = ['PIX', 'BANK', 'CARD_DEBIT', 'CARD_CREDIT']
@@ -44,10 +45,14 @@ export default function TransactionModal({ date, type: initialType, categories, 
     })
   }
 
+  const [y, m, d] = date.split('-')
+  const dateLabel = `${d}/${m}/${y}`
+
   return (
     <div style={{ padding: '1.1rem 1.25rem 1.25rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.9rem' }}>
         <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Nova transação</span>
+        <span style={{ fontSize: '0.75rem', color: '#9ca3af', flex: 1 }}>{dateLabel}</span>
         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '1.2rem', lineHeight: 1, padding: '0.1rem 0.3rem' }}>×</button>
       </div>
 
@@ -105,7 +110,7 @@ export default function TransactionModal({ date, type: initialType, categories, 
           <select value={categoryId} onChange={e => setCategoryId(e.target.value)} style={{ margin: '0 0 0.5rem', fontSize: '0.83rem', height: '34px' }}>
             <option value="">Categoria (opcional)</option>
             {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.indent ? '  - ' : ''}{c.name}</option>
+              <option key={c.id} value={c.id}>{c.indent ? '  - ' : ''}{c.name}</option>
             ))}
           </select>
         )}
