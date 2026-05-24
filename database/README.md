@@ -1,43 +1,55 @@
-# Database Layer - Tallyoh
+# Database Layer
 
-Este diretório contém toda a lógica de gerenciamento de banco de dados do projeto.
+SQL migrations, seed data, and the standalone migration binary for tally'oh.
 
-## Estrutura
+## Structure
 
-- `migrations/`: Arquivos SQL de migração (versionamento do esquema).
-- `seeds/`: Scripts SQL para semear o banco com dados de teste (ex: `initial_seed.sql`).
-- `cmd/migrate/`: Ferramenta em Go para aplicar migrations e seeds.
-- `database.go`: Conector central para o PostgreSQL.
+- `migrations/` — versioned SQL migration files (up + down pairs)
+- `seeds/` — seed scripts for local development
+- `cmd/migrate/` — Go binary that applies migrations and seeds
+- `database.go` — PostgreSQL connection helper
 
-## Como Usar
+## Usage
 
 ### Migrations
-Para evoluir o banco de dados:
+
+Apply pending migrations:
 ```bash
 go run ./database/cmd/migrate up
 ```
 
-Para retroceder uma versão:
+Revert one migration:
 ```bash
 go run ./database/cmd/migrate down
 ```
 
+Show current version:
+```bash
+go run ./database/cmd/migrate version
+```
+
 ### Seeding
-Para popular o banco com o cenário completo, incluindo transações:
+
+Full seed with sample transactions:
 ```bash
 go run ./database/cmd/migrate seed-complete
 ```
 
-Para popular apenas o cenário mínimo com usuário, contas e veículo:
+Minimal seed (user only):
 ```bash
 go run ./database/cmd/migrate seed-barebones
 ```
 
-No `Makefile`, `make seed` é um atalho para o seed completo.
+Via Makefile shortcuts:
+```bash
+make db-seed-complete
+make db-seed-barebones
+```
 
-## Desenvolvimento
+## Creating a Migration
 
-Para criar uma nova migration:
-1. Crie um arquivo `XXXXXX_nome.up.sql` em `migrations/`.
-2. Crie um arquivo `XXXXXX_nome.down.sql` em `migrations/`.
-3. Rode `go run ./database/cmd/migrate up`.
+1. Add `XXXXXX_description.up.sql` under `migrations/`.
+2. Add `XXXXXX_description.down.sql` under `migrations/`.
+3. Run `go run ./database/cmd/migrate up`.
+
+Migration files run in numeric order. Always provide a matching `.down.sql` to keep rollbacks possible.
