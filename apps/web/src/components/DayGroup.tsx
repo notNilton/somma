@@ -1,36 +1,48 @@
 import { useState } from 'react'
 import { formatMoney } from '../lib/format'
 import type { DayGroup } from '../lib/groupByDay'
-import type { TxType } from '../types'
+import type { TxKind } from '../types'
 
-const ROW_TYPES: { type: TxType; letter: string; label: string }[] = [
-  { type: 'EXPENSE',    letter: 'D', label: 'Despesa'      },
-  { type: 'INCOME',     letter: 'R', label: 'Renda'        },
-  { type: 'INVESTMENT', letter: 'I', label: 'Investimento' },
-  { type: 'CREDIT',     letter: 'E', label: 'Economia'     },
-  { type: 'RETURN',     letter: 'T', label: 'Retorno'      },
+type FilterType = 'ALL' | 'INCOME' | 'EXPENSE'
+
+const ROW_TYPES: { kind: TxKind; letter: string; label: string; tone: string }[] = [
+  { kind: 'INCOME', letter: 'R', label: 'Renda', tone: 'income' },
+  { kind: 'EXPENSE', letter: 'D', label: 'Despesa', tone: 'expense' },
+  { kind: 'CREDIT', letter: 'C', label: 'Credito', tone: 'credit' },
+  { kind: 'SAVING', letter: 'E', label: 'Economia', tone: 'saving' },
+  { kind: 'BUDGET', letter: 'O', label: 'Orcamento', tone: 'budget' },
 ]
 
 interface Props {
   group: DayGroup
-  filterType: TxType | 'ALL'
+  filterType: FilterType
   isToday: boolean
-  onAdd: (date: string, type: string) => void
+  onAdd: (date: string, kind: TxKind) => void
   onDelete: (id: string) => void
 }
 
 export default function DayGroupComponent({ group, filterType, isToday, onAdd, onDelete }: Props) {
-  const [expanded, setExpanded] = useState<TxType | null>(null)
+  const [expanded, setExpanded] = useState<TxKind | null>(null)
 
-  const visibleTypes = filterType === 'ALL' ? ROW_TYPES : ROW_TYPES.filter(r => r.type === filterType)
+  const visibleTypes = filterType === 'ALL'
+    ? ROW_TYPES
+    : ROW_TYPES.filter(row => filterType === 'INCOME' ? row.kind === 'INCOME' : row.kind !== 'INCOME')
   const saldoClass = group.runningBalance > 0 ? 'pos' : group.runningBalance < 0 ? 'neg' : 'zero'
 
-  function handleRowClick(type: TxType) {
-    if (group.typeTotals[type]) {
-      setExpanded(prev => prev === type ? null : type)
-    } else {
-      onAdd(group.dateStr, type)
+  function txsFor(kind: TxKind) {
+    return group.transactions.filter(tx => tx.kind === kind)
+  }
+
+  function totalFor(kind: TxKind) {
+    return txsFor(kind).reduce((sum, tx) => sum + tx.amount, 0)
+  }
+
+  function handleRowClick(kind: TxKind) {
+    if (totalFor(kind) > 0) {
+      setExpanded(prev => prev === kind ? null : kind)
+      return
     }
+    onAdd(group.dateStr, kind)
   }
 
   return (
@@ -40,39 +52,39 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
       </div>
 
       <div className="tx-type-list">
-        {visibleTypes.map(({ type, letter, label }) => {
-          const total = group.typeTotals[type] ?? 0
+        {visibleTypes.map(({ kind, letter, label, tone }) => {
+          const total = totalFor(kind)
           const hasItems = total > 0
-          const isExp = expanded === type
-          const txsOfType = group.transactions.filter(t => t.type === type)
+          const isOpen = expanded === kind
+          const txs = txsFor(kind)
 
           return (
-            <div key={type}>
+            <div key={kind}>
               <div
                 className={`tx-type-row${hasItems ? ' has-tx' : ' empty'}`}
-                onClick={() => handleRowClick(type)}
+                onClick={() => handleRowClick(kind)}
                 title={hasItems ? `${label}: ${formatMoney(total)}` : `Adicionar ${label}`}
               >
-                <span className={`tx-type-icon ${type.toLowerCase()}${hasItems ? '' : ' dim'}`}>
+                <span className={`tx-type-icon ${tone}${hasItems ? '' : ' dim'}`}>
                   {letter}
                 </span>
-                <span className={`tx-type-amt ${hasItems ? type.toLowerCase() : 'zero'}`}>
+                <span className={`tx-type-amt ${hasItems ? tone : 'zero'}`}>
                   {hasItems ? formatMoney(total) : 'R$ 0,00'}
                 </span>
-                {hasItems && (
-                  <span className="tx-expand-arrow">{isExp ? '▴' : '▾'}</span>
-                )}
+                {hasItems && <span className="tx-expand-arrow">{isOpen ? '▴' : '▾'}</span>}
               </div>
 
-              {isExp && (
+              {isOpen && (
                 <div className="tx-type-detail">
-                  {txsOfType.map(tx => (
+                  {txs.map(tx => (
                     <div
                       key={tx.id}
                       className="tx-detail-row"
                       style={tx.id.startsWith('optimistic-') ? { opacity: 0.5 } : undefined}
                     >
-                      <span className="tx-detail-desc">{tx.description || '—'}</span>
+                      <span className="tx-detail-desc">
+                        {tx.category?.name || tx.description || label}
+                      </span>
                       {tx.status === 'PENDING' && <span className="tx-badge pending">Pend.</span>}
                       <span className="tx-detail-amt">{formatMoney(tx.amount)}</span>
                       {!tx.id.startsWith('optimistic-') && (
@@ -82,13 +94,18 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
                             e.stopPropagation()
                             if (confirm('Remover?')) onDelete(tx.id)
                           }}
-                        >×</button>
+                        >
+                          ×
+                        </button>
                       )}
                     </div>
                   ))}
                   <button
                     className="tx-add-inline"
-                    onClick={e => { e.stopPropagation(); onAdd(group.dateStr, type) }}
+                    onClick={e => {
+                      e.stopPropagation()
+                      onAdd(group.dateStr, kind)
+                    }}
                   >
                     + adicionar
                   </button>

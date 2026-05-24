@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { transactionsApi, categoriesApi } from '../api'
+import { budgetsApi, transactionsApi } from '../api'
 import { useAuth } from '../contexts/AuthContext'
 import { groupByDay, computeSummary } from '../lib/groupByDay'
-import { flattenCategories } from '../lib/categories'
 import { formatMoney } from '../lib/format'
 import DayGroupComponent from '../components/DayGroup'
 import TransactionModal from '../components/TransactionModal'
-import type { Transaction, CreateInput, TxType } from '../types'
+import type { Transaction, CreateInput, TxKind } from '../types'
 
 const PT_MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-interface ModalState { open: boolean; date: string; type: string }
+interface ModalState { open: boolean; date: string; kind: TxKind }
+type UiFilterType = 'ALL' | 'INCOME' | 'EXPENSE'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
@@ -24,7 +24,7 @@ export default function TransactionsPage() {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
-  const [filterType, setFilterType] = useState<TxType | 'ALL'>('ALL')
+  const [filterType, setFilterType] = useState<UiFilterType>('ALL')
 
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) }
@@ -45,19 +45,17 @@ export default function TransactionsPage() {
     queryKey: txKey,
     queryFn: () => transactionsApi.list(from, to),
   })
-
-  const { data: rawCats = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: categoriesApi.list,
-    staleTime: Infinity,
+  const { data: budgets = [], error: budgetsError } = useQuery({
+    queryKey: ['budgets'],
+    queryFn: () => budgetsApi.list(),
   })
 
   useEffect(() => {
-    if ((txError as Error)?.message === 'UNAUTHORIZED') {
+    if ((txError as Error)?.message === 'UNAUTHORIZED' || (budgetsError as Error)?.message === 'UNAUTHORIZED') {
       logout()
       navigate('/login', { replace: true })
     }
-  }, [txError, logout, navigate])
+  }, [budgetsError, txError, logout, navigate])
 
   const createMutation = useMutation({
     mutationFn: (input: CreateInput) => transactionsApi.create(input),
@@ -68,14 +66,13 @@ export default function TransactionsPage() {
         ...old,
         {
           id: 'optimistic-' + Date.now(),
-          type: input.type as Transaction['type'],
-          status: input.status as Transaction['status'],
-          channel: input.channel as Transaction['channel'],
-          paymentMethod: input.paymentMethod as Transaction['paymentMethod'],
+          type: input.type,
+          kind: input.kind ?? (input.type === 'INCOME' ? 'INCOME' : 'EXPENSE'),
+          status: input.status ?? 'COMPLETED',
           amount: input.amount,
           description: input.description,
           date: input.date + 'T00:00:00Z',
-          isRecurring: false,
+          budgetId: input.budgetId,
         },
       ])
       return { previous }
@@ -100,11 +97,11 @@ export default function TransactionsPage() {
     onSettled: () => qc.invalidateQueries({ queryKey: txKey }),
   })
 
-  const [modal, setModal] = useState<ModalState>({ open: false, date: '', type: '' })
+  const [modal, setModal] = useState<ModalState>({ open: false, date: '', kind: 'EXPENSE' })
   const dialogRef = useRef<HTMLDialogElement>(null)
 
-  function openModal(date: string, type: string) {
-    setModal({ open: true, date, type })
+  function openModal(date: string, kind: TxKind) {
+    setModal({ open: true, date, kind })
     dialogRef.current?.showModal()
   }
 
@@ -120,7 +117,6 @@ export default function TransactionsPage() {
 
   const groups = groupByDay(txs, year, month)
   const summary = computeSummary(txs)
-  const categories = flattenCategories(rawCats)
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
   return (
@@ -139,8 +135,6 @@ export default function TransactionsPage() {
           <span className="ms-item income">+{formatMoney(summary.totalIncome)}</span>
           <span className="ms-sep">·</span>
           <span className="ms-item expense">-{formatMoney(summary.totalExpense)}</span>
-          <span className="ms-sep">·</span>
-          <span className="ms-item investment">-{formatMoney(summary.totalInvestment)}</span>
           <span className="ms-spacer" />
           <span className={`ms-net ${summary.netBalance >= 0 ? 'pos' : 'neg'}`}>
             {summary.netBalance > 0 ? '+' : ''}{formatMoney(summary.netBalance)}
@@ -153,14 +147,11 @@ export default function TransactionsPage() {
             <select
               className="type-filter-select"
               value={filterType}
-              onChange={e => setFilterType(e.target.value as TxType | 'ALL')}
+              onChange={e => setFilterType(e.target.value as UiFilterType)}
             >
               <option value="ALL">⊙ Todas</option>
-              <option value="EXPENSE">Despesa</option>
               <option value="INCOME">Renda</option>
-              <option value="INVESTMENT">Investimento</option>
-              <option value="CREDIT">Economia</option>
-              <option value="RETURN">Retorno</option>
+              <option value="EXPENSE">Despesa</option>
             </select>
           </span>
           <span className="th-saldo">Saldo</span>
@@ -185,8 +176,8 @@ export default function TransactionsPage() {
         {modal.open && (
           <TransactionModal
             date={modal.date}
-            type={modal.type}
-            categories={categories}
+            kind={modal.kind}
+            budgets={budgets}
             onClose={closeModal}
             onSubmit={handleCreate}
             error={createMutation.error?.message}
