@@ -32,13 +32,6 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("PATCH /api/v1/categories/{id}", auth(h.UpdateCategory))
 	mux.HandleFunc("DELETE /api/v1/categories/{id}", auth(h.DeleteCategory))
 
-	// Tags
-	mux.HandleFunc("GET /api/v1/tags", auth(h.ListTags))
-	mux.HandleFunc("GET /api/v1/tags/{id}", auth(h.GetTag))
-	mux.HandleFunc("POST /api/v1/tags", auth(h.CreateTag))
-	mux.HandleFunc("PATCH /api/v1/tags/{id}", auth(h.UpdateTag))
-	mux.HandleFunc("DELETE /api/v1/tags/{id}", auth(h.DeleteTag))
-
 	// Transactions
 	mux.HandleFunc("GET /api/v1/transactions", auth(h.ListTransactions))
 	mux.HandleFunc("GET /api/v1/transactions/future", auth(h.ListFutureTransactions))
@@ -52,16 +45,6 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("POST /api/v1/budgets", auth(h.CreateBudget))
 	mux.HandleFunc("PATCH /api/v1/budgets/{id}", auth(h.UpdateBudget))
 	mux.HandleFunc("DELETE /api/v1/budgets/{id}", auth(h.DeleteBudget))
-
-	// Vehicles
-	mux.HandleFunc("GET /api/v1/vehicles", auth(h.ListVehicles))
-	mux.HandleFunc("GET /api/v1/vehicles/{id}", auth(h.GetVehicle))
-	mux.HandleFunc("GET /api/v1/vehicles/{id}/refuelings", auth(h.GetVehicleRefuelings))
-	mux.HandleFunc("GET /api/v1/vehicles/{id}/maintenances", auth(h.GetVehicleMaintenances))
-	mux.HandleFunc("GET /api/v1/vehicles/{id}/expenses-stats", auth(h.GetVehicleExpenseStats))
-	mux.HandleFunc("POST /api/v1/vehicles", auth(h.CreateVehicle))
-	mux.HandleFunc("PATCH /api/v1/vehicles/{id}", auth(h.UpdateVehicle))
-	mux.HandleFunc("DELETE /api/v1/vehicles/{id}", auth(h.DeleteVehicle))
 
 	// Dashboard & Analytics
 	mux.HandleFunc("GET /api/v1/dashboard", auth(h.GetDashboard))
