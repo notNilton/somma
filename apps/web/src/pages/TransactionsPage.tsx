@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { budgetsApi, transactionsApi } from '../api'
 import { useAuth } from '../contexts/AuthContext'
+import { useLocale } from '../i18n'
 import { groupByDay, computeSummary } from '../lib/groupByDay'
 import { formatMoney } from '../lib/format'
 import DayGroupComponent from '../components/DayGroup'
 import TransactionModal from '../components/TransactionModal'
 import type { Transaction, CreateInput, TxKind } from '../types'
-
-const PT_MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
 interface ModalState { open: boolean; date: string; kind: TxKind }
 type UiFilterType = 'ALL' | 'INCOME' | 'EXPENSE'
@@ -20,6 +19,7 @@ export default function TransactionsPage() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { t } = useLocale()
 
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
@@ -88,7 +88,7 @@ export default function TransactionsPage() {
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: txKey })
       const previous = qc.getQueryData<Transaction[]>(txKey)
-      qc.setQueryData<Transaction[]>(txKey, (old = []) => old.filter(t => t.id !== id))
+      qc.setQueryData<Transaction[]>(txKey, (old = []) => old.filter(tx => tx.id !== id))
       return { previous }
     },
     onError: (_err, _id, ctx) => {
@@ -123,11 +123,11 @@ export default function TransactionsPage() {
     <>
       <div className="tx-page">
         <div className="month-nav">
-          <button className="today-chip" onClick={goToday} title="Ir para hoje">
+          <button className="today-chip" onClick={goToday} title="hoje">
             {now.getDate()}
           </button>
           <button className="month-arrow" onClick={prevMonth}>‹</button>
-          <span className="month-label">{PT_MONTHS[month]}/{String(year).slice(2)}</span>
+          <span className="month-label">{t.months[month]}/{String(year).slice(2)}</span>
           <button className="month-arrow" onClick={nextMonth}>›</button>
         </div>
 
@@ -142,19 +142,19 @@ export default function TransactionsPage() {
         </div>
 
         <div className="tx-table-header">
-          <span className="th-dia">Dia</span>
+          <span className="th-dia">{t.table.day}</span>
           <span className="th-filter">
             <select
               className="type-filter-select"
               value={filterType}
               onChange={e => setFilterType(e.target.value as UiFilterType)}
             >
-              <option value="ALL">⊙ Todas</option>
-              <option value="INCOME">Renda</option>
-              <option value="EXPENSE">Despesa</option>
+              <option value="ALL">{t.filter.all}</option>
+              <option value="INCOME">{t.filter.income}</option>
+              <option value="EXPENSE">{t.filter.expense}</option>
             </select>
           </span>
-          <span className="th-saldo">Saldo</span>
+          <span className="th-saldo">{t.table.balance}</span>
         </div>
 
         {groups.map(g => (

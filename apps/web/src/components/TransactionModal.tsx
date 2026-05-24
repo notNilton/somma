@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useLocale } from '../i18n'
 import type { Budget, CreateInput, TxKind } from '../types'
 
 interface Props {
@@ -14,17 +15,8 @@ function txTypeForKind(kind: TxKind) {
   return kind === 'INCOME' ? 'INCOME' : 'EXPENSE'
 }
 
-function titleForKind(kind: TxKind) {
-  switch (kind) {
-    case 'INCOME': return 'Nova renda'
-    case 'CREDIT': return 'Novo pagamento de credito'
-    case 'SAVING': return 'Nova economia'
-    case 'BUDGET': return 'Novo lancamento de orcamento'
-    default: return 'Nova despesa'
-  }
-}
-
 export default function TransactionModal({ date, kind, budgets, onClose, onSubmit, error }: Props) {
+  const { t } = useLocale()
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [budgetId, setBudgetId] = useState('')
@@ -48,7 +40,7 @@ export default function TransactionModal({ date, kind, budgets, onClose, onSubmi
     <div className="tx-modal">
       <div className="tx-modal-header">
         <div>
-          <div className="tx-modal-title">{titleForKind(kind)}</div>
+          <div className="tx-modal-title">{t.kind[kind].label}</div>
           <div className="tx-modal-date">{dateLabel}</div>
         </div>
         <button className="tx-modal-close" onClick={onClose}>×</button>
@@ -74,7 +66,7 @@ export default function TransactionModal({ date, kind, budgets, onClose, onSubmi
         <input
           className="tx-modal-input"
           type="text"
-          placeholder="Descrição (opcional)"
+          placeholder={t.modal.descPlaceholder}
           value={description}
           onChange={e => setDescription(e.target.value)}
           maxLength={255}
@@ -87,7 +79,7 @@ export default function TransactionModal({ date, kind, budgets, onClose, onSubmi
             value={budgetId}
             onChange={e => setBudgetId(e.target.value)}
           >
-            <option value="">Selecione um orcamento</option>
+            <option value="">{t.kind.BUDGET.label}</option>
             {budgets.map((budget) => (
               <option key={budget.id} value={budget.id}>
                 {budget.name}
@@ -98,10 +90,10 @@ export default function TransactionModal({ date, kind, budgets, onClose, onSubmi
 
         <div className="tx-modal-actions">
           <button type="button" onClick={onClose} className="tx-modal-btn tx-modal-btn-secondary">
-            Cancelar
+            {t.modal.cancel}
           </button>
           <button type="submit" className="tx-modal-btn tx-modal-btn-primary">
-            Salvar
+            {t.modal.save}
           </button>
         </div>
       </form>

@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { formatMoney } from '../lib/format'
+import { useLocale } from '../i18n'
 import type { DayGroup } from '../lib/groupByDay'
 import type { TxKind } from '../types'
 
 type FilterType = 'ALL' | 'INCOME' | 'EXPENSE'
 
-const ROW_TYPES: { kind: TxKind; letter: string; label: string; tone: string }[] = [
-  { kind: 'INCOME', letter: 'R', label: 'Renda', tone: 'income' },
-  { kind: 'EXPENSE', letter: 'D', label: 'Despesa', tone: 'expense' },
-  { kind: 'CREDIT', letter: 'C', label: 'Credito', tone: 'credit' },
-  { kind: 'SAVING', letter: 'E', label: 'Economia', tone: 'saving' },
-  { kind: 'BUDGET', letter: 'O', label: 'Orcamento', tone: 'budget' },
-]
+const KIND_TONES: Record<TxKind, string> = {
+  INCOME: 'income',
+  EXPENSE: 'expense',
+  CREDIT: 'credit',
+  SAVING: 'saving',
+  BUDGET: 'budget',
+}
+
+const ALL_KINDS: TxKind[] = ['INCOME', 'EXPENSE', 'CREDIT', 'SAVING', 'BUDGET']
 
 interface Props {
   group: DayGroup
@@ -23,10 +26,14 @@ interface Props {
 
 export default function DayGroupComponent({ group, filterType, isToday, onAdd, onDelete }: Props) {
   const [expanded, setExpanded] = useState<TxKind | null>(null)
+  const { t } = useLocale()
 
-  const visibleTypes = filterType === 'ALL'
-    ? ROW_TYPES
-    : ROW_TYPES.filter(row => filterType === 'INCOME' ? row.kind === 'INCOME' : row.kind !== 'INCOME')
+  const visibleKinds = ALL_KINDS.filter(kind =>
+    filterType === 'ALL' ? true :
+    filterType === 'INCOME' ? kind === 'INCOME' :
+    kind !== 'INCOME'
+  )
+
   const saldoClass = group.runningBalance > 0 ? 'pos' : group.runningBalance < 0 ? 'neg' : 'zero'
 
   function txsFor(kind: TxKind) {
@@ -52,7 +59,9 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
       </div>
 
       <div className="tx-type-list">
-        {visibleTypes.map(({ kind, letter, label, tone }) => {
+        {visibleKinds.map(kind => {
+          const { letter, label } = t.kind[kind]
+          const tone = KIND_TONES[kind]
           const total = totalFor(kind)
           const hasItems = total > 0
           const isOpen = expanded === kind
@@ -63,7 +72,7 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
               <div
                 className={`tx-type-row${hasItems ? ' has-tx' : ' empty'}`}
                 onClick={() => handleRowClick(kind)}
-                title={hasItems ? `${label}: ${formatMoney(total)}` : `Adicionar ${label}`}
+                title={hasItems ? `${label}: ${formatMoney(total)}` : `+ ${label}`}
               >
                 <span className={`tx-type-icon ${tone}${hasItems ? '' : ' dim'}`}>
                   {letter}
@@ -85,14 +94,16 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
                       <span className="tx-detail-desc">
                         {tx.category?.name || tx.description || label}
                       </span>
-                      {tx.status === 'PENDING' && <span className="tx-badge pending">Pend.</span>}
+                      {tx.status === 'PENDING' && (
+                        <span className="tx-badge pending">{t.status.pending}</span>
+                      )}
                       <span className="tx-detail-amt">{formatMoney(tx.amount)}</span>
                       {!tx.id.startsWith('optimistic-') && (
                         <button
                           className="tx-detail-del"
                           onClick={e => {
                             e.stopPropagation()
-                            if (confirm('Remover?')) onDelete(tx.id)
+                            if (confirm(t.dayGroup.confirmDelete)) onDelete(tx.id)
                           }}
                         >
                           ×
@@ -107,7 +118,7 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
                       onAdd(group.dateStr, kind)
                     }}
                   >
-                    + adicionar
+                    {t.dayGroup.addInline}
                   </button>
                 </div>
               )}

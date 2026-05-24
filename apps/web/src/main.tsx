@@ -4,18 +4,21 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { RouterProvider } from 'react-router-dom'
 import { queryClient, persister } from './queryClient'
 import { AuthProvider } from './contexts/AuthContext'
+import { LocaleProvider } from './i18n'
 import { router } from './router'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
-      >
-        <RouterProvider router={router} />
-      </PersistQueryClientProvider>
-    </AuthProvider>
+    <LocaleProvider>
+      <AuthProvider>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
+        >
+          <RouterProvider router={router} />
+        </PersistQueryClientProvider>
+      </AuthProvider>
+    </LocaleProvider>
   </StrictMode>,
 )

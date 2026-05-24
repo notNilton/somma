@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useIsFetching, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
+import { useLocale } from '../i18n'
 import { authApi } from '../api'
 
 export default function AppLayout() {
@@ -8,6 +9,7 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const isFetching = useIsFetching()
+  const { t } = useLocale()
 
   async function handleLogout() {
     await authApi.logout().catch(() => {})
@@ -24,23 +26,23 @@ export default function AppLayout() {
         </NavLink>
         <span className="nav-spacer" />
         {isFetching > 0 && (
-          <span className="sync-dot syncing" title="Sincronizando..." />
+          <span className="sync-dot syncing" title={t.nav.syncing} />
         )}
         <NavLink
           className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
           to="/"
           end
         >
-          Transações
+          {t.nav.transactions}
         </NavLink>
         <NavLink
           className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
           to="/config"
         >
-          Config
+          {t.nav.config}
         </NavLink>
         <button className="btn-logout" onClick={handleLogout}>
-          Sair
+          {t.nav.logout}
         </button>
       </nav>
       <Outlet />
