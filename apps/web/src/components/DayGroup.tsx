@@ -77,6 +77,7 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
                 <span className={`tx-type-icon ${tone}${hasItems ? '' : ' dim'}`}>
                   {letter}
                 </span>
+                <span className="tx-type-label">{label}</span>
                 <span className={`tx-type-amt ${hasItems ? tone : 'zero'}`}>
                   {hasItems ? formatMoney(total) : 'R$ 0,00'}
                 </span>

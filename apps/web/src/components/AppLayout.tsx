@@ -37,6 +37,12 @@ export default function AppLayout() {
         </NavLink>
         <NavLink
           className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+          to="/budgets"
+        >
+          {t.nav.budgets}
+        </NavLink>
+        <NavLink
+          className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
           to="/config"
         >
           {t.nav.config}

@@ -2,7 +2,7 @@ export type Locale = 'pt-BR' | 'en-US' | 'es'
 
 export interface T {
   locale: { 'pt-BR': string; 'en-US': string; es: string }
-  nav: { transactions: string; config: string; logout: string; syncing: string }
+  nav: { transactions: string; budgets: string; config: string; logout: string; syncing: string }
   months: [string,string,string,string,string,string,string,string,string,string,string,string]
   filter: { all: string; income: string; expense: string }
   table: { day: string; balance: string }
@@ -33,6 +33,17 @@ export interface T {
     genericError: string
     loginLink: string
   }
+  budgets: {
+    title: string
+    empty: string
+    newBudget: string
+    editBudget: string
+    namePlaceholder: string
+    notesPlaceholder: string
+    remaining: string
+    noTransactions: string
+    confirmDelete: string
+  }
   config: {
     title: string
     sections: { account: string; appearance: string; language: string; data: string; about: string }
@@ -47,7 +58,7 @@ export interface T {
 export const translations: Record<Locale, T> = {
   'pt-BR': {
     locale: { 'pt-BR': 'Português', 'en-US': 'English', es: 'Español' },
-    nav: { transactions: 'Transações', config: 'Config', logout: 'Sair', syncing: 'Sincronizando...' },
+    nav: { transactions: 'Transações', budgets: 'Orçamentos', config: 'Config', logout: 'Sair', syncing: 'Sincronizando...' },
     months: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
     filter: { all: '⊙ Todas', income: 'Renda', expense: 'Despesa' },
     table: { day: 'Dia', balance: 'Saldo' },
@@ -84,6 +95,17 @@ export const translations: Record<Locale, T> = {
       genericError: 'Erro ao criar conta',
       loginLink: 'Já tenho conta',
     },
+    budgets: {
+      title: 'Orçamentos',
+      empty: 'Nenhum orçamento criado ainda.',
+      newBudget: 'Novo orçamento',
+      editBudget: 'Editar orçamento',
+      namePlaceholder: 'Nome (ex: Viagem Europa)',
+      notesPlaceholder: 'Observações (opcional)',
+      remaining: 'restante',
+      noTransactions: 'Nenhuma transação associada.',
+      confirmDelete: 'Remover orçamento?',
+    },
     config: {
       title: 'Configurações',
       sections: { account: 'Conta', appearance: 'Aparência', language: 'Idioma', data: 'Dados', about: 'Sobre' },
@@ -101,7 +123,7 @@ export const translations: Record<Locale, T> = {
 
   'en-US': {
     locale: { 'pt-BR': 'Português', 'en-US': 'English', es: 'Español' },
-    nav: { transactions: 'Transactions', config: 'Settings', logout: 'Log out', syncing: 'Syncing...' },
+    nav: { transactions: 'Transactions', budgets: 'Budgets', config: 'Settings', logout: 'Log out', syncing: 'Syncing...' },
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     filter: { all: '⊙ All', income: 'Income', expense: 'Expense' },
     table: { day: 'Day', balance: 'Balance' },
@@ -138,6 +160,17 @@ export const translations: Record<Locale, T> = {
       genericError: 'Failed to create account',
       loginLink: 'Already have an account',
     },
+    budgets: {
+      title: 'Budgets',
+      empty: 'No budgets created yet.',
+      newBudget: 'New budget',
+      editBudget: 'Edit budget',
+      namePlaceholder: 'Name (e.g. Europe trip)',
+      notesPlaceholder: 'Notes (optional)',
+      remaining: 'remaining',
+      noTransactions: 'No associated transactions.',
+      confirmDelete: 'Remove budget?',
+    },
     config: {
       title: 'Settings',
       sections: { account: 'Account', appearance: 'Appearance', language: 'Language', data: 'Data', about: 'About' },
@@ -155,7 +188,7 @@ export const translations: Record<Locale, T> = {
 
   es: {
     locale: { 'pt-BR': 'Português', 'en-US': 'English', es: 'Español' },
-    nav: { transactions: 'Transacciones', config: 'Ajustes', logout: 'Salir', syncing: 'Sincronizando...' },
+    nav: { transactions: 'Transacciones', budgets: 'Presupuestos', config: 'Ajustes', logout: 'Salir', syncing: 'Sincronizando...' },
     months: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
     filter: { all: '⊙ Todas', income: 'Ingreso', expense: 'Gasto' },
     table: { day: 'Día', balance: 'Saldo' },
@@ -191,6 +224,17 @@ export const translations: Record<Locale, T> = {
       emailConflict: 'El correo ya está registrado',
       genericError: 'Error al crear la cuenta',
       loginLink: 'Ya tengo cuenta',
+    },
+    budgets: {
+      title: 'Presupuestos',
+      empty: 'No hay presupuestos creados.',
+      newBudget: 'Nuevo presupuesto',
+      editBudget: 'Editar presupuesto',
+      namePlaceholder: 'Nombre (ej: Viaje Europa)',
+      notesPlaceholder: 'Notas (opcional)',
+      remaining: 'restante',
+      noTransactions: 'Sin transacciones asociadas.',
+      confirmDelete: '¿Eliminar presupuesto?',
     },
     config: {
       title: 'Ajustes',

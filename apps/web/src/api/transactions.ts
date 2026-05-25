@@ -5,6 +5,9 @@ export const transactionsApi = {
   list: (from: string, to: string) =>
     req<Transaction[]>(`/api/v1/transactions?from=${from}&to=${to}&limit=500`),
 
+  listByBudget: (budgetId: string) =>
+    req<Transaction[]>(`/api/v1/transactions?budgetId=${budgetId}&limit=500`),
+
   create: (input: CreateInput) =>
     req<Transaction>('/api/v1/transactions', {
       method: 'POST',

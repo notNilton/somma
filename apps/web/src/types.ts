@@ -51,3 +51,11 @@ export interface CreateInput {
   budgetId?: string
   notes?: string
 }
+
+export interface CreateBudgetInput {
+  name: string
+  allocatedAmount: number
+  notes?: string
+}
+
+export type UpdateBudgetInput = Partial<CreateBudgetInput>

@@ -5,6 +5,7 @@ import AppLayout from './components/AppLayout'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import TransactionsPage from './pages/TransactionsPage'
+import BudgetsPage from './pages/BudgetsPage'
 import ConfigPage from './pages/ConfigPage'
 
 function RequireAuth() {
@@ -37,6 +38,14 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageSpinner />}>
                 <TransactionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/budgets',
+            element: (
+              <Suspense fallback={<PageSpinner />}>
+                <BudgetsPage />
               </Suspense>
             ),
           },
