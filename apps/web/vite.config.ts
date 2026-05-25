@@ -1,3 +1,5 @@
+declare const process: { env: Record<string, string | undefined> }
+
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 

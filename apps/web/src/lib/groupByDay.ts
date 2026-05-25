@@ -11,6 +11,7 @@ export interface DayGroup {
 export interface Summary {
   totalIncome: number
   totalExpense: number
+  totalInvestment: number
   netBalance: number
 }
 
@@ -42,12 +43,13 @@ export function groupByDay(transactions: Transaction[], year: number, month: num
 }
 
 export function computeSummary(transactions: Transaction[]): Summary {
-  let totalIncome = 0, totalExpense = 0
+  let totalIncome = 0, totalExpense = 0, totalInvestment = 0
   for (const tx of transactions) {
     if (tx.type === 'INCOME') totalIncome += tx.amount
+    else if (tx.kind === 'SAVING') totalInvestment += tx.amount
     else totalExpense += tx.amount
   }
-  return { totalIncome, totalExpense, netBalance: totalIncome - totalExpense }
+  return { totalIncome, totalExpense, totalInvestment, netBalance: totalIncome - totalExpense - totalInvestment }
 }
 
 function pad(n: number): string {
