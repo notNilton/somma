@@ -35,6 +35,7 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
   )
 
   const saldoClass = group.runningBalance > 0 ? 'pos' : group.runningBalance < 0 ? 'neg' : 'zero'
+  const totalClass = group.runningTotal > 0 ? 'pos' : group.runningTotal < 0 ? 'neg' : 'zero'
 
   function txsFor(kind: TxKind) {
     return group.transactions.filter(tx => tx.kind === kind)
@@ -128,8 +129,30 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
         })}
       </div>
 
-      <div className={`tx-saldo ${saldoClass}`}>
-        {group.runningBalance !== 0 ? formatMoney(group.runningBalance) : ''}
+      <div className={`tx-total ${saldoClass}`}>
+        <div className="tx-total-head">
+          <span className="tx-total-title">{t.dayGroup.balance}</span>
+          <span className={`tx-total-balance ${saldoClass}`}>
+            {group.runningBalance > 0 ? '+' : ''}{formatMoney(group.runningBalance)}
+          </span>
+        </div>
+
+        <div className="tx-total-breakdown">
+          <div className="tx-total-row budget">
+            <span className="tx-total-label">{t.kind.BUDGET.label}</span>
+            <span className="tx-total-value budget">-{formatMoney(group.runningBudget)}</span>
+          </div>
+          <div className="tx-total-row saving">
+            <span className="tx-total-label">{t.kind.SAVING.label}</span>
+            <span className="tx-total-value saving">-{formatMoney(group.runningInvestment)}</span>
+          </div>
+          <div className="tx-total-row total">
+            <span className="tx-total-label">{t.table.total}</span>
+            <span className={`tx-total-value total ${totalClass}`}>
+              {group.runningTotal > 0 ? '+' : ''}{formatMoney(group.runningTotal)}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   )

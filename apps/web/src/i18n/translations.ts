@@ -5,11 +5,11 @@ export interface T {
   nav: { transactions: string; budgets: string; config: string; logout: string; syncing: string }
   months: [string,string,string,string,string,string,string,string,string,string,string,string]
   filter: { all: string; income: string; expense: string }
-  table: { day: string; balance: string }
+  table: { day: string; total: string }
   kind: Record<'INCOME'|'EXPENSE'|'SAVING'|'CREDIT'|'BUDGET', { label: string; letter: string }>
   status: { pending: string }
   modal: { title: string; descPlaceholder: string; cancel: string; save: string }
-  dayGroup: { addInline: string; confirmDelete: string }
+  dayGroup: { addInline: string; confirmDelete: string; balance: string }
   login: {
     subtitle: string
     emailPlaceholder: string
@@ -36,6 +36,7 @@ export interface T {
   budgets: {
     title: string
     empty: string
+    summary: string
     newBudget: string
     editBudget: string
     namePlaceholder: string
@@ -61,7 +62,7 @@ export const translations: Record<Locale, T> = {
     nav: { transactions: 'Transações', budgets: 'Orçamentos', config: 'Config', logout: 'Sair', syncing: 'Sincronizando...' },
     months: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
     filter: { all: '⊙ Todas', income: 'Renda', expense: 'Despesa' },
-    table: { day: 'Dia', balance: 'Saldo' },
+    table: { day: 'Dia', total: 'Total' },
     kind: {
       INCOME:  { label: 'Renda',      letter: 'R' },
       EXPENSE: { label: 'Despesa',    letter: 'D' },
@@ -71,7 +72,7 @@ export const translations: Record<Locale, T> = {
     },
     status: { pending: 'Pend.' },
     modal: { title: 'Novo lançamento', descPlaceholder: 'Descrição (opcional)', cancel: 'Cancelar', save: 'Salvar' },
-    dayGroup: { addInline: '+ adicionar', confirmDelete: 'Remover?' },
+    dayGroup: { addInline: '+ adicionar', confirmDelete: 'Remover?', balance: 'Saldo' },
     login: {
       subtitle: 'Acompanhe transações, crédito, economia e orçamentos.',
       emailPlaceholder: 'Email',
@@ -98,6 +99,7 @@ export const translations: Record<Locale, T> = {
     budgets: {
       title: 'Orçamentos',
       empty: 'Nenhum orçamento criado ainda.',
+      summary: '{count} orçamentos · {overBudgetCount} acima do limite',
       newBudget: 'Novo orçamento',
       editBudget: 'Editar orçamento',
       namePlaceholder: 'Nome (ex: Viagem Europa)',
@@ -126,7 +128,7 @@ export const translations: Record<Locale, T> = {
     nav: { transactions: 'Transactions', budgets: 'Budgets', config: 'Settings', logout: 'Log out', syncing: 'Syncing...' },
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     filter: { all: '⊙ All', income: 'Income', expense: 'Expense' },
-    table: { day: 'Day', balance: 'Balance' },
+    table: { day: 'Day', total: 'Total' },
     kind: {
       INCOME:  { label: 'Income',   letter: 'I' },
       EXPENSE: { label: 'Expense',  letter: 'E' },
@@ -136,7 +138,7 @@ export const translations: Record<Locale, T> = {
     },
     status: { pending: 'Pend.' },
     modal: { title: 'New entry', descPlaceholder: 'Description (optional)', cancel: 'Cancel', save: 'Save' },
-    dayGroup: { addInline: '+ add', confirmDelete: 'Remove?' },
+    dayGroup: { addInline: '+ add', confirmDelete: 'Remove?', balance: 'Balance' },
     login: {
       subtitle: 'Track transactions, credit, savings and budgets.',
       emailPlaceholder: 'Email',
@@ -163,6 +165,7 @@ export const translations: Record<Locale, T> = {
     budgets: {
       title: 'Budgets',
       empty: 'No budgets created yet.',
+      summary: '{count} budgets · {overBudgetCount} over limit',
       newBudget: 'New budget',
       editBudget: 'Edit budget',
       namePlaceholder: 'Name (e.g. Europe trip)',
@@ -191,7 +194,7 @@ export const translations: Record<Locale, T> = {
     nav: { transactions: 'Transacciones', budgets: 'Presupuestos', config: 'Ajustes', logout: 'Salir', syncing: 'Sincronizando...' },
     months: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
     filter: { all: '⊙ Todas', income: 'Ingreso', expense: 'Gasto' },
-    table: { day: 'Día', balance: 'Saldo' },
+    table: { day: 'Día', total: 'Total' },
     kind: {
       INCOME:  { label: 'Ingreso',   letter: 'I' },
       EXPENSE: { label: 'Gasto',     letter: 'G' },
@@ -201,7 +204,7 @@ export const translations: Record<Locale, T> = {
     },
     status: { pending: 'Pend.' },
     modal: { title: 'Nuevo registro', descPlaceholder: 'Descripción (opcional)', cancel: 'Cancelar', save: 'Guardar' },
-    dayGroup: { addInline: '+ agregar', confirmDelete: '¿Eliminar?' },
+    dayGroup: { addInline: '+ agregar', confirmDelete: '¿Eliminar?', balance: 'Saldo' },
     login: {
       subtitle: 'Registra transacciones, crédito, ahorro y presupuestos.',
       emailPlaceholder: 'Correo',
@@ -228,6 +231,7 @@ export const translations: Record<Locale, T> = {
     budgets: {
       title: 'Presupuestos',
       empty: 'No hay presupuestos creados.',
+      summary: '{count} presupuestos · {overBudgetCount} sobre el límite',
       newBudget: 'Nuevo presupuesto',
       editBudget: 'Editar presupuesto',
       namePlaceholder: 'Nombre (ej: Viaje Europa)',

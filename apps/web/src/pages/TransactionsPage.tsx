@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { budgetsApi, transactionsApi } from '../api'
 import { useAuth } from '../contexts/AuthContext'
 import { useLocale } from '../i18n'
-import { groupByDay, computeSummary } from '../lib/groupByDay'
-import { formatMoney } from '../lib/format'
+import { groupByDay } from '../lib/groupByDay'
 import DayGroupComponent from '../components/DayGroup'
 import TransactionModal from '../components/TransactionModal'
 import type { Transaction, CreateInput, TxKind } from '../types'
@@ -116,7 +115,6 @@ export default function TransactionsPage() {
   }
 
   const groups = groupByDay(txs, year, month)
-  const summary = computeSummary(txs)
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
   return (
@@ -129,16 +127,6 @@ export default function TransactionsPage() {
           <button className="month-arrow" onClick={prevMonth}>‹</button>
           <span className="month-label">{t.months[month]}/{String(year).slice(2)}</span>
           <button className="month-arrow" onClick={nextMonth}>›</button>
-        </div>
-
-        <div className="month-summary">
-          <span className="ms-item income">+{formatMoney(summary.totalIncome)}</span>
-          <span className="ms-sep">·</span>
-          <span className="ms-item expense">-{formatMoney(summary.totalExpense)}</span>
-          <span className="ms-spacer" />
-          <span className={`ms-net ${summary.netBalance >= 0 ? 'pos' : 'neg'}`}>
-            {summary.netBalance > 0 ? '+' : ''}{formatMoney(summary.netBalance)}
-          </span>
         </div>
 
         <div className="tx-table-header">
@@ -154,7 +142,7 @@ export default function TransactionsPage() {
               <option value="EXPENSE">{t.filter.expense}</option>
             </select>
           </span>
-          <span className="th-saldo">{t.table.balance}</span>
+          <span className="th-total">{t.table.total}</span>
         </div>
 
         {groups.map(g => (

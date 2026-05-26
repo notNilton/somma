@@ -6,6 +6,9 @@ export interface DayGroup {
   transactions: Transaction[]
   netAmount: number
   runningBalance: number
+  runningInvestment: number
+  runningBudget: number
+  runningTotal: number
 }
 
 export interface Summary {
@@ -21,7 +24,16 @@ export function groupByDay(transactions: Transaction[], year: number, month: num
   const map = new Map<string, DayGroup>()
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`
-    map.set(dateStr, { dateStr, dayNum: d, transactions: [], netAmount: 0, runningBalance: 0 })
+    map.set(dateStr, {
+      dateStr,
+      dayNum: d,
+      transactions: [],
+      netAmount: 0,
+      runningBalance: 0,
+      runningInvestment: 0,
+      runningBudget: 0,
+      runningTotal: 0,
+    })
   }
 
   for (const tx of transactions) {
@@ -34,9 +46,18 @@ export function groupByDay(transactions: Transaction[], year: number, month: num
 
   const sorted = Array.from(map.values()).sort((a, b) => a.dateStr.localeCompare(b.dateStr))
   let running = 0
+  let runningInvestment = 0
+  let runningBudget = 0
   for (const g of sorted) {
+    for (const tx of g.transactions) {
+      if (tx.kind === 'SAVING') runningInvestment += tx.amount
+      else if (tx.kind === 'BUDGET') runningBudget += tx.amount
+    }
     running += g.netAmount
     g.runningBalance = running
+    g.runningInvestment = runningInvestment
+    g.runningBudget = runningBudget
+    g.runningTotal = running + runningInvestment + runningBudget
   }
 
   return sorted
