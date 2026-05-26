@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM docker.io/library/golang:1.25-alpine AS builder
 
 WORKDIR /src/database
 
@@ -10,7 +10,7 @@ ENV GOWORK=off
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o migrate ./cmd/migrate
 
-FROM alpine:3.19
+FROM docker.io/library/alpine:3.19
 
 WORKDIR /app
 

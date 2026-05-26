@@ -35,4 +35,5 @@ coverage
 app/main
 app/migrate
 app/tmp/
+apps/backend/tmp/
 database/migrate

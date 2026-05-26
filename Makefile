@@ -12,7 +12,7 @@ else
   CURDIR_UNIX := $(CURDIR)
 endif
 
-POSTGRES_IMAGE ?= postgres:18-alpine
+POSTGRES_IMAGE ?= docker.io/library/postgres:18-alpine
 POSTGRES_CONTAINER ?= $(APP_NAME)-db-local
 POSTGRES_VOLUME ?= $(APP_NAME)-postgres-local-data
 POSTGRES_USER ?= postgres
@@ -26,13 +26,13 @@ ENV ?= development
 JWT_SECRET ?= dev-secret-change-in-production-x
 WEBAPP_URL ?= http://localhost:$(WEBAPP_PORT)
 API_URL ?= http://localhost:$(BACKEND_PORT)
-WEB_DEV_API_URL ?= http://host.docker.internal:$(BACKEND_PORT)
+WEB_DEV_API_URL ?= http://$(APP_NAME)-backend-dev:$(BACKEND_PORT)
 DATABASE_URL ?= postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable
 CONTAINER_DATABASE_URL ?= postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_CONTAINER):5432/$(POSTGRES_DB)?sslmode=disable
 DEV_NETWORK ?= $(APP_NAME)-dev
 
 ENABLE_MINIO ?= 0
-MINIO_IMAGE ?= minio/minio:latest
+MINIO_IMAGE ?= docker.io/minio/minio:latest
 MINIO_CONTAINER ?= $(APP_NAME)-minio-local
 MINIO_VOLUME ?= $(APP_NAME)-minio-local-data
 MINIO_ROOT_USER ?= minioadmin
@@ -41,10 +41,11 @@ MINIO_PORT ?= 9000
 MINIO_CONSOLE_PORT ?= 9001
 REMOVE_VOLUME ?= 0
 DOC_PORT ?= 8090
+MIGRATE_IMAGE ?= $(APP_NAME)-database-dev
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up dev deps-up deps-down deps-reset net db-up db-wait db-down db-reset db-setup minio-up minio-down env backend web doc migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones test clean
+.PHONY: help up dev deps-up deps-down deps-reset net db-up db-wait db-down db-reset db-setup minio-up minio-down env backend web doc migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones test clean migrate-image
 
 help:
 	@printf '%s\n' 'Tallyoh local dev'
@@ -104,7 +105,7 @@ up: db-setup
 		-e BASE_URL=/doc \
 		-e DEEP_LINKING=true \
 		--name $(APP_NAME)-doc-dev \
-		swaggerapi/swagger-ui:latest >/dev/null
+		docker.io/swaggerapi/swagger-ui:latest >/dev/null
 	@printf 'Servicos iniciados:\n'
 	@printf '  Backend : http://localhost:$(BACKEND_PORT)\n'
 	@printf '  Web     : http://localhost:$(WEBAPP_PORT)\n'
@@ -146,7 +147,9 @@ db-up: net
 		$(CONTAINER_ENGINE) network connect $(DEV_NETWORK) "$(POSTGRES_CONTAINER)" 2>/dev/null || true; \
 	else \
 		printf 'Creating Postgres container %s on localhost:%s\n' "$(POSTGRES_CONTAINER)" "$(POSTGRES_PORT)"; \
-		$(CONTAINER_ENGINE) volume create "$(POSTGRES_VOLUME)" >/dev/null; \
+		if ! $(CONTAINER_ENGINE) volume inspect "$(POSTGRES_VOLUME)" >/dev/null 2>&1; then \
+			$(CONTAINER_ENGINE) volume create "$(POSTGRES_VOLUME)" >/dev/null; \
+		fi; \
 		$(CONTAINER_ENGINE) run -d \
 			--name "$(POSTGRES_CONTAINER)" \
 			--network $(DEV_NETWORK) \
@@ -202,7 +205,9 @@ minio-up:
 		$(CONTAINER_ENGINE) start "$(MINIO_CONTAINER)" >/dev/null; \
 	else \
 		printf 'Creating MinIO container %s on localhost:%s\n' "$(MINIO_CONTAINER)" "$(MINIO_PORT)"; \
-		$(CONTAINER_ENGINE) volume create "$(MINIO_VOLUME)" >/dev/null; \
+		if ! $(CONTAINER_ENGINE) volume inspect "$(MINIO_VOLUME)" >/dev/null 2>&1; then \
+			$(CONTAINER_ENGINE) volume create "$(MINIO_VOLUME)" >/dev/null; \
+		fi; \
 		$(CONTAINER_ENGINE) run -d \
 			--name "$(MINIO_CONTAINER)" \
 			-e MINIO_ROOT_USER="$(MINIO_ROOT_USER)" \
@@ -273,24 +278,47 @@ doc: net
 		-e BASE_URL=/doc \
 		-e DEEP_LINKING=true \
 		--name $(APP_NAME)-doc-dev \
-		swaggerapi/swagger-ui:latest
+		docker.io/swaggerapi/swagger-ui:latest
 
 migrate-up:
-	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate up
+	@$(MAKE) --no-print-directory migrate-image
+	@$(CONTAINER_ENGINE) run --rm \
+		--network $(DEV_NETWORK) \
+		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
+		--entrypoint ./migrate \
+		$(MIGRATE_IMAGE) up
 
 migrate-down:
-	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate down
+	@$(MAKE) --no-print-directory migrate-image
+	@$(CONTAINER_ENGINE) run --rm \
+		--network $(DEV_NETWORK) \
+		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
+		--entrypoint ./migrate \
+		$(MIGRATE_IMAGE) down
 
 migrate-version:
-	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate version
+	@$(MAKE) --no-print-directory migrate-image
+	@$(CONTAINER_ENGINE) run --rm \
+		--network $(DEV_NETWORK) \
+		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
+		--entrypoint ./migrate \
+		$(MIGRATE_IMAGE) version
 
 seed: db-seed-complete
 
 db-seed-complete: migrate-up
-	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate seed-complete
+	@$(CONTAINER_ENGINE) run --rm \
+		--network $(DEV_NETWORK) \
+		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
+		--entrypoint ./migrate \
+		$(MIGRATE_IMAGE) seed-complete
 
 db-seed-barebones: migrate-up
-	@cd database && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/migrate seed-barebones
+	@$(CONTAINER_ENGINE) run --rm \
+		--network $(DEV_NETWORK) \
+		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
+		--entrypoint ./migrate \
+		$(MIGRATE_IMAGE) seed-barebones
 
 # aliases legacy
 seed-complete: db-seed-complete
@@ -302,3 +330,9 @@ test:
 
 clean:
 	@rm -rf apps/backend/tmp
+
+migrate-image:
+	@set -euo pipefail; \
+	if ! $(CONTAINER_ENGINE) image inspect "$(MIGRATE_IMAGE)" >/dev/null 2>&1; then \
+		$(CONTAINER_ENGINE) build -q -t "$(MIGRATE_IMAGE)" -f database/Dockerfile . >/dev/null; \
+	fi
