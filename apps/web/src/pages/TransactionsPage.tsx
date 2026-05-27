@@ -158,6 +158,7 @@ export default function TransactionsPage() {
       </div>
 
       <dialog
+        className="budget-dialog"
         ref={dialogRef}
         onClick={e => { if (e.target === dialogRef.current) closeModal() }}
       >

@@ -37,44 +37,52 @@ export default function TransactionModal({ date, kind, budgets, onClose, onSubmi
   const dateLabel = `${d}/${m}/${y}`
 
   return (
-    <div className="tx-modal">
-      <div className="tx-modal-header">
+    <form className="budget-modal tx-modal" onSubmit={handleSubmit}>
+      <div className="budget-modal-header">
         <div>
-          <div className="tx-modal-title">{t.kind[kind].label}</div>
-          <div className="tx-modal-date">{dateLabel}</div>
+          <div className="budget-modal-kicker">Lançamento</div>
+          <div className="budget-modal-title">{t.kind[kind].label}</div>
+          <div className="budget-modal-subtitle">{dateLabel}</div>
         </div>
-        <button className="tx-modal-close" onClick={onClose}>×</button>
+        <button type="button" className="budget-modal-close" onClick={onClose}>
+          ×
+        </button>
       </div>
 
-      {error && <div className="tx-modal-error">{error}</div>}
+      {error && <div className="budget-modal-error">{error}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <div className="tx-modal-main-field">
-          <input
-            className="tx-amount-input"
-            type="number"
-            step="0.01"
-            min="0.01"
-            placeholder="0,00"
-            required
-            autoFocus
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-          />
-        </div>
-
+      <label className="budget-field">
+        <span className="budget-field-label">Valor</span>
         <input
-          className="tx-modal-input"
+          className="budget-amount-input"
+          type="number"
+          step="0.01"
+          min="0.01"
+          placeholder="0,00"
+          required
+          autoFocus
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+        />
+      </label>
+
+      <label className="budget-field">
+        <span className="budget-field-label">Descrição</span>
+        <input
+          className="budget-input"
           type="text"
           placeholder={t.modal.descPlaceholder}
           value={description}
           onChange={e => setDescription(e.target.value)}
           maxLength={255}
         />
+      </label>
 
-        {kind === 'BUDGET' && (
+      {kind === 'BUDGET' && (
+        <label className="budget-field">
+          <span className="budget-field-label">{t.kind.BUDGET.label}</span>
           <select
-            className="tx-modal-select"
+            className="budget-input"
             required
             value={budgetId}
             onChange={e => setBudgetId(e.target.value)}
@@ -86,17 +94,17 @@ export default function TransactionModal({ date, kind, budgets, onClose, onSubmi
               </option>
             ))}
           </select>
-        )}
+        </label>
+      )}
 
-        <div className="tx-modal-actions">
-          <button type="button" onClick={onClose} className="tx-modal-btn tx-modal-btn-secondary">
-            {t.modal.cancel}
-          </button>
-          <button type="submit" className="tx-modal-btn tx-modal-btn-primary">
-            {t.modal.save}
-          </button>
-        </div>
-      </form>
-    </div>
+      <div className="budget-modal-actions">
+        <button type="button" onClick={onClose} className="budget-modal-btn budget-modal-btn-secondary">
+          {t.modal.cancel}
+        </button>
+        <button type="submit" className="budget-modal-btn budget-modal-btn-primary">
+          {t.modal.save}
+        </button>
+      </div>
+    </form>
   )
 }
