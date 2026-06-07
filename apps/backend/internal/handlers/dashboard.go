@@ -37,8 +37,12 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		userName = userName[:idx]
 	}
 
-	// Total balance calculado a partir dos lançamentos ativos do usuário.
-	var totalBalanceCents int64
+	// Initial balance from user settings
+	var initialBalanceCents int64
+	h.db.QueryRow(r.Context(), `SELECT initial_balance_cents FROM users WHERE id = $1`, claims.UserID).Scan(&initialBalanceCents)
+
+	// Total balance = initial balance + sum of all completed transactions
+	var txBalanceCents int64
 	h.db.QueryRow(r.Context(), `
 		SELECT COALESCE(SUM(
 			CASE
@@ -51,7 +55,8 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		WHERE user_id = $1
 		  AND is_active = true
 		  AND status = 'COMPLETED'
-	`, claims.UserID).Scan(&totalBalanceCents)
+	`, claims.UserID).Scan(&txBalanceCents)
+	totalBalanceCents := initialBalanceCents + txBalanceCents
 
 	// Income e expenses do mês selecionado
 	var monthlyIncomeCents, monthlyExpensesCents int64
@@ -70,7 +75,9 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		for rows.Next() {
 			var txType string
 			var cents int64
-			rows.Scan(&txType, &cents)
+			if err := rows.Scan(&txType, &cents); err != nil {
+				continue
+			}
 			if txType == "INCOME" {
 				monthlyIncomeCents = cents
 			} else {
@@ -96,7 +103,9 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 			var categoryName, categoryColor *string
 			var amountCents int64
 			var date any
-			txRows.Scan(&id, &description, &amountCents, &txType, &date, &categoryName, &categoryColor)
+			if err := txRows.Scan(&id, &description, &amountCents, &txType, &date, &categoryName, &categoryColor); err != nil {
+				continue
+			}
 			recentTxs = append(recentTxs, map[string]any{
 				"id":          id,
 				"description": description,
@@ -128,7 +137,9 @@ func (h *Handler) GetDashboard(w http.ResponseWriter, r *http.Request) {
 		for cfRows.Next() {
 			var day any
 			var totalCents int64
-			cfRows.Scan(&day, &totalCents)
+			if err := cfRows.Scan(&day, &totalCents); err != nil {
+				continue
+			}
 			cashFlow = append(cashFlow, map[string]any{
 				"day":   day,
 				"value": money.ToReais(totalCents),
