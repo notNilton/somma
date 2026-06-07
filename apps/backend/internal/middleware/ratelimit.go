@@ -94,3 +94,16 @@ func (rl *RateLimiter) Limit(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// LimitHandler wraps a single HandlerFunc with per-IP rate limiting.
+func (rl *RateLimiter) LimitHandler(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ip := extractIP(r)
+		lim := rl.getLimiter(ip)
+		if !lim.Allow() {
+			http.Error(w, `{"error":"too many requests"}`, http.StatusTooManyRequests)
+			return
+		}
+		next(w, r)
+	}
+}
