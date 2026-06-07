@@ -17,16 +17,23 @@ import (
 )
 
 type createTransactionDto struct {
-	CategoryID   *string `json:"categoryId"`
-	BudgetID     *string `json:"budgetId"`
-	Type         string  `json:"type"`
-	Kind         string  `json:"kind"`
-	Status       *string `json:"status"`
-	Amount       float64 `json:"amount"`
-	Date         string  `json:"date"`
-	Description  string  `json:"description"`
-	Notes        *string `json:"notes"`
-	CurrencyCode *string `json:"currencyCode"`
+	CategoryID     *string `json:"categoryId"`
+	BudgetID       *string `json:"budgetId"`
+	Type           string  `json:"type"`
+	Kind           string  `json:"kind"`
+	Status         *string `json:"status"`
+	Amount         float64 `json:"amount"`
+	Date           string  `json:"date"`
+	Description    string  `json:"description"`
+	Notes          *string `json:"notes"`
+	CurrencyCode   *string `json:"currencyCode"`
+	IsRecurring    bool    `json:"isRecurring"`
+	RecurrenceFreq string  `json:"recurrenceFreq"` // DAILY | WEEKLY | MONTHLY | YEARLY
+	RecurrenceEnd  string  `json:"recurrenceEnd"`  // YYYY-MM-DD, optional
+}
+
+var validRecurrenceFreqs = map[string]bool{
+	"DAILY": true, "WEEKLY": true, "MONTHLY": true, "YEARLY": true,
 }
 
 func (d *createTransactionDto) validate() error {
@@ -56,6 +63,12 @@ func (d *createTransactionDto) validate() error {
 	}
 	if d.Status != nil && !models.ValidTransactionStatuses[*d.Status] {
 		return errors.New("invalid transaction status")
+	}
+	if d.IsRecurring && d.RecurrenceFreq != "" && !validRecurrenceFreqs[d.RecurrenceFreq] {
+		return errors.New("invalid recurrence frequency")
+	}
+	if d.IsRecurring && d.RecurrenceFreq == "" {
+		d.RecurrenceFreq = "MONTHLY"
 	}
 	return nil
 }
@@ -179,6 +192,7 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 		SELECT t.id, t.user_id, t.category_id, t.budget_id,
 		       t.type, t.kind, t.status, t.amount_cents, t.date,
 		       t.description, t.notes, t.currency_code, t.is_active, t.deleted_at, t.created_at, t.updated_at,
+		       t.is_recurring, t.recurrence_freq, t.recurrence_end_date, t.recurring_origin_id,
 		       c.name AS category_name, c.color AS category_color
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
@@ -202,6 +216,7 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 			&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID,
 			&t.Type, &t.Kind, &t.Status, &t.AmountCents, &t.Date,
 			&t.Description, &t.Notes, &t.CurrencyCode, &t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
+			&t.IsRecurring, &t.RecurrenceFreq, &t.RecurrenceEndDate, &t.RecurringOriginID,
 			&t.CategoryName, &t.CategoryColor,
 		); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
@@ -225,6 +240,7 @@ func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 		SELECT t.id, t.user_id, t.category_id, t.budget_id,
 		       t.type, t.kind, t.status, t.amount_cents, t.date,
 		       t.description, t.notes, t.currency_code, t.is_active, t.deleted_at, t.created_at, t.updated_at,
+		       t.is_recurring, t.recurrence_freq, t.recurrence_end_date, t.recurring_origin_id,
 		       c.name AS category_name, c.color AS category_color
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
@@ -233,6 +249,7 @@ func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 		&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID,
 		&t.Type, &t.Kind, &t.Status, &t.AmountCents, &t.Date,
 		&t.Description, &t.Notes, &t.CurrencyCode, &t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
+		&t.IsRecurring, &t.RecurrenceFreq, &t.RecurrenceEndDate, &t.RecurringOriginID,
 		&t.CategoryName, &t.CategoryColor,
 	)
 	if err != nil {
@@ -292,19 +309,34 @@ func (h *Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		currency = strings.TrimSpace(*dto.CurrencyCode)
 	}
 
+	var recurrenceFreq *string
+	var recurrenceEnd *time.Time
+	if dto.IsRecurring {
+		recurrenceFreq = &dto.RecurrenceFreq
+		if dto.RecurrenceEnd != "" {
+			if t, err2 := time.Parse("2006-01-02", dto.RecurrenceEnd); err2 == nil {
+				recurrenceEnd = &t
+			}
+		}
+	}
+
 	var t models.Transaction
 	err = h.db.QueryRow(r.Context(), `
 		INSERT INTO transactions (
 			user_id, category_id, budget_id, type, kind, status, amount_cents,
-			date, description, notes, currency_code
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+			date, description, notes, currency_code,
+			is_recurring, recurrence_freq, recurrence_end_date
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
 		RETURNING id, user_id, category_id, budget_id, type, kind, status, amount_cents,
-		          date, description, notes, currency_code, is_active, deleted_at, created_at, updated_at
+		          date, description, notes, currency_code, is_active, deleted_at, created_at, updated_at,
+		          is_recurring, recurrence_freq, recurrence_end_date, recurring_origin_id
 	`, claims.UserID, dto.CategoryID, budgetID, dto.Type, dto.Kind, status, money.ToCents(dto.Amount),
 		txDate, fallbackTransactionDescription(dto), dto.Notes, currency,
+		dto.IsRecurring, recurrenceFreq, recurrenceEnd,
 	).Scan(
 		&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID, &t.Type, &t.Kind, &t.Status, &t.AmountCents,
 		&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
+		&t.IsRecurring, &t.RecurrenceFreq, &t.RecurrenceEndDate, &t.RecurringOriginID,
 	)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
@@ -368,12 +400,14 @@ func (h *Handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		    updated_at = NOW()
 		WHERE id = $11 AND user_id = $12 AND is_active = true
 		RETURNING id, user_id, category_id, budget_id, type, kind, status, amount_cents,
-		          date, description, notes, currency_code, is_active, deleted_at, created_at, updated_at
+		          date, description, notes, currency_code, is_active, deleted_at, created_at, updated_at,
+		          is_recurring, recurrence_freq, recurrence_end_date, recurring_origin_id
 	`, dto.CategoryID, budgetID, dto.Type, dto.Kind, status, money.ToCents(dto.Amount),
 		txDate, fallbackTransactionDescription(dto), dto.Notes, currency, r.PathValue("id"), claims.UserID,
 	).Scan(
 		&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID, &t.Type, &t.Kind, &t.Status, &t.AmountCents,
 		&t.Date, &t.Description, &t.Notes, &t.CurrencyCode, &t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
+		&t.IsRecurring, &t.RecurrenceFreq, &t.RecurrenceEndDate, &t.RecurringOriginID,
 	)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "transaction not found")
@@ -416,6 +450,7 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 		SELECT t.id, t.user_id, t.category_id, t.budget_id,
 		       t.type, t.kind, t.status, t.amount_cents, t.date,
 		       t.description, t.notes, t.currency_code, t.is_active, t.deleted_at, t.created_at, t.updated_at,
+		       t.is_recurring, t.recurrence_freq, t.recurrence_end_date, t.recurring_origin_id,
 		       c.name AS category_name, c.color AS category_color
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
@@ -437,6 +472,7 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 			&t.ID, &t.UserID, &t.CategoryID, &t.BudgetID,
 			&t.Type, &t.Kind, &t.Status, &t.AmountCents, &t.Date,
 			&t.Description, &t.Notes, &t.CurrencyCode, &t.IsActive, &t.DeletedAt, &t.CreatedAt, &t.UpdatedAt,
+			&t.IsRecurring, &t.RecurrenceFreq, &t.RecurrenceEndDate, &t.RecurringOriginID,
 			&t.CategoryName, &t.CategoryColor,
 		); err != nil {
 			writeError(w, http.StatusInternalServerError, "internal error")
@@ -450,21 +486,27 @@ func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request)
 
 func transactionResponse(t models.TransactionWithCategory) map[string]any {
 	r := map[string]any{
-		"id":           t.ID,
-		"userId":       t.UserID,
-		"categoryId":   t.CategoryID,
-		"budgetId":     t.BudgetID,
-		"type":         t.Type,
-		"kind":         t.Kind,
-		"status":       t.Status,
-		"amount":       money.ToReais(t.AmountCents),
-		"date":         t.Date,
-		"description":  t.Description,
-		"notes":        t.Notes,
-		"currencyCode": t.CurrencyCode,
-		"isActive":     t.IsActive,
-		"createdAt":    t.CreatedAt,
-		"updatedAt":    t.UpdatedAt,
+		"id":                t.ID,
+		"userId":            t.UserID,
+		"categoryId":        t.CategoryID,
+		"budgetId":          t.BudgetID,
+		"type":              t.Type,
+		"kind":              t.Kind,
+		"status":            t.Status,
+		"amount":            money.ToReais(t.AmountCents),
+		"date":              t.Date,
+		"description":       t.Description,
+		"notes":             t.Notes,
+		"currencyCode":      t.CurrencyCode,
+		"isActive":          t.IsActive,
+		"createdAt":         t.CreatedAt,
+		"updatedAt":         t.UpdatedAt,
+		"isRecurring":       t.IsRecurring,
+		"recurrenceFreq":    t.RecurrenceFreq,
+		"recurringOriginId": t.RecurringOriginID,
+	}
+	if t.RecurrenceEndDate != nil {
+		r["recurrenceEndDate"] = t.RecurrenceEndDate.Format("2006-01-02")
 	}
 	if t.CategoryName != nil {
 		r["category"] = map[string]any{
