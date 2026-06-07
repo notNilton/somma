@@ -7,18 +7,22 @@ import (
 	"github.com/nilbyte/tallyoh/backend/internal/cache"
 	"github.com/nilbyte/tallyoh/backend/internal/handlers"
 	"github.com/nilbyte/tallyoh/backend/internal/middleware"
+	"golang.org/x/time/rate"
 )
 
 func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cache, isProduction bool) {
 	h := handlers.New(db, jwtKey, c, isProduction)
 	auth := middleware.Auth(jwtKey, db)
 
+	// Stricter rate limiter for auth endpoints: 5 requests/minute per IP
+	authRL := middleware.NewRateLimiter(rate.Limit(5.0/60.0), 5)
+
 	// Health
 	mux.HandleFunc("GET /api/health", h.Health)
 
-	// Auth (público)
-	mux.HandleFunc("POST /api/auth/register", h.Register)
-	mux.HandleFunc("POST /api/auth/login", h.Login)
+	// Auth (stricter rate-limited)
+	mux.HandleFunc("POST /api/auth/register", authRL.LimitHandler(h.Register))
+	mux.HandleFunc("POST /api/auth/login", authRL.LimitHandler(h.Login))
 	mux.HandleFunc("POST /api/auth/logout", h.Logout)
 
 	// Users
@@ -57,4 +61,10 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("PATCH /api/v1/settings/profile", auth(h.UpdateProfile))
 	mux.HandleFunc("PATCH /api/v1/settings/change-password", auth(h.ChangePassword))
 	mux.HandleFunc("DELETE /api/v1/settings/account", auth(h.DeleteMyAccount))
+	mux.HandleFunc("GET /api/v1/settings/initial-balance", auth(h.GetInitialBalance))
+	mux.HandleFunc("PATCH /api/v1/settings/initial-balance", auth(h.UpdateInitialBalance))
+
+	// Import
+	mux.HandleFunc("POST /api/v1/import/preview", auth(h.PreviewImport))
+	mux.HandleFunc("POST /api/v1/import/confirm", auth(h.ConfirmImport))
 }

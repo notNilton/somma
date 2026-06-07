@@ -14,6 +14,9 @@ export interface Transaction {
   budgetId?: string
   categoryId?: string
   category?: { name?: string; color?: string }
+  isRecurring?: boolean
+  recurrenceFreq?: string
+  recurringOriginId?: string
 }
 
 export interface Category {
@@ -50,6 +53,21 @@ export interface CreateInput {
   categoryId?: string
   budgetId?: string
   notes?: string
+  isRecurring?: boolean
+  recurrenceFreq?: string
+  recurrenceEnd?: string
+}
+
+export interface ImportRow {
+  date: string
+  description: string
+  amount: number
+  type: 'INCOME' | 'EXPENSE'
+}
+
+export interface ImportPreview {
+  rows: ImportRow[]
+  errors: string[]
 }
 
 export interface CreateBudgetInput {
@@ -59,3 +77,11 @@ export interface CreateBudgetInput {
 }
 
 export type UpdateBudgetInput = Partial<CreateBudgetInput>
+
+export interface UpdateInput {
+  amount?: number
+  description?: string
+  categoryId?: string
+  budgetId?: string
+  notes?: string
+}

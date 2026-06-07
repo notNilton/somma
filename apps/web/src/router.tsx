@@ -7,6 +7,8 @@ import RegisterPage from './pages/RegisterPage'
 import TransactionsPage from './pages/TransactionsPage'
 import BudgetsPage from './pages/BudgetsPage'
 import ConfigPage from './pages/ConfigPage'
+import DashboardPage from './pages/DashboardPage'
+import ImportPage from './pages/ImportPage'
 
 function RequireAuth() {
   const { authed } = useAuth()
@@ -50,8 +52,20 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: '/dashboard',
+            element: (
+              <Suspense fallback={<PageSpinner />}>
+                <DashboardPage />
+              </Suspense>
+            ),
+          },
+          {
             path: '/config',
             element: <ConfigPage />,
+          },
+          {
+            path: '/import',
+            element: <ImportPage />,
           },
         ],
       },

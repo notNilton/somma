@@ -14,6 +14,12 @@ export const transactionsApi = {
       body: JSON.stringify(input),
     }),
 
+  update: (id: string, input: Partial<CreateInput>) =>
+    req<Transaction>(`/api/v1/transactions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+
   remove: (id: string) =>
     req<void>(`/api/v1/transactions/${id}`, { method: 'DELETE' }),
 }
