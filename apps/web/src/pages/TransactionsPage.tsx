@@ -1,18 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { budgetsApi, transactionsApi } from '../api'
+import { budgetsApi, categoriesApi, transactionsApi } from '../api'
 import { useAuth } from '../contexts/AuthContext'
 import { useLocale } from '../i18n'
 import { groupByDay } from '../lib/groupByDay'
 import DayGroupComponent from '../components/DayGroup'
 import TransactionModal from '../components/TransactionModal'
-import type { Transaction, CreateInput, TxKind } from '../types'
+import type { Category, CreateInput, Transaction, TxKind, UpdateInput } from '../types'
 
-interface ModalState { open: boolean; date: string; kind: TxKind }
+interface ModalState {
+  open: boolean
+  date: string
+  kind: TxKind
+  transaction?: Transaction
+}
 type UiFilterType = 'ALL' | 'INCOME' | 'EXPENSE'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
+
+function flattenCategories(cats: Category[]): Category[] {
+  return cats.flatMap(c => [c, ...(c.children ? flattenCategories(c.children) : [])])
+}
 
 export default function TransactionsPage() {
   const { logout } = useAuth()
@@ -48,6 +57,11 @@ export default function TransactionsPage() {
     queryKey: ['budgets'],
     queryFn: () => budgetsApi.list(),
   })
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesApi.list(),
+    staleTime: 5 * 60 * 1000,
+  })
 
   useEffect(() => {
     if ((txError as Error)?.message === 'UNAUTHORIZED' || (budgetsError as Error)?.message === 'UNAUTHORIZED') {
@@ -72,6 +86,7 @@ export default function TransactionsPage() {
           description: input.description,
           date: input.date + 'T00:00:00Z',
           budgetId: input.budgetId,
+          categoryId: input.categoryId,
         },
       ])
       return { previous }
@@ -79,6 +94,12 @@ export default function TransactionsPage() {
     onError: (_err, _input, ctx) => {
       if (ctx?.previous) qc.setQueryData(txKey, ctx.previous)
     },
+    onSettled: () => qc.invalidateQueries({ queryKey: txKey }),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateInput }) =>
+      transactionsApi.update(id, input),
     onSettled: () => qc.invalidateQueries({ queryKey: txKey }),
   })
 
@@ -99,8 +120,8 @@ export default function TransactionsPage() {
   const [modal, setModal] = useState<ModalState>({ open: false, date: '', kind: 'EXPENSE' })
   const dialogRef = useRef<HTMLDialogElement>(null)
 
-  function openModal(date: string, kind: TxKind) {
-    setModal({ open: true, date, kind })
+  function openModal(date: string, kind: TxKind, transaction?: Transaction) {
+    setModal({ open: true, date, kind, transaction })
     dialogRef.current?.showModal()
   }
 
@@ -112,6 +133,25 @@ export default function TransactionsPage() {
   function handleCreate(input: CreateInput) {
     closeModal()
     createMutation.mutate(input)
+  }
+
+  function handleEdit(tx: Transaction) {
+    const dateStr = tx.date.slice(0, 10)
+    openModal(dateStr, tx.kind, tx)
+  }
+
+  function handleUpdate(input: CreateInput) {
+    if (!modal.transaction) return
+    closeModal()
+    updateMutation.mutate({
+      id: modal.transaction.id,
+      input: {
+        amount: input.amount,
+        description: input.description,
+        categoryId: input.categoryId,
+        budgetId: input.budgetId,
+      },
+    })
   }
 
   const groups = groupByDay(txs, year, month)
@@ -153,6 +193,7 @@ export default function TransactionsPage() {
             isToday={g.dateStr === todayStr}
             onAdd={openModal}
             onDelete={id => deleteMutation.mutate(id)}
+            onEdit={handleEdit}
           />
         ))}
       </div>
@@ -167,9 +208,11 @@ export default function TransactionsPage() {
             date={modal.date}
             kind={modal.kind}
             budgets={budgets}
+            categories={categories}
+            transaction={modal.transaction}
             onClose={closeModal}
-            onSubmit={handleCreate}
-            error={createMutation.error?.message}
+            onSubmit={modal.transaction ? handleUpdate : handleCreate}
+            error={createMutation.error?.message ?? updateMutation.error?.message}
           />
         )}
       </dialog>

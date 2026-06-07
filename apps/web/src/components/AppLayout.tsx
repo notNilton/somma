@@ -28,23 +28,16 @@ export default function AppLayout() {
         {isFetching > 0 && (
           <span className="sync-dot syncing" title={t.nav.syncing} />
         )}
-        <NavLink
-          className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-          to="/"
-          end
-        >
+        <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/" end>
           {t.nav.transactions}
         </NavLink>
-        <NavLink
-          className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-          to="/budgets"
-        >
+        <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/budgets">
           {t.nav.budgets}
         </NavLink>
-        <NavLink
-          className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-          to="/config"
-        >
+        <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/dashboard">
+          {t.nav.dashboard}
+        </NavLink>
+        <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/config">
           {t.nav.config}
         </NavLink>
         <button className="btn-logout" onClick={handleLogout}>
@@ -52,6 +45,13 @@ export default function AppLayout() {
         </button>
       </nav>
       <Outlet />
+      <footer className="app-footer">
+        <span className="app-footer-brand">tallyoh</span>
+        <span className="app-footer-sep" />
+        desenvolvido por <a className="app-footer-link" href="https://nilbyte.com.br" target="_blank" rel="noopener noreferrer">nilbyte</a>
+        <span className="app-footer-sep" />
+        {new Date().getFullYear()}
+      </footer>
     </>
   )
 }

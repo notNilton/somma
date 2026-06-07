@@ -50,6 +50,7 @@ export default function LoginPage() {
             required
           />
           <button className="login-submit" type="submit" disabled={isPending}>
+            {isPending && <span className="login-spinner" aria-hidden="true" />}
             {isPending ? t.login.submitting : t.login.submit}
           </button>
         </form>
