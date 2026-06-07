@@ -5,6 +5,7 @@ TRUNCATE TABLE
     users
 RESTART IDENTITY CASCADE;
 
+-- dev credentials: nilton.naab@gmail.com / dev-password-123
 INSERT INTO users (
     id,
     email,
@@ -22,7 +23,7 @@ VALUES
         '65999990001',
         '123.456.789-00',
         FALSE,
-        '$2y$12$wIeB0/bWpmLYhsIbzroCnOWP8KVCOJhFQEHjd3WvUxio5vWtwirdm'
+        '$2a$12$WrIQ0w9BpDBQBGRdJtq.6.r1lsF1FEEovx2b2xRi6.Yg.qkGzxKWC'
     )
 ON CONFLICT (email) DO UPDATE
 SET
