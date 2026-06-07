@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { formatMoney } from '../lib/format'
 import { useLocale } from '../i18n'
 import type { DayGroup } from '../lib/groupByDay'
-import type { TxKind } from '../types'
+import type { Transaction, TxKind } from '../types'
 
 type FilterType = 'ALL' | 'INCOME' | 'EXPENSE'
 
@@ -22,9 +22,10 @@ interface Props {
   isToday: boolean
   onAdd: (date: string, kind: TxKind) => void
   onDelete: (id: string) => void
+  onEdit: (tx: Transaction) => void
 }
 
-export default function DayGroupComponent({ group, filterType, isToday, onAdd, onDelete }: Props) {
+export default function DayGroupComponent({ group, filterType, isToday, onAdd, onDelete, onEdit }: Props) {
   const [expanded, setExpanded] = useState<TxKind | null>(null)
   const { t } = useLocale()
 
@@ -101,24 +102,30 @@ export default function DayGroupComponent({ group, filterType, isToday, onAdd, o
                       )}
                       <span className="tx-detail-amt">{formatMoney(tx.amount)}</span>
                       {!tx.id.startsWith('optimistic-') && (
-                        <button
-                          className="tx-detail-del"
-                          onClick={e => {
-                            e.stopPropagation()
-                            if (confirm(t.dayGroup.confirmDelete)) onDelete(tx.id)
-                          }}
-                        >
-                          ×
-                        </button>
+                        <>
+                          <button
+                            className="tx-detail-edit"
+                            onClick={e => { e.stopPropagation(); onEdit(tx) }}
+                            title="Editar"
+                          >
+                            ✎
+                          </button>
+                          <button
+                            className="tx-detail-del"
+                            onClick={e => {
+                              e.stopPropagation()
+                              if (confirm(t.dayGroup.confirmDelete)) onDelete(tx.id)
+                            }}
+                          >
+                            ×
+                          </button>
+                        </>
                       )}
                     </div>
                   ))}
                   <button
                     className="tx-add-inline"
-                    onClick={e => {
-                      e.stopPropagation()
-                      onAdd(group.dateStr, kind)
-                    }}
+                    onClick={e => { e.stopPropagation(); onAdd(group.dateStr, kind) }}
                   >
                     {t.dayGroup.addInline}
                   </button>

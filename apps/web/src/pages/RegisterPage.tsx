@@ -90,6 +90,7 @@ export default function RegisterPage() {
             autoComplete="new-password"
           />
           <button className="login-submit" type="submit" disabled={isPending}>
+            {isPending && <span className="login-spinner" aria-hidden="true" />}
             {isPending ? t.register.submitting : t.register.submit}
           </button>
         </form>
