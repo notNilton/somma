@@ -6,8 +6,10 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/nilbyte/tallyoh/backend/internal/cache"
 	"github.com/nilbyte/tallyoh/backend/internal/middleware"
 	"github.com/nilbyte/tallyoh/backend/internal/models"
+	"github.com/nilbyte/tallyoh/backend/internal/money"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -123,12 +125,51 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.db.Exec(r.Context(), `
+	if _, err := h.db.Exec(r.Context(), `
 		UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2
-	`, string(newHash), claims.UserID)
+	`, string(newHash), claims.UserID); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
 
 	log.Printf("[AUDIT] password changed: %s", claims.Email)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) GetInitialBalance(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	var cents int64
+	if err := h.db.QueryRow(r.Context(), `SELECT initial_balance_cents FROM users WHERE id = $1`, claims.UserID).Scan(&cents); err != nil {
+		writeError(w, http.StatusNotFound, "user not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"initialBalance": money.ToReais(cents)})
+}
+
+func (h *Handler) UpdateInitialBalance(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	var body struct {
+		InitialBalance float64 `json:"initialBalance"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	cents := money.ToCents(body.InitialBalance)
+	if _, err := h.db.Exec(r.Context(), `UPDATE users SET initial_balance_cents = $1, updated_at = NOW() WHERE id = $2`, cents, claims.UserID); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	h.cache.DeletePrefix(cache.DashboardPrefix(claims.UserID))
+	writeJSON(w, http.StatusOK, map[string]any{"initialBalance": money.ToReais(cents)})
 }
 
 func (h *Handler) DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
@@ -161,7 +202,10 @@ func (h *Handler) DeleteMyAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.db.Exec(r.Context(), `DELETE FROM users WHERE id = $1`, claims.UserID)
+	if _, err := h.db.Exec(r.Context(), `DELETE FROM users WHERE id = $1`, claims.UserID); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
 	log.Printf("[AUDIT] account deleted: %s", claims.Email)
 	w.WriteHeader(http.StatusNoContent)
 }
