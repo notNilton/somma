@@ -20,6 +20,7 @@ func New(db *pgxpool.Pool, ctx context.Context) *Scheduler {
 func (s *Scheduler) Start() {
 	log.Println("jobs: scheduler started")
 	go s.runAt(0, 5, "budget-alerts", s.checkBudgetAlerts)
+	go s.runAt(0, 1, "recurring-transactions", s.spawnRecurring)
 }
 
 // runEvery executa a função a cada intervalo
