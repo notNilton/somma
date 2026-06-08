@@ -107,3 +107,20 @@ func (rl *RateLimiter) LimitHandler(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
+
+// LimitUser wraps a HandlerFunc with per-user rate limiting (falls back to IP).
+func (rl *RateLimiter) LimitUser(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var key string
+		if claims, ok := ClaimsFromContext(r.Context()); ok {
+			key = "user:" + claims.UserID
+		} else {
+			key = "ip:" + extractIP(r)
+		}
+		if !rl.getLimiter(key).Allow() {
+			http.Error(w, `{"error":"too many requests"}`, http.StatusTooManyRequests)
+			return
+		}
+		next(w, r)
+	}
+}

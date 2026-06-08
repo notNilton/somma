@@ -10,6 +10,95 @@ import (
 	"github.com/nilbyte/tallyoh/backend/internal/money"
 )
 
+func (h *Handler) GetTrends(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	txType := r.URL.Query().Get("type")
+	if txType == "" {
+		txType = "EXPENSE"
+	}
+
+	rows, err := h.db.Query(r.Context(), `
+		WITH monthly AS (
+			SELECT c.id AS cat_id, c.name AS cat_name, c.color AS cat_color,
+			       DATE_TRUNC('month', t.date) AS month,
+			       SUM(t.amount_cents) AS total_cents
+			FROM transactions t
+			LEFT JOIN categories c ON c.id = t.category_id
+			WHERE t.user_id = $1
+			  AND t.is_active = true
+			  AND t.status = 'COMPLETED'
+			  AND t.type = $2
+			  AND t.date >= DATE_TRUNC('month', NOW()) - INTERVAL '5 months'
+			GROUP BY c.id, c.name, c.color, DATE_TRUNC('month', t.date)
+		),
+		with_window AS (
+			SELECT cat_id, cat_name, cat_color, month, total_cents,
+			       LAG(total_cents) OVER (PARTITION BY cat_id ORDER BY month) AS prev_month_cents,
+			       AVG(total_cents) OVER (
+			           PARTITION BY cat_id ORDER BY month
+			           ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+			       ) AS moving_avg
+			FROM monthly
+		)
+		SELECT cat_id, cat_name, cat_color, total_cents,
+		       COALESCE(prev_month_cents, 0) AS prev_month_cents,
+		       ROUND(moving_avg) AS moving_avg
+		FROM with_window
+		WHERE month = DATE_TRUNC('month', NOW())
+		ORDER BY total_cents DESC
+	`, claims.UserID, txType)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	defer rows.Close()
+
+	type trendItem struct {
+		CategoryID      *string `json:"categoryId"`
+		CategoryName    *string `json:"categoryName"`
+		CategoryColor   *string `json:"categoryColor"`
+		Total           float64 `json:"total"`
+		TotalCents      int64   `json:"totalCents"`
+		MovingAvg       float64 `json:"movingAvg"`
+		MovingAvgCents  int64   `json:"movingAvgCents"`
+		DeltaPct        *float64 `json:"deltaPct"`
+		PrevMonth       float64 `json:"prevMonth"`
+		PrevMonthCents  int64   `json:"prevMonthCents"`
+	}
+
+	items := make([]trendItem, 0)
+	for rows.Next() {
+		var it trendItem
+		if err := rows.Scan(
+			&it.CategoryID, &it.CategoryName, &it.CategoryColor,
+			&it.TotalCents, &it.PrevMonthCents, &it.MovingAvgCents,
+		); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal error")
+			return
+		}
+		it.Total = money.ToReais(it.TotalCents)
+		it.PrevMonth = money.ToReais(it.PrevMonthCents)
+		it.MovingAvg = money.ToReais(it.MovingAvgCents)
+		if it.PrevMonthCents != 0 {
+			d := float64(it.TotalCents-it.PrevMonthCents) / float64(it.PrevMonthCents) * 100
+			it.DeltaPct = &d
+		}
+		items = append(items, it)
+	}
+
+	now := time.Now()
+	writeJSON(w, http.StatusOK, map[string]any{
+		"type":  txType,
+		"month": now.Format("2006-01"),
+		"items": items,
+	})
+}
+
 func (h *Handler) GetMonthlyEvolution(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.ClaimsFromContext(r.Context())
 	if !ok {
