@@ -2,7 +2,7 @@ export type Locale = 'pt-BR' | 'en-US' | 'es'
 
 export interface T {
   locale: { 'pt-BR': string; 'en-US': string; es: string }
-  nav: { transactions: string; budgets: string; dashboard: string; config: string; logout: string; syncing: string }
+  nav: { transactions: string; budgets: string; dashboard: string; goals: string; config: string; logout: string; syncing: string }
   months: [string,string,string,string,string,string,string,string,string,string,string,string]
   filter: { all: string; income: string; expense: string }
   table: { day: string; total: string }
@@ -133,13 +133,40 @@ export interface T {
     success: string
     importMore: string
     goToTx: string
+    potentialDuplicate: string
+  }
+  goals: {
+    title: string
+    newGoal: string
+    empty: string
+    name: string
+    namePlaceholder: string
+    target: string
+    deadline: string
+    description: string
+    descPlaceholder: string
+    color: string
+    save: string
+    create: string
+    remaining: string
+    achieved: string
+    confirmDelete: string
+    confirmYes: string
+  }
+  report: {
+    print: string
+    summary: string
+    byCategory: string
+    colDesc: string
+    colType: string
+    colAmount: string
   }
 }
 
 export const translations: Record<Locale, T> = {
   'pt-BR': {
     locale: { 'pt-BR': 'Português', 'en-US': 'English', es: 'Español' },
-    nav: { transactions: 'Transações', budgets: 'Orçamentos', dashboard: 'Visão geral', config: 'Config', logout: 'Sair', syncing: 'Sincronizando...' },
+    nav: { transactions: 'Transações', budgets: 'Orçamentos', dashboard: 'Visão geral', goals: 'Metas', config: 'Config', logout: 'Sair', syncing: 'Sincronizando...' },
     months: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
     filter: { all: '⊙ Todas', income: 'Renda', expense: 'Despesa' },
     table: { day: 'Dia', total: 'Total' },
@@ -280,12 +307,39 @@ export const translations: Record<Locale, T> = {
       success: '{n} lançamento(s) importado(s) com sucesso.',
       importMore: 'Importar mais',
       goToTx: 'Ver transações',
+      potentialDuplicate: 'Possível duplicata',
+    },
+    goals: {
+      title: 'Metas financeiras',
+      newGoal: 'Nova meta',
+      empty: 'Nenhuma meta criada ainda.',
+      name: 'Nome',
+      namePlaceholder: 'Ex: Fundo de emergência',
+      target: 'Valor alvo',
+      deadline: 'Prazo (opcional)',
+      description: 'Descrição',
+      descPlaceholder: 'Observação opcional',
+      color: 'Cor',
+      save: 'Atualizar',
+      create: 'Criar meta',
+      remaining: 'restante',
+      achieved: 'Metas concluídas',
+      confirmDelete: 'Remover esta meta?',
+      confirmYes: 'Remover',
+    },
+    report: {
+      print: 'Imprimir / PDF',
+      summary: 'Resumo do período',
+      byCategory: 'Despesas por categoria',
+      colDesc: 'Descrição',
+      colType: 'Tipo',
+      colAmount: 'Valor',
     },
   },
 
   'en-US': {
     locale: { 'pt-BR': 'Português', 'en-US': 'English', es: 'Español' },
-    nav: { transactions: 'Transactions', budgets: 'Budgets', dashboard: 'Overview', config: 'Settings', logout: 'Log out', syncing: 'Syncing...' },
+    nav: { transactions: 'Transactions', budgets: 'Budgets', dashboard: 'Overview', goals: 'Goals', config: 'Settings', logout: 'Log out', syncing: 'Syncing...' },
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     filter: { all: '⊙ All', income: 'Income', expense: 'Expense' },
     table: { day: 'Day', total: 'Total' },
@@ -426,12 +480,39 @@ export const translations: Record<Locale, T> = {
       success: '{n} transaction(s) imported successfully.',
       importMore: 'Import more',
       goToTx: 'View transactions',
+      potentialDuplicate: 'Possible duplicate',
+    },
+    goals: {
+      title: 'Financial goals',
+      newGoal: 'New goal',
+      empty: 'No goals created yet.',
+      name: 'Name',
+      namePlaceholder: 'e.g. Emergency fund',
+      target: 'Target amount',
+      deadline: 'Deadline (optional)',
+      description: 'Description',
+      descPlaceholder: 'Optional note',
+      color: 'Color',
+      save: 'Update',
+      create: 'Create goal',
+      remaining: 'remaining',
+      achieved: 'Achieved goals',
+      confirmDelete: 'Remove this goal?',
+      confirmYes: 'Remove',
+    },
+    report: {
+      print: 'Print / PDF',
+      summary: 'Period summary',
+      byCategory: 'Expenses by category',
+      colDesc: 'Description',
+      colType: 'Type',
+      colAmount: 'Amount',
     },
   },
 
   es: {
     locale: { 'pt-BR': 'Português', 'en-US': 'English', es: 'Español' },
-    nav: { transactions: 'Transacciones', budgets: 'Presupuestos', dashboard: 'Resumen', config: 'Ajustes', logout: 'Salir', syncing: 'Sincronizando...' },
+    nav: { transactions: 'Transacciones', budgets: 'Presupuestos', dashboard: 'Resumen', goals: 'Metas', config: 'Ajustes', logout: 'Salir', syncing: 'Sincronizando...' },
     months: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
     filter: { all: '⊙ Todas', income: 'Ingreso', expense: 'Gasto' },
     table: { day: 'Día', total: 'Total' },
@@ -572,6 +653,33 @@ export const translations: Record<Locale, T> = {
       success: '{n} transacción(es) importada(s) con éxito.',
       importMore: 'Importar más',
       goToTx: 'Ver transacciones',
+      potentialDuplicate: 'Posible duplicado',
+    },
+    goals: {
+      title: 'Metas financieras',
+      newGoal: 'Nueva meta',
+      empty: 'Sin metas creadas aún.',
+      name: 'Nombre',
+      namePlaceholder: 'Ej: Fondo de emergencia',
+      target: 'Monto objetivo',
+      deadline: 'Plazo (opcional)',
+      description: 'Descripción',
+      descPlaceholder: 'Nota opcional',
+      color: 'Color',
+      save: 'Actualizar',
+      create: 'Crear meta',
+      remaining: 'restante',
+      achieved: 'Metas logradas',
+      confirmDelete: '¿Eliminar esta meta?',
+      confirmYes: 'Eliminar',
+    },
+    report: {
+      print: 'Imprimir / PDF',
+      summary: 'Resumen del período',
+      byCategory: 'Gastos por categoría',
+      colDesc: 'Descripción',
+      colType: 'Tipo',
+      colAmount: 'Importe',
     },
   },
 }

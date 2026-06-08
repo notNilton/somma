@@ -29,7 +29,8 @@ export default function ImportPage() {
       const preview = await importApi.preview(file)
       setRows(preview.rows)
       setParseErrors(preview.errors)
-      setSelected(new Set(preview.rows.map((_, i) => i)))
+      // pre-deselect potential duplicates
+      setSelected(new Set(preview.rows.map((_, i) => i).filter(i => !preview.rows[i].potentialDuplicate)))
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -100,7 +101,7 @@ export default function ImportPage() {
               <input
                 ref={fileRef}
                 type="file"
-                accept=".csv,.txt"
+                accept=".csv,.txt,.ofx,.ofc"
                 className="import-file-input"
                 onChange={handleFile}
               />
@@ -151,7 +152,12 @@ export default function ImportPage() {
                           />
                         </td>
                         <td>{row.date}</td>
-                        <td>{row.description}</td>
+                        <td>
+                          {row.description}
+                          {row.potentialDuplicate && (
+                            <span className="import-dup-badge">{t.import.potentialDuplicate}</span>
+                          )}
+                        </td>
                         <td className={`import-amount ${row.type === 'INCOME' ? 'income' : 'expense'}`}>
                           {row.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </td>

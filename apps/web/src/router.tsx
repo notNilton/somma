@@ -9,6 +9,8 @@ import BudgetsPage from './pages/BudgetsPage'
 import ConfigPage from './pages/ConfigPage'
 import DashboardPage from './pages/DashboardPage'
 import ImportPage from './pages/ImportPage'
+import GoalsPage from './pages/GoalsPage'
+import ReportPage from './pages/ReportPage'
 
 function RequireAuth() {
   const { authed } = useAuth()
@@ -66,6 +68,22 @@ export const router = createBrowserRouter([
           {
             path: '/import',
             element: <ImportPage />,
+          },
+          {
+            path: '/goals',
+            element: (
+              <Suspense fallback={<PageSpinner />}>
+                <GoalsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/report',
+            element: (
+              <Suspense fallback={<PageSpinner />}>
+                <ReportPage />
+              </Suspense>
+            ),
           },
         ],
       },

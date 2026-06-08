@@ -67,4 +67,10 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	// Import
 	mux.HandleFunc("POST /api/v1/import/preview", auth(h.PreviewImport))
 	mux.HandleFunc("POST /api/v1/import/confirm", auth(h.ConfirmImport))
+
+	// Goals
+	mux.HandleFunc("GET /api/v1/goals", auth(h.ListGoals))
+	mux.HandleFunc("POST /api/v1/goals", auth(h.CreateGoal))
+	mux.HandleFunc("PATCH /api/v1/goals/{id}", auth(h.UpdateGoal))
+	mux.HandleFunc("DELETE /api/v1/goals/{id}", auth(h.DeleteGoal))
 }

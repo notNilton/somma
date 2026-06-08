@@ -23,6 +23,7 @@ type Transaction struct {
 	RecurrenceFreq    *string
 	RecurrenceEndDate *time.Time
 	RecurringOriginID *string
+	GoalID            *string
 }
 
 type TransactionWithCategory struct {
