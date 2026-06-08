@@ -37,6 +37,9 @@ export default function AppLayout() {
         <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/dashboard">
           {t.nav.dashboard}
         </NavLink>
+        <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/goals">
+          {t.nav.goals}
+        </NavLink>
         <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/config">
           {t.nav.config}
         </NavLink>

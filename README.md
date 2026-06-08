@@ -19,9 +19,9 @@ Personal finance tracker built around a simple income/expense model with kinds (
 
 ```
 apps/
-  backend/          → Go API (apps/backend/cmd/api/main.go)
-  web/              → React frontend (Vite, port 3400)
-  doc/              → OpenAPI spec + Bruno collection
+  backend/          → Go API (port 3300)
+  web/              → React frontend (port 3400 dev / prod)
+  doc/              → OpenAPI spec + Swagger UI
 database/
   migrations/       → SQL migrations (sequential, named)
   seeds/            → initial data scripts
@@ -73,8 +73,8 @@ make db-seed-barebones # apply minimal seed (user only)
 To create a new migration, add two files under `database/migrations/`:
 
 ```
-000021_description.up.sql
-000021_description.down.sql
+000024_description.up.sql
+000024_description.down.sql
 ```
 
 ---
@@ -107,15 +107,11 @@ Cloudflare  ←  *.nilbyte.com.br DNS
 VPS niflheim (Ubuntu)
    │
    ▼
-Caddy (container, http:// only — no own certificates)
-   ├── gitea.nilbyte.com.br         → gitea:3000
-   ├── api.tallyoh.nilbyte.com.br   → tallyoh_backend_prod:3300
-   └── tallyoh.nilbyte.com.br       → tallyoh_web_prod:80
+Caddy (container, http:// only)
+   ├── gitea.nilbyte.com.br       → gitea:3000
+   ├── tallyoh.nilbyte.com.br     → tallyoh_web_prod:3400
+   └── api.tallyoh.nilbyte.com.br → tallyoh_backend_prod:3300
 ```
-
-Traffic enters via **Cloudflare Tunnel** — no ports exposed directly to the internet. Cloudflare terminates TLS and forwards plain HTTP to Caddy.
-
-**Important:** Cloudflare only routes HTTP/HTTPS. Any other protocol (raw SSH, TCP) is silently dropped before reaching the server.
 
 ### Docker Networks
 
@@ -124,37 +120,12 @@ Traffic enters via **Cloudflare Tunnel** — no ports exposed directly to the in
 | `nilbyte-git` | Gitea + act_runner (CI) |
 | `tallyoh-internal` | DB + backend + web |
 
-Caddy is attached to all networks for reverse proxying.
-
-### Why `gitea:3000` instead of `gitea.nilbyte.com.br` in CI
-
-The Gitea Actions runner runs as a container on the `nilbyte-git` network. From there:
-
-- `gitea:3000` → **accessible** via Docker internal DNS
-- `gitea.nilbyte.com.br` → **inaccessible** — the domain resolves through the Cloudflare Tunnel, which is external; the container cannot route back to the host via the public IP
-
-CI uses `gitea:3000` for docker login/push, with the daemon configured to allow insecure HTTP:
-
-```json
-{ "insecure-registries": ["gitea:3000"] }
-```
-
 ### SSH Access (port 2222)
 
-Gitea exposes SSH on port **2222**. SSH does not go through Cloudflare.
-
-**From the same server / CI containers:**
 ```bash
-ssh://git@gitea:22/nilByte/tallyoh.git
-```
-
-**From an external machine via Tailscale (recommended):**
-```bash
+# From Tailscale
 git clone ssh://git@niflhel:2222/nilByte/tallyoh.git
-ssh -T git@niflhel -p 2222
-```
 
-```
 # ~/.ssh/config
 Host gitea
   HostName niflhel
@@ -162,8 +133,6 @@ Host gitea
   User git
   IdentityFile ~/.ssh/id_ed25519
 ```
-
-**Without Tailscale:** not possible. `gitea.nilbyte.com.br:2222` hits Cloudflare which drops TCP silently. Use HTTPS + token for git operations instead.
 
 ---
 
@@ -175,28 +144,27 @@ Runs on every PR. Validates without publishing images.
 
 | Job | What it does |
 |-----|-------------|
-| `detect-changes` | Identifies which areas changed |
+| `detect-changes` | Identifies which areas changed relative to `main` |
 | `build-backend` | `go build -mod=vendor ./...` |
-| `build-database` | `go build -mod=vendor ./...` on the migrations module |
+| `build-web` | `docker build` of the web image |
+| `build-doc` | Validates `openapi.yml` syntax |
 | `validate-compose` | `docker compose config` on compose files |
 
 ### `onmain.yml` — `main` branch
 
-Runs on every push to `main`. Detects changed areas, builds and pushes Docker images, then bumps the patch version of the affected service.
+Runs on every push to `main`. Each job detects changes independently, builds and pushes Docker images, then bumps the patch version.
 
 | Job | What it does |
 |-----|-------------|
-| `build-backend` | Builds Go binary, pushes `backend:latest` + `backend:vX.Y.Z`, bumps `apps/backend/VERSION` |
-| `build-web` | Builds Vite bundle, pushes `web:latest` + `web:vX.Y.Z`, bumps version in `apps/web/package.json` |
-| `build-doc` | Builds doc image, pushes `doc:latest` + `doc:vX.Y.Z`, bumps `apps/doc/VERSION` |
+| `build-backend` | Builds image, pushes `backend:latest` + `backend:vX.Y.Z`, bumps `apps/backend/VERSION` |
+| `build-web` | Builds image, pushes `web:latest` + `web:vX.Y.Z`, bumps version in `apps/web/package.json` |
+| `build-doc` | Builds image, pushes `doc:latest` + `doc:vX.Y.Z`, bumps `apps/doc/VERSION` |
 
-Version bump commits are tagged `[skip ci]` to avoid infinite loops.
+Version bump commits are tagged `[skip ci]` to avoid infinite loops. All jobs run in parallel and are independent — each only triggers if its own area changed.
 
 ### Vendored Dependencies
 
 Both the backend (`apps/backend/vendor/`) and database module (`database/vendor/`) vendor their dependencies. CI uses `go build -mod=vendor` — no internet access required for Go builds.
-
-To update dependencies:
 
 ```bash
 # Backend
