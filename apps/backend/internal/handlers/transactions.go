@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +16,28 @@ import (
 	"github.com/nilbyte/tallyoh/backend/internal/models"
 	"github.com/nilbyte/tallyoh/backend/internal/money"
 )
+
+type txCursor struct {
+	Date string `json:"d"`
+	ID   string `json:"i"`
+}
+
+func encodeCursor(date time.Time, id string) string {
+	b, _ := json.Marshal(txCursor{Date: date.Format("2006-01-02"), ID: id})
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func decodeCursor(raw string) (txCursor, bool) {
+	b, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		return txCursor{}, false
+	}
+	var c txCursor
+	if err := json.Unmarshal(b, &c); err != nil {
+		return txCursor{}, false
+	}
+	return c, true
+}
 
 type createTransactionDto struct {
 	CategoryID     *string `json:"categoryId"`
@@ -176,19 +199,23 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 	q := r.URL.Query()
 
-	page, _ := strconv.Atoi(q.Get("page"))
-	if page < 1 {
-		page = 1
-	}
 	limit, _ := strconv.Atoi(q.Get("limit"))
 	if limit < 1 {
 		limit = 20
-	} else if limit > 5000 {
-		limit = 5000
+	} else if limit > 200 {
+		limit = 200
 	}
-	offset := (page - 1) * limit
 
 	where, args, i := h.buildTransactionsFilter(q, claims.UserID)
+
+	if raw := q.Get("cursor"); raw != "" {
+		if cur, ok := decodeCursor(raw); ok {
+			where += fmt.Sprintf(" AND (t.date < $%d OR (t.date = $%d AND t.id < $%d))", i, i, i+1)
+			args = append(args, cur.Date, cur.Date, cur.ID)
+			i += 2
+		}
+	}
+
 	query := fmt.Sprintf(`
 		SELECT t.id, t.user_id, t.category_id, t.budget_id,
 		       t.type, t.kind, t.status, t.amount_cents, t.date,
@@ -198,10 +225,10 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 		FROM transactions t
 		LEFT JOIN categories c ON c.id = t.category_id
 		WHERE %s
-		ORDER BY t.date DESC, t.created_at DESC
-		LIMIT $%d OFFSET $%d
-	`, where, i, i+1)
-	args = append(args, limit, offset)
+		ORDER BY t.date DESC, t.id DESC
+		LIMIT $%d
+	`, where, i)
+	args = append(args, limit+1)
 
 	rows, err := h.db.Query(r.Context(), query, args...)
 	if err != nil {
@@ -210,7 +237,9 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	result := make([]any, 0)
+	items := make([]any, 0, limit)
+	var last models.TransactionWithCategory
+	count := 0
 	for rows.Next() {
 		var t models.TransactionWithCategory
 		if err := rows.Scan(
@@ -223,10 +252,23 @@ func (h *Handler) ListTransactions(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "internal error")
 			return
 		}
-		result = append(result, transactionResponse(t))
+		count++
+		if count <= limit {
+			items = append(items, transactionResponse(t))
+			last = t
+		}
 	}
 
-	writeJSON(w, http.StatusOK, result)
+	var nextCursor *string
+	if count > limit {
+		c := encodeCursor(last.Date, last.ID)
+		nextCursor = &c
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"items":      items,
+		"nextCursor": nextCursor,
+	})
 }
 
 func (h *Handler) GetTransaction(w http.ResponseWriter, r *http.Request) {
