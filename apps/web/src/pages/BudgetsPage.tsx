@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLocale } from '../i18n'
 import { formatMoney } from '../lib/format'
 import BudgetModal from '../components/BudgetModal'
+import EmptyState from '../components/EmptyState'
 import type { Budget, CreateBudgetInput } from '../types'
 
 interface BudgetCardProps {
@@ -251,7 +252,12 @@ export default function BudgetsPage() {
         </div>
 
         {budgets.length === 0 ? (
-          <div className="empty-state">{t.budgets.empty}</div>
+          <EmptyState
+            icon="📊"
+            title={t.budgets.empty}
+            hint="Crie um orçamento para controlar seus gastos por categoria"
+            action={{ label: t.budgets.newBudget, onClick: openCreate }}
+          />
         ) : (
           <div className="budget-list">
             {budgets.map(budget => (

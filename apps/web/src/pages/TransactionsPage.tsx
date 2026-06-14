@@ -7,6 +7,10 @@ import { useLocale } from '../i18n'
 import { groupByDay } from '../lib/groupByDay'
 import DayGroupComponent from '../components/DayGroup'
 import TransactionModal from '../components/TransactionModal'
+import EmptyState from '../components/EmptyState'
+import UndoToast from '../components/UndoToast'
+import ShortcutsHint from '../components/ShortcutsHint'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Category, CreateInput, Transaction, TxKind, UpdateInput } from '../types'
 
 interface ModalState {
@@ -33,6 +37,8 @@ export default function TransactionsPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
   const [filterType, setFilterType] = useState<UiFilterType>('ALL')
+  const [search, setSearch] = useState('')
+  const [filterCategory, setFilterCategory] = useState('')
 
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) }
@@ -108,7 +114,9 @@ export default function TransactionsPage() {
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: txKey })
       const previous = qc.getQueryData<Transaction[]>(txKey)
+      const deleted = previous?.find(tx => tx.id === id)
       qc.setQueryData<Transaction[]>(txKey, (old = []) => old.filter(tx => tx.id !== id))
+      if (deleted) setUndoState({ id, label: deleted.description || 'Transação' })
       return { previous }
     },
     onError: (_err, _id, ctx) => {
@@ -117,8 +125,21 @@ export default function TransactionsPage() {
     onSettled: () => qc.invalidateQueries({ queryKey: txKey }),
   })
 
+  const restoreMutation = useMutation({
+    mutationFn: (id: string) => transactionsApi.restore(id),
+    onSettled: () => qc.invalidateQueries({ queryKey: txKey }),
+  })
+
+  const [undoState, setUndoState] = useState<{ id: string; label: string } | null>(null)
   const [modal, setModal] = useState<ModalState>({ open: false, date: '', kind: 'EXPENSE' })
   const dialogRef = useRef<HTMLDialogElement>(null)
+
+  useKeyboardShortcuts({
+    onNewTransaction: () => {
+      const todayDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+      openModal(todayDate, 'EXPENSE')
+    },
+  })
 
   function openModal(date: string, kind: TxKind, transaction?: Transaction) {
     setModal({ open: true, date, kind, transaction })
@@ -140,6 +161,12 @@ export default function TransactionsPage() {
     openModal(dateStr, tx.kind, tx)
   }
 
+  function handleUndo() {
+    if (!undoState) return
+    restoreMutation.mutate(undoState.id)
+    setUndoState(null)
+  }
+
   function handleUpdate(input: CreateInput) {
     if (!modal.transaction) return
     closeModal()
@@ -154,7 +181,12 @@ export default function TransactionsPage() {
     })
   }
 
-  const groups = groupByDay(txs, year, month)
+  const filtered = txs.filter(tx => {
+    if (search && !tx.description?.toLowerCase().includes(search.toLowerCase())) return false
+    if (filterCategory && tx.categoryId !== filterCategory) return false
+    return true
+  })
+  const groups = groupByDay(filtered, year, month)
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
   return (
@@ -167,6 +199,26 @@ export default function TransactionsPage() {
           <button className="month-arrow" onClick={prevMonth}>‹</button>
           <span className="month-label">{t.months[month]}/{String(year).slice(2)}</span>
           <button className="month-arrow" onClick={nextMonth}>›</button>
+        </div>
+
+        <div className="tx-search-row">
+          <input
+            className="tx-search-input"
+            type="search"
+            placeholder={t.search.placeholder}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <select
+            className="tx-category-filter"
+            value={filterCategory}
+            onChange={e => setFilterCategory(e.target.value)}
+          >
+            <option value="">Categoria</option>
+            {flattenCategories(categories).map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
 
         <div className="tx-table-header">
@@ -196,6 +248,13 @@ export default function TransactionsPage() {
             onEdit={handleEdit}
           />
         ))}
+        {filtered.length === 0 && (
+          <EmptyState
+            icon="💸"
+            title="Nenhuma transação"
+            hint="Adicione sua primeira transação clicando em qualquer dia"
+          />
+        )}
       </div>
 
       <dialog
@@ -216,6 +275,14 @@ export default function TransactionsPage() {
           />
         )}
       </dialog>
+      {undoState && (
+        <UndoToast
+          message={`"${undoState.label}" removida`}
+          onUndo={handleUndo}
+          onDismiss={() => setUndoState(null)}
+        />
+      )}
+      <ShortcutsHint />
     </>
   )
 }
