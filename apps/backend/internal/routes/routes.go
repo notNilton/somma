@@ -45,6 +45,7 @@ func Register(mux *http.ServeMux, db *pgxpool.Pool, jwtKey []byte, c *cache.Cach
 	mux.HandleFunc("POST /api/v1/transactions", auth(writeRL.LimitUser(h.CreateTransaction)))
 	mux.HandleFunc("PATCH /api/v1/transactions/{id}", auth(writeRL.LimitUser(h.UpdateTransaction)))
 	mux.HandleFunc("DELETE /api/v1/transactions/{id}", auth(writeRL.LimitUser(h.DeleteTransaction)))
+	mux.HandleFunc("PATCH /api/v1/transactions/{id}/restore", auth(writeRL.LimitUser(h.RestoreTransaction)))
 
 	// Budgets
 	mux.HandleFunc("GET /api/v1/budgets", auth(readRL.LimitUser(h.ListBudgets)))
