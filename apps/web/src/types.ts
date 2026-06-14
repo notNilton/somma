@@ -63,6 +63,7 @@ export interface ImportRow {
   description: string
   amount: number
   type: 'INCOME' | 'EXPENSE'
+  potentialDuplicate?: boolean
 }
 
 export interface ImportPreview {
