@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { goalsApi, type Goal, type GoalInput } from '../api/goals'
 import { useLocale } from '../i18n'
+import EmptyState from '../components/EmptyState'
 import { formatMoney } from '../lib/format'
 
 const GOAL_COLORS = [
@@ -118,44 +119,69 @@ function GoalCard({ goal, onEdit, onDelete, t }: GoalCardProps) {
   const achieved = goal.savedAmount >= goal.targetAmount
 
   return (
-    <div className={`goal-card${achieved ? ' goal-achieved' : ''}`}>
-      <div className="goal-card-top">
-        <div className="goal-icon" style={{ background: goal.color + '22', color: goal.color }}>
+    <div className={`goal-row${achieved ? ' goal-achieved' : ''}`}>
+      <div className="goal-row-main">
+        <div className="goal-row-mark" style={{ background: goal.color + '22', color: goal.color }}>
           {achieved ? '✓' : goal.name.charAt(0).toUpperCase()}
         </div>
-        <div className="goal-card-info">
-          <span className="goal-card-name">{goal.name}</span>
+
+        <div className="budget-row-copy">
+          <div className="budget-row-headline">
+            <span className="budget-row-name">{goal.name}</span>
+            <span className={`budget-row-progress-pill${achieved ? ' achieved' : ''}`}>
+              {Math.round(pct)}%
+            </span>
+          </div>
           {goal.targetDate && (
-            <span className="goal-card-date">
+            <span className="budget-row-notes">
               {new Date(goal.targetDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
             </span>
           )}
-          {goal.description && <span className="goal-card-desc">{goal.description}</span>}
-        </div>
-        <div className="goal-card-actions">
-          <button className="btn-action-sm btn-action-ghost" onClick={() => onEdit(goal)}>✎</button>
-          <button className="btn-action-sm btn-action-danger" onClick={() => onDelete(goal.id)}>×</button>
+          {goal.description && <span className="budget-row-notes">{goal.description}</span>}
         </div>
       </div>
 
-      <div className="goal-progress-bar-wrap">
-        <div
-          className={`goal-progress-bar-fill${achieved ? ' achieved' : ''}`}
-          style={{ width: `${pct}%`, background: goal.color }}
-        />
+      <div className="budget-row-meta">
+        <div className="budget-row-stats">
+          <span className="goal-row-saved">{formatMoney(goal.savedAmount)}</span>
+          <span className="budget-row-sep">/</span>
+          <span className="budget-row-allocated">{formatMoney(goal.targetAmount)}</span>
+        </div>
+
+        <div className="budget-progress-bar-wrap" aria-hidden="true">
+          <div
+            className={`goal-progress-fill${achieved ? ' achieved' : ''}`}
+            style={{ width: `${pct}%`, ...(achieved ? {} : { background: goal.color }) }}
+          />
+        </div>
+
+        <div className="budget-row-remaining-wrap">
+          <span className={`budget-row-remaining${achieved ? ' achieved' : ''}`}>
+            {achieved ? t.goals.achieved : formatMoney(goal.remaining)}
+          </span>
+          <span className="budget-row-remaining-label">
+            {achieved ? '' : t.goals.remaining}
+          </span>
+        </div>
       </div>
 
-      <div className="goal-card-footer">
-        <span className="goal-saved">{formatMoney(goal.savedAmount)}</span>
-        <span className="goal-pct">{Math.round(pct)}%</span>
-        <span className="goal-target">{formatMoney(goal.targetAmount)}</span>
+      <div className="budget-row-actions">
+        <button
+          type="button"
+          className="budget-action-btn"
+          onClick={() => onEdit(goal)}
+          title={t.goals.save}
+        >
+          ✎
+        </button>
+        <button
+          type="button"
+          className="budget-action-btn budget-action-del"
+          onClick={() => onDelete(goal.id)}
+        >
+          ×
+        </button>
       </div>
-
-      {!achieved && goal.remaining > 0 && (
-        <span className="goal-remaining">
-          {formatMoney(goal.remaining)} {t.goals.remaining}
-        </span>
-      )}
     </div>
   )
 }
@@ -225,7 +251,12 @@ export default function GoalsPage() {
       )}
 
       {goals.length === 0 && !showForm && (
-        <p className="goals-empty">{t.goals.empty}</p>
+        <EmptyState
+          icon="🎯"
+          title={t.goals.empty}
+          hint="Defina uma meta de economia e acompanhe seu progresso"
+          action={{ label: t.goals.newGoal, onClick: () => setShowForm(true) }}
+        />
       )}
 
       {deleteConfirm && (
