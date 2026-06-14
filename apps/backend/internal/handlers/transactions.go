@@ -482,6 +482,27 @@ func (h *Handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) RestoreTransaction(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+
+	tag, err := h.db.Exec(r.Context(), `
+		UPDATE transactions
+		SET is_active = true, deleted_at = NULL, updated_at = NOW()
+		WHERE id = $1 AND user_id = $2 AND is_active = false
+	`, r.PathValue("id"), claims.UserID)
+	if err != nil || tag.RowsAffected() == 0 {
+		writeError(w, http.StatusNotFound, "transaction not found or already active")
+		return
+	}
+
+	h.cache.DeletePrefix(cache.DashboardPrefix(claims.UserID))
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) ListFutureTransactions(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.ClaimsFromContext(r.Context())
 	if !ok {
