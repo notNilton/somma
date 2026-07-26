@@ -38,7 +38,7 @@ jobs:
             FORCE_ALL=true
           fi
 
-          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^apps/backend/'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^apps/somma-expenses/backend/|^apps/somma-vehicles/backend/'; then
             BACKEND_CHANGED=true
           fi
 
@@ -46,7 +46,7 @@ jobs:
             DOC_CHANGED=true
           fi
 
-          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -q '^apps/web/'; then
+          if [ "$FORCE_ALL" != "true" ] && echo "$CHANGED_FILES" | grep -Eq '^apps/somma-expenses/web/|^apps/somma-vehicles/web/'; then
             WEB_CHANGED=true
           fi
 
@@ -76,7 +76,15 @@ jobs:
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
       - name: Build backend
-        working-directory: apps/backend
+        working-directory: apps/somma-expenses/backend
+        env:
+          GOWORK: "off"
+          GOCACHE: /tmp/go-build
+          GOMODCACHE: /tmp/go-mod-cache
+        run: go build -mod=vendor ./...
+
+      - name: Build vehicles backend
+        working-directory: apps/somma-vehicles/backend
         env:
           GOWORK: "off"
           GOCACHE: /tmp/go-build
@@ -111,9 +119,13 @@ jobs:
           git clone --depth=1 --branch "${{ gitea.ref_name }}" \
             "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
 
-      - name: Build web image
+      - name: Build expenses web image
         run: |
-          docker build -f apps/web/Dockerfile -t web-ci-check apps/web/
+          docker build -f apps/somma-expenses/web/Dockerfile -t expenses-web-ci-check apps/somma-expenses/web/
+
+      - name: Build vehicles web image
+        run: |
+          docker build -f apps/somma-vehicles/web/Dockerfile -t vehicles-web-ci-check apps/somma-vehicles/web/
 
   validate-compose:
     needs: detect-changes

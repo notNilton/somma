@@ -1,12 +1,12 @@
 openapi: "3.0.3"
 
 info:
-  title: Tallyoh API
+  title: Somma API
   version: "1.0.0"
   description: API de finanças pessoais
 
 servers:
-  - url: https://tallyoh.nilbyte.com.br
+  - url: https://somma.nilbyte.com.br
     description: Produção
   - url: http://localhost:3300
     description: Desenvolvimento

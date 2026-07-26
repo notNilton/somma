@@ -9,12 +9,12 @@ on:
 
 env:
   REGISTRY: "gitea.nilbyte.com.br"
-  IMAGE_NAMESPACE: "nilbyte/tallyoh"
+  IMAGE_NAMESPACE: "nilbyte/somma"
   GIT_USER_NAME: "ci-bot"
   GIT_USER_EMAIL: "ci@nilbyte.com.br"
 
 jobs:
-  build-backend:
+  build-expenses-backend:
     runs-on: runner
     steps:
       - name: Checkout main with credentials
@@ -33,7 +33,7 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             CHANGED=true
           elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/backend/|database/|.gitea/workflows/)'; then
+            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-expenses/backend/|database/|.gitea/workflows/)'; then
               CHANGED=true
             fi
           else
@@ -46,31 +46,31 @@ jobs:
         run: |
           echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
-      - name: Build and push backend image
+      - name: Build and push expenses backend image
         if: steps.check.outputs.CHANGED == 'true'
         run: |
-          VERSION=$(cat apps/backend/VERSION | tr -d '[:space:]')
-          docker build -f apps/backend/Dockerfile \
+          VERSION=$(cat apps/somma-expenses/backend/VERSION | tr -d '[:space:]')
+          docker build -f apps/somma-expenses/backend/Dockerfile \
             --build-arg VERSION="${VERSION}" \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest" \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:${VERSION}" \
             .
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest"
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:${VERSION}"
 
-      - name: Bump backend version
+      - name: Bump expenses backend version
         if: steps.check.outputs.CHANGED == 'true'
         run: |
-          VERSION=$(cat apps/backend/VERSION | tr -d '[:space:]')
+          VERSION=$(cat apps/somma-expenses/backend/VERSION | tr -d '[:space:]')
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-          echo "$NEW_VERSION" > apps/backend/VERSION
-          git add apps/backend/VERSION
-          git commit -m "chore(release): backend $NEW_VERSION [skip ci]"
+          echo "$NEW_VERSION" > apps/somma-expenses/backend/VERSION
+          git add apps/somma-expenses/backend/VERSION
+          git commit -m "chore(release): expenses-backend $NEW_VERSION [skip ci]"
           git pull --rebase origin main
           git push origin main
 
-  build-web:
+  build-expenses-web:
     runs-on: runner
     steps:
       - name: Checkout main with credentials
@@ -89,7 +89,7 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             CHANGED=true
           elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/web/|.gitea/workflows/)'; then
+            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-expenses/web/|.gitea/workflows/)'; then
               CHANGED=true
             fi
           else
@@ -102,31 +102,146 @@ jobs:
         run: |
           echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
-      - name: Build and push web image
+      - name: Build and push expenses web image
         if: steps.check.outputs.CHANGED == 'true'
         run: |
-          VERSION=$(node -e "process.stdout.write(require('./apps/web/package.json').version)")
-          docker build -f apps/web/Dockerfile \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:latest" \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:${VERSION}" \
-            apps/web/
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:latest"
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:${VERSION}"
+          VERSION=$(node -e "process.stdout.write(require('./apps/somma-expenses/web/package.json').version)")
+          docker build -f apps/somma-expenses/web/Dockerfile \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:${VERSION}" \
+            apps/somma-expenses/web/
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:${VERSION}"
 
-      - name: Bump web version
+      - name: Bump expenses web version
         if: steps.check.outputs.CHANGED == 'true'
         run: |
-          VERSION=$(node -e "process.stdout.write(require('./apps/web/package.json').version)")
+          VERSION=$(node -e "process.stdout.write(require('./apps/somma-expenses/web/package.json').version)")
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
           node -e "
             const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('apps/web/package.json'));
+            const pkg = JSON.parse(fs.readFileSync('apps/somma-expenses/web/package.json'));
             pkg.version = '$NEW_VERSION';
-            fs.writeFileSync('apps/web/package.json', JSON.stringify(pkg, null, 2) + '\n');
+            fs.writeFileSync('apps/somma-expenses/web/package.json', JSON.stringify(pkg, null, 2) + '\n');
           "
-          git add apps/web/package.json
-          git commit -m "chore(release): web $NEW_VERSION [skip ci]"
+          git add apps/somma-expenses/web/package.json
+          git commit -m "chore(release): expenses-web $NEW_VERSION [skip ci]"
+          git pull --rebase origin main
+          git push origin main
+
+  build-vehicles-backend:
+    runs-on: runner
+    steps:
+      - name: Checkout main with credentials
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
+          git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git config user.name "${{ env.GIT_USER_NAME }}"
+          git config user.email "${{ env.GIT_USER_EMAIL }}"
+
+      - name: Detect changes
+        id: check
+        run: |
+          CHANGED=false
+          if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
+            CHANGED=true
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-vehicles/backend/|database/|.gitea/workflows/)'; then
+              CHANGED=true
+            fi
+          else
+            CHANGED=true
+          fi
+          echo "CHANGED=$CHANGED" >> "$GITHUB_OUTPUT"
+
+      - name: Login to registry
+        if: steps.check.outputs.CHANGED == 'true'
+        run: |
+          echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
+
+      - name: Build and push vehicles backend image
+        if: steps.check.outputs.CHANGED == 'true'
+        run: |
+          VERSION=$(cat apps/somma-vehicles/backend/VERSION | tr -d '[:space:]')
+          docker build -f apps/somma-vehicles/backend/Dockerfile \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-backend:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-backend:${VERSION}" \
+            .
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-backend:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-backend:${VERSION}"
+
+      - name: Bump vehicles backend version
+        if: steps.check.outputs.CHANGED == 'true'
+        run: |
+          VERSION=$(cat apps/somma-vehicles/backend/VERSION | tr -d '[:space:]')
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+          echo "$NEW_VERSION" > apps/somma-vehicles/backend/VERSION
+          git add apps/somma-vehicles/backend/VERSION
+          git commit -m "chore(release): vehicles-backend $NEW_VERSION [skip ci]"
+          git pull --rebase origin main
+          git push origin main
+
+  build-vehicles-web:
+    runs-on: runner
+    steps:
+      - name: Checkout main with credentials
+        run: |
+          git config --global credential.helper store
+          echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
+          echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
+          git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git config user.name "${{ env.GIT_USER_NAME }}"
+          git config user.email "${{ env.GIT_USER_EMAIL }}"
+
+      - name: Detect changes
+        id: check
+        run: |
+          CHANGED=false
+          if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
+            CHANGED=true
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-vehicles/web/|.gitea/workflows/)'; then
+              CHANGED=true
+            fi
+          else
+            CHANGED=true
+          fi
+          echo "CHANGED=$CHANGED" >> "$GITHUB_OUTPUT"
+
+      - name: Login to registry
+        if: steps.check.outputs.CHANGED == 'true'
+        run: |
+          echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
+
+      - name: Build and push vehicles web image
+        if: steps.check.outputs.CHANGED == 'true'
+        run: |
+          VERSION=$(node -e "process.stdout.write(require('./apps/somma-vehicles/web/package.json').version)")
+          docker build -f apps/somma-vehicles/web/Dockerfile \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-web:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-web:${VERSION}" \
+            apps/somma-vehicles/web/
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-web:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-web:${VERSION}"
+
+      - name: Bump vehicles web version
+        if: steps.check.outputs.CHANGED == 'true'
+        run: |
+          VERSION=$(node -e "process.stdout.write(require('./apps/somma-vehicles/web/package.json').version)")
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('apps/somma-vehicles/web/package.json'));
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('apps/somma-vehicles/web/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          git add apps/somma-vehicles/web/package.json
+          git commit -m "chore(release): vehicles-web $NEW_VERSION [skip ci]"
           git pull --rebase origin main
           git push origin main
 

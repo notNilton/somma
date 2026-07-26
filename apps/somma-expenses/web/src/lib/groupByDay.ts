@@ -1,0 +1,49 @@
+import type { Transaction } from '../types'
+
+export interface DayGroup {
+  dateStr: string
+  dayNum: number
+  transactions: Transaction[]
+  netAmount: number
+  runningBalance: number
+  runningTotal: number
+}
+
+export function groupByDay(transactions: Transaction[], year: number, month: number): DayGroup[] {
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+  const map = new Map<string, DayGroup>()
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`
+    map.set(dateStr, {
+      dateStr,
+      dayNum: d,
+      transactions: [],
+      netAmount: 0,
+      runningBalance: 0,
+      runningTotal: 0,
+    })
+  }
+
+  for (const tx of transactions) {
+    const dateStr = tx.date.slice(0, 10)
+    const g = map.get(dateStr)
+    if (!g) continue
+    g.transactions.push(tx)
+    g.netAmount += tx.type === 'INCOME' ? tx.amount : -tx.amount
+  }
+
+  const sorted = Array.from(map.values()).sort((a, b) => a.dateStr.localeCompare(b.dateStr))
+  let running = 0
+  for (const g of sorted) {
+    running += g.netAmount
+    g.runningBalance = running
+    g.runningTotal = g.netAmount
+  }
+
+  return sorted
+}
+
+function pad(n: number): string {
+  return String(n).padStart(2, '0')
+}

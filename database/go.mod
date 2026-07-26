@@ -1,4 +1,4 @@
-module github.com/nilbyte/tallyoh/database
+module github.com/nilbyte/somma/database
 
 go 1.25.0
 
