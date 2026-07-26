@@ -35,5 +35,8 @@ coverage
 app/main
 app/migrate
 app/tmp/
-apps/backend/tmp/
+apps/*/backend/tmp/
 database/migrate
+
+# TypeScript incremental build cache
+*.tsbuildinfo

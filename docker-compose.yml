@@ -3,18 +3,16 @@ services:
     build:
       context: .
       dockerfile: database/Dockerfile
-    container_name: tallyoh-migrate
+    container_name: somma-migrate
     restart: "no"
     environment:
-      # A URL deve ser injetada pelo ambiente de deploy
-      # Formato: postgresql://tallyoh:<senha>@nilbyte_postgres_prod:5432/tallyoh?sslmode=disable
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
 
-  backend:
+  expenses-backend:
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
-    container_name: api.tallyoh.nilbyte
+      dockerfile: apps/somma-expenses/backend/Dockerfile
+    container_name: api.somma.nilbyte
     restart: always
     ports:
       - "3300:3300"
@@ -22,23 +20,55 @@ services:
       ENV: production
       PORT: 3300
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      WEBAPP_URL: ${WEBAPP_URL:-http://web.tallyoh.nilbyte:3400}
+      WEBAPP_URL: ${WEBAPP_URL:-http://web.somma.nilbyte:3400}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
     depends_on:
       migrate:
         condition: service_completed_successfully
 
-  web:
+  expenses-web:
     build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-    container_name: web.tallyoh.nilbyte
+      context: apps/somma-expenses/web
+      dockerfile: Dockerfile
+    container_name: web.somma.nilbyte
     restart: always
     ports:
       - "3400:3400"
     environment:
       PORT: 3400
-      API_URL: ${API_URL:-http://api.tallyoh.nilbyte:3300}
+      API_URL: ${API_URL:-http://api.somma.nilbyte:3300}
     depends_on:
-      - backend
+      - expenses-backend
 
+  vehicles-backend:
+    build:
+      context: .
+      dockerfile: apps/somma-vehicles/backend/Dockerfile
+    container_name: vehicles-api.somma.nilbyte
+    restart: always
+    ports:
+      - "3310:3310"
+    environment:
+      ENV: production
+      PORT: 3310
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      EXPENSES_URL: ${WEBAPP_URL:-http://web.somma.nilbyte:3400}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  vehicles-web:
+    build:
+      context: apps/somma-vehicles/web
+      dockerfile: Dockerfile
+    container_name: vehicles-web.somma.nilbyte
+    restart: always
+    ports:
+      - "3410:3410"
+    environment:
+      PORT: 3410
+      API_URL: ${VEHICLES_API_URL:-http://vehicles-api.somma.nilbyte:3310}
+      VITE_EXPENSES_URL: ${WEBAPP_URL:-http://web.somma.nilbyte:3400}
+    depends_on:
+      - vehicles-backend
