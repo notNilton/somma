@@ -33,6 +33,7 @@ export default function TransactionModal({ date, kind, categories, onClose, onSu
   const [description, setDescription] = useState(isEdit ? (transaction!.description ?? '') : '')
   const [categoryId, setCategoryId] = useState(isEdit ? (transaction!.categoryId ?? '') : '')
   const [selectedKind, setSelectedKind] = useState<TxKind>(isEdit ? transaction!.kind : kind)
+  const [txDate, setTxDate] = useState(date)
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -41,13 +42,10 @@ export default function TransactionModal({ date, kind, categories, onClose, onSu
       kind: selectedKind,
       amount: parseFloat(amount),
       description,
-      date,
+      date: txDate,
       categoryId: categoryId || undefined,
     })
   }
-
-  const [y, m, d] = date.split('-')
-  const dateLabel = `${d}/${m}/${y}`
 
   const filteredCategories = flattenCategories(
     categories.filter(c => c.type === typeForKind(selectedKind))
@@ -59,7 +57,13 @@ export default function TransactionModal({ date, kind, categories, onClose, onSu
         <div>
           <div className="budget-modal-kicker">{isEdit ? t.modal.editTitle : t.modal.title}</div>
           <div className="budget-modal-title">{t.kind[selectedKind].label}</div>
-          <div className="budget-modal-subtitle">{dateLabel}</div>
+          <input
+            className="budget-modal-subtitle budget-modal-date-input"
+            type="date"
+            value={txDate}
+            onChange={e => setTxDate(e.target.value)}
+            required
+          />
         </div>
         <button type="button" className="budget-modal-close" onClick={onClose}>×</button>
       </div>
