@@ -11,7 +11,7 @@ import EmptyState from '../components/EmptyState'
 import UndoToast from '../components/UndoToast'
 import ShortcutsHint from '../components/ShortcutsHint'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import type { Category, CreateInput, Transaction, TxKind, UpdateInput } from '../types'
+import type { CreateInput, Transaction, TxKind, UpdateInput } from '../types'
 
 interface ModalState {
   open: boolean
@@ -23,10 +23,6 @@ type UiFilterType = 'ALL' | 'INCOME' | 'EXPENSE'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
-function flattenCategories(cats: Category[]): Category[] {
-  return cats.flatMap(c => [c, ...(c.children ? flattenCategories(c.children) : [])])
-}
-
 export default function TransactionsPage() {
   const { logout } = useAuth()
   const navigate = useNavigate()
@@ -37,8 +33,6 @@ export default function TransactionsPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
   const [filterType, setFilterType] = useState<UiFilterType>('ALL')
-  const [search, setSearch] = useState('')
-  const [filterCategory, setFilterCategory] = useState('')
 
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) }
@@ -175,12 +169,7 @@ export default function TransactionsPage() {
     })
   }
 
-  const filtered = txs.filter(tx => {
-    if (search && !tx.description?.toLowerCase().includes(search.toLowerCase())) return false
-    if (filterCategory && tx.categoryId !== filterCategory) return false
-    return true
-  })
-  const groups = groupByDay(filtered, year, month)
+  const groups = groupByDay(txs, year, month)
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
   return (
@@ -193,26 +182,6 @@ export default function TransactionsPage() {
           <button className="month-arrow" onClick={prevMonth}>‹</button>
           <span className="month-label">{t.months[month]}/{String(year).slice(2)}</span>
           <button className="month-arrow" onClick={nextMonth}>›</button>
-        </div>
-
-        <div className="tx-search-row">
-          <input
-            className="tx-search-input"
-            type="search"
-            placeholder={t.search.placeholder}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          <select
-            className="tx-category-filter"
-            value={filterCategory}
-            onChange={e => setFilterCategory(e.target.value)}
-          >
-            <option value="">Categoria</option>
-            {flattenCategories(categories).map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
         </div>
 
         <div className="tx-table-header">
@@ -242,7 +211,7 @@ export default function TransactionsPage() {
             onEdit={handleEdit}
           />
         ))}
-        {filtered.length === 0 && (
+        {groups.length === 0 && (
           <EmptyState
             icon="💸"
             title={t.emptyState.title}

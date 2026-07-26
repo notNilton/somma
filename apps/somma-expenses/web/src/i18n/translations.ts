@@ -8,7 +8,6 @@ export interface T {
   table: { day: string; type: string; total: string }
   kind: Record<'INCOME'|'EXPENSE'|'CREDIT', { label: string; letter: string }>
   status: { pending: string }
-  search: { placeholder: string }
   emptyState: { title: string; hint: string }
   modal: {
     title: string
@@ -93,7 +92,6 @@ export const translations: Record<Locale, T> = {
       CREDIT:  { label: 'Crédito',      letter: 'C' },
     },
     status: { pending: 'Pend.' },
-    search: { placeholder: 'Buscar lançamento...' },
     emptyState: {
       title: 'Nenhum lançamento',
       hint: 'Adicione seu primeiro lançamento clicando em qualquer dia',
@@ -184,7 +182,6 @@ export const translations: Record<Locale, T> = {
       CREDIT:  { label: 'Credit',      letter: 'C' },
     },
     status: { pending: 'Pend.' },
-    search: { placeholder: 'Search entry...' },
     emptyState: {
       title: 'No entries',
       hint: 'Add your first entry by tapping any day',
@@ -275,7 +272,6 @@ export const translations: Record<Locale, T> = {
       CREDIT:  { label: 'Crédito',     letter: 'C' },
     },
     status: { pending: 'Pend.' },
-    search: { placeholder: 'Buscar movimiento...' },
     emptyState: {
       title: 'Sin movimientos',
       hint: 'Añade tu primer movimiento tocando cualquier día',
