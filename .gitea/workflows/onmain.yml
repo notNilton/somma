@@ -23,6 +23,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git checkout "${{ gitea.sha }}"
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
@@ -79,6 +80,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git checkout "${{ gitea.sha }}"
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
@@ -139,6 +141,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git checkout "${{ gitea.sha }}"
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
@@ -194,6 +197,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git checkout "${{ gitea.sha }}"
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
@@ -254,6 +258,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
+          git checkout "${{ gitea.sha }}"
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
