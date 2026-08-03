@@ -1,38 +1,38 @@
 # CI/CD — Gitea Actions
 
-Pipeline de integração e entrega contínua do Somma, rodando no act_runner hospedado no VPS `niflheim`.
+Continuous integration and continuous delivery pipeline for Somma, running on `act_runner` hosted on the `niflheim` VPS.
 
 ---
 
 # Gitea Runner Pools
 
-Este repositório usa runners separados por workload para evitar que builds de aplicação concorram entre si no mesmo host.
+This repository uses separate runners per workload to prevent application builds from competing for resources on the same host.
 
-## Contexto do host (VPS Niflheim)
+## Host Context (VPS Niflheim)
 
-- 4 vCPU / 8 GB de RAM
-- Gitea e stack de produção rodando no mesmo host.
-- Os runners são configurados para limitar o impacto no servidor, priorizando a estabilidade dos serviços de produção sobre a velocidade do CI.
+- 4 vCPUs / 8 GB RAM
+- Gitea and production stack running on the same host.
+- Runners are configured to limit server impact, prioritizing production service stability over CI speed.
 
-## Topologia
+## Topology
 
-- `basic`: Detecção de mudanças, bump/tag e validações leves de infraestrutura.
-- `go`: Backend Go e Migrations.
-- `basic`: Deploy por SSH.
-- `typescript`: Webapp React, Vite, e outras ferramentas Node.js.
+- `basic`: Change detection, version bump/tag, and lightweight infrastructure validations.
+- `go`: Go Backend and Migrations.
+- `basic`: SSH deployment.
+- `typescript`: React Webapp, Vite, and other Node.js tools.
 
-## Limites operacionais
+## Operational Limits
 
 - `go`: `mem_limit: 1024m`, `cpu_shares: 96`.
 - `typescript`: `mem_limit: 2048m`, `cpu_shares: 160`.
-- Ambos têm `capacity: 1` e `oom_score_adj: 500`.
-- Os runners não têm limite de CPU fixo para permitir bursts quando o host está livre.
+- Both have `capacity: 1` and `oom_score_adj: 500`.
+- Runners do not have fixed CPU limits to allow bursts when host resources are available.
 
-## Como o workflow escolhe o runner
+## How the Workflow Chooses a Runner
 
-O seletor é o `runs-on` do job.
+The selector is the `runs-on` property of the job.
 
-### Backend Go / Infra
+### Go Backend / Infra
 
 ```yaml
 jobs:
@@ -40,7 +40,7 @@ jobs:
     runs-on: go
 ```
 
-### Basic / automações leves
+### Basic / Lightweight Automations
 
 ```yaml
 jobs:
@@ -56,7 +56,7 @@ jobs:
     runs-on: basic
 ```
 
-### Webapp TypeScript / React
+### TypeScript / React Webapp
 
 ```yaml
 jobs:
@@ -64,57 +64,57 @@ jobs:
     runs-on: typescript
 ```
 
-## O que evitar
+## What to Avoid
 
-- **Não use `ubuntu-latest`** como label genérico.
-- **Não use `react`** (label depreciado; use `typescript`).
-- Não instale toolchains pesadas manualmente se a imagem do runner já fornece isso.
+- **Do not use `ubuntu-latest`** as a generic label.
+- **Do not use `react`** (deprecated label; use `typescript`).
+- Do not manually install heavy toolchains if the runner image already provides them.
 
-## Setup de toolchain
+## Toolchain Setup
 
-As imagens dos runners já trazem as toolchains principais (`go`, `node`, `npm`).
+Runner images already include primary toolchains (`go`, `node`, `npm`).
 
-Use `actions/setup-go` ou `actions/setup-node` apenas quando precisar:
-- Fixar uma versão específica diferente da embutida.
-- Usar cache nativo da action.
-- Testar múltiplas versões.
-
----
-
-## Operação (Deploy Explícito)
-
-O deploy no VPS é um job explícito na pipeline:
-1.  A pipeline publica as imagens com a tag `:latest`.
-2.  Um job de `deploy` conecta via SSH ao VPS usando o usuário `deploy`.
-3.  O VPS executa o `docker compose pull` e `up -d` a partir do checkout de infraestrutura em `/srv/nilbyte/infrastructure`.
-
-## Execução seletiva
-
-Os workflows principais não constroem mais tudo em toda execução:
-
-- `onmain.yml` detecta backend/database/webapp separadamente, só faz bump/build/push do que mudou, mas se alterar `.gitea/workflows/**` ele força o conjunto completo.
-- `pull_request.yml` valida backend/database/webapp separadamente e pula os jobs não afetados.
-
-### Cache usado nos jobs
-
-- Docker usa `--cache-from` com a imagem `:latest` já publicada no registry.
-- Webapp usa cache local do npm via `npm ci --cache /tmp/npm-cache --prefer-offline`.
-- Backend/database usam `GOCACHE` e `GOMODCACHE` em `/tmp` para reduzir recompilações quando o runner reaproveita estado.
+Use `actions/setup-go` or `actions/setup-node` only when you need to:
+- Pin a specific version different from the pre-installed one.
+- Use native action caching.
+- Test across multiple versions.
 
 ---
 
-## Visão geral
+## Operations (Explicit Deploy)
 
-| Workflow | Trigger | Propósito |
-|----------|---------|-----------|
-| `ondev.yml` | push em `development` | Valida que o código compila e constrói |
-| `onmain.yml` | push em `main` | Bump de versão + build + push de imagens para o registry |
+Deploying to the VPS is an explicit job in the pipeline:
+1. The pipeline pushes images tagged with `:latest`.
+2. A `deploy` job connects via SSH to the VPS using the `deploy` user.
+3. The VPS executes `docker compose pull` and `up -d` from the infrastructure checkout located at `/srv/nilbyte/infrastructure`.
+
+## Selective Execution
+
+Primary workflows no longer build everything on every execution:
+
+- `onmain.yml` detects backend/database/webapp changes separately, only performing bump/build/push for changed components. Changes under `.gitea/workflows/**` force a full build set.
+- `pull_request.yml` validates backend/database/webapp separately and skips unaffected jobs.
+
+### Caching Used in Jobs
+
+- Docker uses `--cache-from` referencing the `:latest` image published in the registry.
+- Webapp uses npm local cache via `npm ci --cache /tmp/npm-cache --prefer-offline`.
+- Backend/database use `GOCACHE` and `GOMODCACHE` under `/tmp` to reduce re-compilations when runners reuse state.
 
 ---
 
-## `ondev.yml` — branch `development`
+## Overview
 
-Roda em paralelo, sem publicar nada. Objetivo: detectar quebras o mais cedo possível.
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `ondev.yml` | push to `development` | Validates that code compiles and builds |
+| `onmain.yml` | push to `main` | Version bump + build + push images to registry |
+
+---
+
+## `ondev.yml` — `development` branch
+
+Runs in parallel without publishing artifacts. Goal: early detection of breakage.
 
 ```
 push → development
@@ -127,108 +127,108 @@ push → development
 ### Jobs
 
 #### `build-backend`
-1. Clona o repositório via HTTPS com `PACKAGES_TOKEN`
-2. Utiliza a toolchain Go presente no runner
-3. Compila com `go build -mod=vendor ./...` — usa o diretório `apps/backend/vendor/`, zero acesso à internet
+1. Clones the repository via HTTPS with `PACKAGES_TOKEN`
+2. Uses the pre-installed Go toolchain on the runner
+3. Compiles with `go build -mod=vendor ./...` — uses `apps/backend/vendor/`, zero internet access needed
 
 #### `build-webapp`
-1. Clona o repositório
-2. `npm ci` + `npm run build` — usa Node.js pré-instalado na imagem do runner
+1. Clones the repository
+2. `npm ci` + `npm run build` — uses pre-installed Node.js on the runner image
 
 #### `validate-compose`
-1. Clona o repositório
-2. Valida `docker-compose.yml` com variáveis de ambiente dummy (evita erro de variáveis required)
+1. Clones the repository
+2. Validates `docker-compose.yml` with dummy environment variables (prevents required variable errors)
 
 ---
 
-## `onmain.yml` — branch `main`
+## `onmain.yml` — `main` branch
 
-Roda sequencialmente (bump primeiro, builds em paralelo depois).
+Runs sequentially (bump first, parallel builds follow).
 
 ```
 push → main
          │
-         └── bump-versions          (sempre, sequencial)
+         └── bump-versions          (always sequential)
                   │
-                  ├── build-backend   (paralelo)
-                  ├── update-database (paralelo)
-                  └── build-webapp    (paralelo)
+                  ├── build-backend   (parallel)
+                  ├── update-database (parallel)
+                  └── build-webapp    (parallel)
 ```
 
 ### Job `bump-versions`
 
-Incrementa o **patch** de ambas as versões, commita de volta em `main` e cria as tags git.
+Increments the **patch** version for both applications, commits back to `main`, and creates git tags.
 
-| Arquivo | Campo |
-|---------|-------|
-| `apps/backend/VERSION` | texto puro, ex: `1.0.5` |
-| `apps/webapp/package.json` | campo `version` via `jq` |
+| File | Field |
+|------|-------|
+| `apps/backend/VERSION` | plain text, e.g.: `1.0.5` |
+| `apps/webapp/package.json` | `version` field via `jq` |
 
-O push de volta usa HTTPS com o token embutido na URL para contornar a limitação de SSH dentro da rede Docker (ver [Limitações de rede](#limitações-de-rede)).
+Pushing back uses HTTPS with embedded token in URL to bypass container network SSH limitations (see [Network Limitations](#runner-network-limitations)).
 
-Outputs do job (usados pelos builds):
-- `BACKEND_VERSION` — ex: `1.0.6`
-- `WEBAPP_VERSION` — ex: `1.0.6`
+Job outputs (used by downstream build jobs):
+- `BACKEND_VERSION` — e.g.: `1.0.6`
+- `WEBAPP_VERSION` — e.g.: `1.0.6`
 
 ### Job `build-backend`
 
-1. Clona `main` via HTTPS
-2. Utiliza a toolchain Go presente no runner
-3. Compila o binário: `CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -ldflags "-X .../version.Version=X.Y.Z" -o main ./cmd/api`
-   - `CGO_ENABLED=0` é **obrigatório** — o runner é Ubuntu (glibc) mas a imagem final é Alpine (musl). Sem isso, o binário falha with `exec ./main: no such file or directory` em produção.
-4. Resolve o IP do container Gitea na rede `nilbyte-git` via `docker network inspect`
-5. Faz `docker login` no registry interno (`172.20.x.x:3000`)
-6. `docker build --network=host` — usa rede do host para puxar imagens base do Docker Hub
-7. Publica `backend:latest` e `backend:X.Y.Z` no registry
+1. Clones `main` via HTTPS
+2. Uses pre-installed Go toolchain on runner
+3. Compiles binary: `CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -ldflags "-X .../version.Version=X.Y.Z" -o main ./cmd/api`
+   - `CGO_ENABLED=0` is **mandatory** — runner is Ubuntu (glibc) but final runtime image is Alpine (musl). Without this, binary fails with `exec ./main: no such file or directory` in production.
+4. Resolves Gitea container IP inside `nilbyte-git` network via `docker network inspect`
+5. Performs `docker login` to internal registry (`172.20.x.x:3000`)
+6. `docker build --network=host` — uses host network to pull base images from Docker Hub
+7. Pushes `backend:latest` and `backend:X.Y.Z` to registry
 
 ### Job `update-database`
 
-1. Clona `main`
-2. Faz login no registry
-3. `docker build` usa o `database/Dockerfile`, que compila o binário `migrate` dentro da imagem final
-4. Publica `database:latest` — imagem contém o binário `migrate` + todos os arquivos SQL de migration e seed
+1. Clones `main`
+2. Log in to registry
+3. `docker build` uses `database/Dockerfile`, which compiles the `migrate` binary inside final image
+4. Pushes `database:latest` — image contains `migrate` binary + all migration and seed SQL files
 
 ### Job `build-webapp`
 
-1. Clona `main`
-2. `npm ci` + `npm run build` com `VITE_API_URL` e `VITE_APP_VERSION` injetados
-3. Login no registry
+1. Clones `main`
+2. `npm ci` + `npm run build` with injected `VITE_API_URL` and `VITE_APP_VERSION`
+3. Log in to registry
 4. `docker build --network=host`
-5. Publica `webapp:latest` e `webapp:X.Y.Z`
+5. Pushes `webapp:latest` and `webapp:X.Y.Z`
 
 ---
 
-## Secrets necessários
+## Required Secrets
 
-| Secret | Usado para |
-|--------|-----------|
-| `TOKEN_COMPLETE` | Clone HTTPS (Main e PR), push de tags e docker login |
-| `DEPLOY_SSH_KEY` | Chave SSH para acesso ao VPS |
-| `DEPLOY_HOST` | Endereço IP ou domínio do VPS |
-| `DEPLOY_USER` | Usuário para o deploy (ex: `deploy`) |
+| Secret | Used for |
+|--------|----------|
+| `TOKEN_COMPLETE` | HTTPS clone (Main & PR), pushing tags, and docker login |
+| `DEPLOY_SSH_KEY` | SSH key for VPS access |
+| `DEPLOY_HOST` | VPS IP address or hostname |
+| `DEPLOY_USER` | Deployment user (e.g.: `deploy`) |
 
 ---
 
-## Limitações de rede do runner
+## Runner Network Limitations
 
-O act_runner executa cada job como um container Docker na rede `nilbyte-git`. Essa rede é **isolada** — sem roteamento para a internet ou para o host via domínio externo.
+The `act_runner` runs each job as a Docker container inside the `nilbyte-git` network. This network is **isolated** — no routing to the public internet or host via external domains.
 
-### O que funciona de dentro da rede
+### What works inside the network
 
-| Destino | Funciona? | Motivo |
-|---------|-----------|--------|
-| `gitea:3000` (HTTP) | ✅ | Docker DNS interno da rede `nilbyte-git` |
-| `gitea.nilbyte.com.br` | ❌ | Vai para Cloudflare Tunnel → inacessível de dentro |
-| `registry-1.docker.io` (Docker Hub) | ❌ | DNS externo não resolve na rede isolada |
-| Host via `--network=host` no build | ✅ | Escapa da rede isolada e usa DNS do host |
+| Destination | Status | Reason |
+|-------------|--------|--------|
+| `gitea:3000` (HTTP) | ✅ | Internal Docker DNS inside `nilbyte-git` |
+| `gitea.nilbyte.com.br` | ❌ | Routes through Cloudflare Tunnel → unreachable internally |
+| `registry-1.docker.io` (Docker Hub) | ❌ | External DNS unresolved in isolated network |
+| Host via `--network=host` during build | ✅ | Bypasses isolated network and uses host DNS |
 
-### Por que o checkout usa `gitea.server_url`
+### Why checkout uses `gitea.server_url`
 
-O Gitea injeta `gitea.server_url` como `http://gitea:3000` (endereço interno), então o clone HTTPS funciona mesmo sem internet.
+Gitea injects `gitea.server_url` as `http://gitea:3000` (internal address), enabling HTTPS clone without internet connectivity.
 
-### Por que o docker login usa o IP do container e não o hostname
+### Why docker login uses container IP instead of hostname
 
-O daemon Docker roda no HOST (fora do container do runner). O host não tem DNS para `gitea` (nome interno da rede Docker). Por isso o CI resolve o IP real via:
+The Docker daemon runs on the HOST (outside the runner container). The host lacks DNS resolution for `gitea` (internal Docker network name). Therefore, CI resolves the actual IP via:
 
 ```bash
 docker network inspect nilbyte-git \
@@ -236,66 +236,66 @@ docker network inspect nilbyte-git \
   | cut -d/ -f1
 ```
 
-O resultado (ex: `172.20.0.4`) é usado como endereço do registry.
+The output (e.g.: `172.20.0.4`) is passed as registry address.
 
-### Por que `--network=host` nos docker builds
+### Why `--network=host` in docker builds
 
-`docker build` sem flag usa a rede `bridge` padrão do host, cujo DNS resolve normalmente. Com `--network=host`, os containers de build temporários herdam a rede do host e conseguem puxar imagens base (`alpine`, `golang`, `node`, `nginx`) do Docker Hub.
+`docker build` without flags defaults to host `bridge` network with standard DNS. Using `--network=host` allows temporary build containers to inherit host network settings and pull base images (`alpine`, `golang`, `node`, `nginx`) from Docker Hub.
 
-### Configuração necessária no servidor (one-time)
+### Server Configuration (One-time Setup)
 
-O Docker daemon do host precisa aceitar o registry HTTP interno. Configurado uma vez em `/etc/docker/daemon.json`:
+Host Docker daemon must accept internal HTTP registry. Configured once in `/etc/docker/daemon.json`:
 
 ```json
 {"insecure-registries": ["172.20.0.0/20"]}
 ```
 
-Recarregado com `sudo systemctl reload docker` (não reinicia — apenas recarrega o config sem parar containers).
+Reloaded via `sudo systemctl reload docker` (no restart — reloads configuration without stopping containers).
 
 ---
 
-## Diagrama completo de rede
+## Complete Network Diagram
 
 ```
-Runner container (rede nilbyte-git)
+Runner container (nilbyte-git network)
 │
-├── git clone → http://gitea:3000/...          ✅ Docker DNS interno
-├── git push  → http://oauth2:TOKEN@gitea:3000  ✅ Token na URL
+├── git clone → http://gitea:3000/...          ✅ Internal Docker DNS
+├── git push  → http://oauth2:TOKEN@gitea:3000  ✅ Token in URL
 │
-├── docker inspect nilbyte-git → IP do gitea   ✅ socket montado
-├── docker login 172.20.0.4:3000               ✅ IP direto (insecure registry)
+├── docker inspect nilbyte-git → gitea IP      ✅ Mounted socket
+├── docker login 172.20.0.4:3000               ✅ Direct IP (insecure registry)
 │
 └── docker build --network=host
-      └── pull alpine/node/nginx → Docker Hub  ✅ usa DNS do host
+      └── pull alpine/node/nginx → Docker Hub  ✅ Uses host DNS
 ```
 
 ---
 
-## Fluxo completo de um deploy
+## Complete Deployment Workflow
 
 ```
-1. PR mergeado em main
-2. onmain.yml dispara
-3. bump-versions: VERSION 1.0.5 → 1.0.6, commita, cria tag backend-v1.0.6
-4. build-backend: compila binary (CGO_ENABLED=0), gera backend:1.0.6 + backend:latest
-5. update-database: `docker build` gera database:latest com o binário `migrate` compilado no Dockerfile
-6. build-webapp: npm build, gera webapp:1.0.6 + webapp:latest
-7. Job deploy (via SSH):
+1. PR merged into main
+2. onmain.yml triggers
+3. bump-versions: VERSION 1.0.5 → 1.0.6, commit, tag backend-v1.0.6
+4. build-backend: compile binary (CGO_ENABLED=0), generate backend:1.0.6 + backend:latest
+5. update-database: `docker build` generates database:latest with `migrate` binary compiled in Dockerfile
+6. build-webapp: npm build, generate webapp:1.0.6 + webapp:latest
+7. Deploy job (via SSH):
    a. cd /srv/nilbyte/infrastructure
    b. docker compose pull
    c. docker compose up -d
 ```
 
-### Comandos disponíveis no manage-somma.sh
+### Available commands in manage-somma.sh
 
-| Comando | Ação |
-|---------|------|
-| `start` | Sobe toda a stack (db → migrate → backend + webapp) |
-| `stop` | Para e remove todos os containers da stack |
+| Command | Action |
+|---------|--------|
+| `start` | Starts full stack (db → migrate → backend + webapp) |
+| `stop` | Stops and removes all stack containers |
 | `restart` | stop + start |
-| `pull` | Puxa imagens mais recentes do registry |
+| `pull` | Pulls latest images from registry |
 | `update` | pull + stop + start |
-| `logs` | Logs em tempo real de todos os serviços |
-| `status` | Estado atual dos containers |
-| `migrate` | Roda `./migrate up` manualmente (one-shot) |
-| `seed` | Roda `./migrate seed` manualmente (one-shot) |
+| `logs` | Real-time logs for all services |
+| `status` | Current status of containers |
+| `migrate` | Runs `./migrate up` manually (one-shot) |
+| `seed` | Runs `./migrate seed` manually (one-shot) |
