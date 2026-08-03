@@ -3,13 +3,13 @@ openapi: "3.0.3"
 info:
   title: Somma API
   version: "1.0.0"
-  description: API de finanças pessoais
+  description: Personal finance API
 
 servers:
   - url: https://somma.nilbyte.com.br
-    description: Produção
+    description: Production
   - url: http://localhost:3300
-    description: Desenvolvimento
+    description: Development
 
 security:
   - bearerAuth: []
@@ -91,9 +91,9 @@ components:
           type: string
           enum: [INCOME, EXPENSE, SAVING, CREDIT, BUDGET]
           description: |
-            Padrão derivado do type se omitido.
-            INCOME só aceita kind INCOME.
-            EXPENSE aceita EXPENSE, SAVING, CREDIT ou BUDGET.
+            Default derived from type if omitted.
+            INCOME only accepts kind INCOME.
+            EXPENSE accepts EXPENSE, SAVING, CREDIT or BUDGET.
         status: { type: string, enum: [COMPLETED, PENDING, CANCELED] }
         amount: { type: number, format: float }
         date: { type: string, format: date, example: "2026-05-01" }
@@ -132,11 +132,11 @@ paths:
       security: []
       responses:
         '200':
-          description: Serviço saudável
+          description: Healthy service
 
   /api/auth/register:
     post:
-      summary: Registrar usuário
+      summary: Register user
       tags: [Auth]
       security: []
       requestBody:
@@ -152,7 +152,7 @@ paths:
                 name: { type: string }
       responses:
         '201':
-          description: Usuário criado
+          description: User created
 
   /api/auth/login:
     post:
@@ -171,7 +171,7 @@ paths:
                 password: { type: string }
       responses:
         '200':
-          description: Autenticado
+          description: Authenticated
 
   /api/auth/logout:
     post:
@@ -179,20 +179,20 @@ paths:
       tags: [Auth]
       responses:
         '204':
-          description: Sessão encerrada
+          description: Session terminated
 
   /api/users/me:
     get:
-      summary: Usuário atual
+      summary: Current user
       tags: [Users]
       responses:
         '200':
-          description: Perfil do usuário
+          description: User profile
           content:
             application/json:
               schema: { $ref: '#/components/schemas/User' }
     patch:
-      summary: Atualizar usuário atual
+      summary: Update current user
       tags: [Users]
       requestBody:
         content:
@@ -206,20 +206,20 @@ paths:
                 privacyModeEnabled: { type: boolean }
       responses:
         '200':
-          description: Atualizado
+          description: Updated
 
   /api/v1/settings/profile:
     get:
-      summary: Buscar perfil
+      summary: Fetch profile
       tags: [Settings]
       responses:
         '200':
-          description: Dados do perfil
+          description: Profile data
           content:
             application/json:
               schema: { $ref: '#/components/schemas/User' }
     patch:
-      summary: Atualizar perfil
+      summary: Update profile
       tags: [Settings]
       requestBody:
         content:
@@ -233,11 +233,11 @@ paths:
                 privacyModeEnabled: { type: boolean }
       responses:
         '200':
-          description: Perfil atualizado
+          description: Profile updated
 
   /api/v1/settings/change-password:
     patch:
-      summary: Alterar senha
+      summary: Change password
       tags: [Settings]
       requestBody:
         required: true
@@ -251,11 +251,11 @@ paths:
                 newPassword: { type: string, minLength: 12 }
       responses:
         '204':
-          description: Senha alterada
+          description: Password changed
 
   /api/v1/settings/account:
     delete:
-      summary: Deletar conta
+      summary: Delete account
       tags: [Settings]
       requestBody:
         required: true
@@ -268,22 +268,22 @@ paths:
                 currentPassword: { type: string }
       responses:
         '204':
-          description: Conta deletada
+          description: Account deleted
 
   /api/v1/categories:
     get:
-      summary: Listar categorias
+      summary: List categories
       tags: [Categories]
       responses:
         '200':
-          description: Lista de categorias (com filhos agrupados)
+          description: Category list (with grouped children)
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Category' }
     post:
-      summary: Criar categoria
+      summary: Create category
       tags: [Categories]
       requestBody:
         required: true
@@ -292,7 +292,7 @@ paths:
             schema: { $ref: '#/components/schemas/CategoryCreate' }
       responses:
         '201':
-          description: Categoria criada
+          description: Category created
 
   /api/v1/categories/{categoryId}:
     parameters:
@@ -301,16 +301,16 @@ paths:
         required: true
         schema: { type: string, format: uuid }
     get:
-      summary: Buscar categoria
+      summary: Get category
       tags: [Categories]
       responses:
         '200':
-          description: Categoria
+          description: Category
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Category' }
     patch:
-      summary: Atualizar categoria
+      summary: Update category
       tags: [Categories]
       requestBody:
         content:
@@ -318,17 +318,17 @@ paths:
             schema: { $ref: '#/components/schemas/CategoryCreate' }
       responses:
         '200':
-          description: Atualizada
+          description: Updated
     delete:
-      summary: Deletar categoria
+      summary: Delete category
       tags: [Categories]
       responses:
         '204':
-          description: Deletada
+          description: Deleted
 
   /api/v1/transactions:
     get:
-      summary: Listar transações
+      summary: List transactions
       tags: [Transactions]
       parameters:
         - name: page
@@ -363,14 +363,14 @@ paths:
           schema: { type: string }
       responses:
         '200':
-          description: Lista de transações
+          description: Transaction list
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Transaction' }
     post:
-      summary: Criar transação
+      summary: Create transaction
       tags: [Transactions]
       requestBody:
         required: true
@@ -379,18 +379,18 @@ paths:
             schema: { $ref: '#/components/schemas/TransactionCreate' }
       responses:
         '201':
-          description: Transação criada
+          description: Transaction created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Transaction' }
 
   /api/v1/transactions/future:
     get:
-      summary: Listar transações futuras ou pendentes
+      summary: List future or pending transactions
       tags: [Transactions]
       responses:
         '200':
-          description: Transações futuras ou com status PENDING
+          description: Future transactions or transactions with status PENDING
           content:
             application/json:
               schema:
@@ -404,16 +404,16 @@ paths:
         required: true
         schema: { type: string, format: uuid }
     get:
-      summary: Buscar transação
+      summary: Get transaction
       tags: [Transactions]
       responses:
         '200':
-          description: Transação
+          description: Transaction
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Transaction' }
     patch:
-      summary: Atualizar transação
+      summary: Update transaction
       tags: [Transactions]
       requestBody:
         content:
@@ -421,31 +421,31 @@ paths:
             schema: { $ref: '#/components/schemas/TransactionCreate' }
       responses:
         '200':
-          description: Atualizada
+          description: Updated
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Transaction' }
     delete:
-      summary: Deletar transação
+      summary: Delete transaction
       tags: [Transactions]
       responses:
         '204':
-          description: Deletada
+          description: Deleted
 
   /api/v1/budgets:
     get:
-      summary: Listar orçamentos
+      summary: List budgets
       tags: [Budgets]
       responses:
         '200':
-          description: Lista de orçamentos com gasto acumulado
+          description: Budget list with accumulated spending
           content:
             application/json:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Budget' }
     post:
-      summary: Criar orçamento
+      summary: Create budget
       tags: [Budgets]
       requestBody:
         required: true
@@ -454,7 +454,7 @@ paths:
             schema: { $ref: '#/components/schemas/BudgetCreate' }
       responses:
         '201':
-          description: Orçamento criado
+          description: Budget created
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Budget' }
@@ -466,7 +466,7 @@ paths:
         required: true
         schema: { type: string, format: uuid }
     patch:
-      summary: Atualizar orçamento
+      summary: Update budget
       tags: [Budgets]
       requestBody:
         content:
@@ -474,20 +474,20 @@ paths:
             schema: { $ref: '#/components/schemas/BudgetCreate' }
       responses:
         '200':
-          description: Atualizado
+          description: Updated
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Budget' }
     delete:
-      summary: Deletar orçamento
+      summary: Delete budget
       tags: [Budgets]
       responses:
         '204':
-          description: Deletado
+          description: Deleted
 
   /api/v1/dashboard:
     get:
-      summary: Dashboard do mês
+      summary: Monthly dashboard
       tags: [Dashboard]
       parameters:
         - name: month
@@ -495,19 +495,19 @@ paths:
           schema: { type: string, example: "2026-05" }
       responses:
         '200':
-          description: Resumo do mês (saldo, receita, despesa, transações recentes)
+          description: Monthly summary (balance, income, expense, recent transactions)
 
   /api/v1/dashboard/monthly-evolution:
     get:
-      summary: Evolução mensal (últimos 6 meses)
+      summary: Monthly evolution (last 6 months)
       tags: [Dashboard]
       responses:
         '200':
-          description: Evolução mensal de receitas e despesas
+          description: Monthly evolution of income and expenses
 
   /api/v1/dashboard/category-breakdown:
     get:
-      summary: Breakdown por categoria
+      summary: Category breakdown
       tags: [Dashboard]
       parameters:
         - name: month
@@ -518,11 +518,11 @@ paths:
           schema: { type: string, enum: [INCOME, EXPENSE] }
       responses:
         '200':
-          description: Totais por categoria no mês
+          description: Category totals for the month
 
   /api/v1/analytics/annual-evolution:
     get:
-      summary: Evolução anual (12 meses)
+      summary: Annual evolution (12 months)
       tags: [Analytics]
       parameters:
         - name: year
@@ -530,4 +530,4 @@ paths:
           schema: { type: integer, example: 2026 }
       responses:
         '200':
-          description: Dados de evolução anual por mês
+          description: Annual evolution data per month

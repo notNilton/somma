@@ -1,87 +1,87 @@
 # Somma
 
-Plataforma de gestão financeira pessoal e controle de frota/veículos dividida em dois projetos integrados que compartilham o mesmo banco de dados PostgreSQL.
+Personal financial management and vehicle fleet management platform split into two integrated projects sharing the same PostgreSQL database.
 
 ---
 
-## 🚀 Estrutura das Aplicações
+## 🚀 Application Structure
 
-O ecossistema **Somma** é composto por duas partes principais:
+The **Somma** ecosystem consists of two main parts:
 
 ### 1. `somma-expenses`
-- **Descrição**: Módulo completo de controle financeiro pessoal (receitas, despesas, orçamentos envelope, categorias e análises).
-- **Backend**: Go (`net/http` + `pgx/v5`) — Porta `3300`
-- **Web**: React 19 + React Router v7 + Vite + TanStack Query — Porta `3400`
-- **Diretório**: `apps/somma-expenses/`
+- **Description**: Complete personal financial management module (income, expenses, envelope budgets, categories, and analytics).
+- **Backend**: Go (`net/http` + `pgx/v5`) — Port `3300`
+- **Web**: React 19 + React Router v7 + Vite + TanStack Query — Port `3400`
+- **Directory**: `apps/somma-expenses/`
 
 ### 2. `somma-vehicles`
-- **Descrição**: Módulo de gestão de veículos e abastecimentos de combustível (cálculo de consumo em km/L, custo por km, histórico de preços e odômetro).
-- **Backend**: Go (`net/http` + `pgx/v5`) — Porta `3310`
-- **Web**: React 19 + Vite + TailwindCSS + Lucide Icons — Porta `3410`
-- **Diretório**: `apps/somma-vehicles/`
+- **Description**: Vehicle management and fuel refill log module (consumption calculation in km/L, cost per km, price history, and odometer tracking).
+- **Backend**: Go (`net/http` + `pgx/v5`) — Port `3310`
+- **Web**: React 19 + Vite + TailwindCSS + Lucide Icons — Port `3410`
+- **Directory**: `apps/somma-vehicles/`
 
 ---
 
-## 🎯 Pulo do Gato: Banco de Dados Compartilhado & Sincronização Automática
+## 🎯 Key Feature: Shared Database & Automatic Sync
 
-Ambos os projetos compartilham o mesmo banco de dados PostgreSQL (`somma`) e as mesmas tabelas de usuários e autenticação JWT.
+Both projects share the same PostgreSQL database (`somma`) as well as the user and JWT authentication tables.
 
-### Como funciona a integração:
-1. Quando você registra um **Abastecimento** no `somma-vehicles` (informando litros, valor total, preço por litro, posto e km atual):
-   - É gravado o registro na tabela `refueling_logs`.
-   - **Automaticamente** é criado um lançamento na tabela `transactions` com o tipo `EXPENSE` e categoria `Combustível`.
-2. Assim que o abastecimento é salvo, ele **aparece imediatamente no `somma-expenses`** como uma despesa convencional, atualizando os gráficos financeiros e o saldo do mês!
-3. Se um abastecimento for editado ou excluído no `somma-vehicles`, a transação vinculada no `somma-expenses` é automaticamente atualizada/excluída via restrições `FOREIGN KEY ... ON DELETE CASCADE` e transação SQL atômica.
+### How integration works:
+1. When you record a **Refueling Log** in `somma-vehicles` (providing liters, total cost, price per liter, station, and current odometer):
+   - The entry is saved in the `refueling_logs` table.
+   - An entry is **automatically** created in the `transactions` table with type `EXPENSE` and category `Fuel` (Combustível).
+2. As soon as the refueling log is saved, it **immediately appears in `somma-expenses`** as a standard expense, updating financial charts and monthly balances!
+3. If a refueling record is edited or deleted in `somma-vehicles`, the linked transaction in `somma-expenses` is automatically updated/deleted via `FOREIGN KEY ... ON DELETE CASCADE` constraints and atomic SQL transactions.
 
 ---
 
-## 📁 Estrutura do Monorepo
+## 📁 Monorepo Structure
 
 ```
 apps/
   somma-expenses/
-    backend/          → Go API (Porta 3300)
-    web/              → React frontend (Porta 3400)
+    backend/          → Go API (Port 3300)
+    web/              → React frontend (Port 3400)
   somma-vehicles/
-    backend/          → Go API (Porta 3310)
-    web/              → React frontend (Porta 3410)
-  doc/                → Especificação OpenAPI + Swagger UI
+    backend/          → Go API (Port 3310)
+    web/              → React frontend (Port 3410)
+  doc/                → OpenAPI specification + Swagger UI
 database/
-  migrations/         → Migrações SQL compartilhadas (tabelas de veículos e abastecimentos na 000025)
-  seeds/              → Scripts de dados iniciais
-  cmd/migrate/        → Ferramenta CLI de migração
-docker-compose.yml     → Orquestração dos 4 serviços + banco PostgreSQL
-go.work               → Workspaces Go compartilhando o módulo database
+  migrations/         → Shared SQL migrations (vehicle and refueling tables in 000025)
+  seeds/              → Initial seed scripts
+  cmd/migrate/        → CLI migration tool
+docker-compose.yml     → Orchestration of all 4 services + PostgreSQL database
+go.work               → Shared Go workspaces referencing database module
 ```
 
 ---
 
-## 🛠️ Desenvolvimento Local
+## 🛠️ Local Development
 
-### Pré-requisitos
+### Prerequisites
 
 - Go 1.25+
 - Node.js 22+
-- Docker ou Podman
+- Docker or Podman
 
-### Iniciar Todos os Serviços
+### Start All Services
 
 ```bash
 make up
 ```
 
-Este comando:
-1. Sobe o container PostgreSQL na porta `5454`.
-2. Executa as migrações automáticas no banco.
-3. Aplica a seed com dados iniciais (usuário dev, transações, veículos e abastecimentos).
-4. Sobe as APIs e frontends do `somma-expenses` e `somma-vehicles`.
+This command:
+1. Starts the PostgreSQL container on port `5454`.
+2. Runs automatic database migrations.
+3. Applies the seed data (dev user, transactions, vehicles, and refuelings).
+4. Launches APIs and frontends for `somma-expenses` and `somma-vehicles`.
 
 ---
 
-## 🔌 Portas dos Serviços
+## 🔌 Service Ports
 
-| Serviço | Tipo | Porta | URL Local |
-|---------|------|-------|-----------|
+| Service | Type | Port | Local URL |
+|---------|------|------|-----------|
 | **Expenses Web** | Frontend | `3400` | http://localhost:3400 |
 | **Expenses API** | Backend | `3300` | http://localhost:3300 |
 | **Vehicles Web** | Frontend | `3410` | http://localhost:3410 |
