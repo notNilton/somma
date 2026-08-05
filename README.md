@@ -56,3 +56,9 @@ make up
 | Vehicles Web | Frontend | `3410` | http://localhost:3410 |
 | Vehicles API | Backend | `3310` | http://localhost:3310 |
 | PostgreSQL | Database | `5454` | localhost:5454/somma |
+
+
+## Documentation
+
+- [📋 Roadmap & TODOs](docs/TODO.md) - Planned features and project roadmap
+- [📐 Architecture](docs/ARCHITECTURE.md) - System architecture and components
