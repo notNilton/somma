@@ -30,15 +30,17 @@ func (h *RefuelingHandler) List(w http.ResponseWriter, r *http.Request) {
 	vehicleID := r.URL.Query().Get("vehicle_id")
 
 	query := `
-		SELECT 
-			r.id, r.vehicle_id, r.transaction_id, r.user_id, r.date, 
-			COALESCE(r.station, ''), r.fuel_type, r.current_km, r.liters, 
-			r.price_per_liter_cents, r.total_amount_cents, r.is_full_tank, COALESCE(r.notes, ''), 
-			r.created_at, r.updated_at,
-			v.name as vehicle_name, COALESCE(v.license_plate, '') as license_plate
-		FROM refueling_logs r
-		JOIN vehicles v ON r.vehicle_id = v.id
-		WHERE r.user_id = $1
+		WITH ordered_logs AS (
+			SELECT 
+				r.id, r.vehicle_id, r.transaction_id, r.user_id, r.date, 
+				COALESCE(r.station, '') as station, r.fuel_type, r.current_km, r.liters, 
+				r.price_per_liter_cents, r.total_amount_cents, r.is_full_tank, COALESCE(r.notes, '') as notes, 
+				r.created_at, r.updated_at,
+				v.name as vehicle_name, COALESCE(v.license_plate, '') as license_plate,
+				LAG(r.current_km) OVER (PARTITION BY r.vehicle_id ORDER BY r.date ASC, r.current_km ASC) as prev_km
+			FROM refueling_logs r
+			JOIN vehicles v ON r.vehicle_id = v.id
+			WHERE r.user_id = $1
 	`
 	args := []any{claims.UserID}
 
@@ -47,7 +49,18 @@ func (h *RefuelingHandler) List(w http.ResponseWriter, r *http.Request) {
 		args = append(args, vehicleID)
 	}
 
-	query += " ORDER BY r.date DESC, r.current_km DESC"
+	query += `
+		)
+		SELECT 
+			id, vehicle_id, transaction_id, user_id, date, 
+			station, fuel_type, current_km, liters, 
+			price_per_liter_cents, total_amount_cents, is_full_tank, notes, 
+			created_at, updated_at, vehicle_name, license_plate,
+			COALESCE(CASE WHEN prev_km IS NOT NULL AND current_km > prev_km THEN current_km - prev_km ELSE 0 END, 0) as distance_since_last_km,
+			COALESCE(CASE WHEN prev_km IS NOT NULL AND current_km > prev_km AND liters > 0 THEN (current_km - prev_km) / liters ELSE 0 END, 0) as calculated_km_l
+		FROM ordered_logs
+		ORDER BY date DESC, current_km DESC
+	`
 
 	rows, err := h.DB.Query(r.Context(), query, args...)
 	if err != nil {
@@ -65,25 +78,13 @@ func (h *RefuelingHandler) List(w http.ResponseWriter, r *http.Request) {
 			&log.PricePerLiterCents, &log.TotalAmountCents, &log.IsFullTank, &log.Notes,
 			&log.CreatedAt, &log.UpdatedAt,
 			&log.VehicleName, &log.LicensePlate,
+			&log.DistanceSinceLastKM, &log.CalculatedKmL,
 		)
 		if err != nil {
 			http.Error(w, `{"error":"scan error: `+err.Error()+`"}`, http.StatusInternalServerError)
 			return
 		}
 		logs = append(logs, log)
-	}
-
-	// Compute distance & km/L metrics between consecutive refueling logs per vehicle
-	for i := range logs {
-		if i < len(logs)-1 && logs[i].VehicleID == logs[i+1].VehicleID {
-			kmDiff := logs[i].CurrentKM - logs[i+1].CurrentKM
-			if kmDiff > 0 {
-				logs[i].DistanceSinceLastKM = kmDiff
-				if logs[i].Liters > 0 {
-					logs[i].CalculatedKmL = kmDiff / logs[i].Liters
-				}
-			}
-		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
