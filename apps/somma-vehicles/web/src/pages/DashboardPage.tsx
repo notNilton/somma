@@ -1,12 +1,7 @@
-import { useState, useMemo, useRef } from 'react'
-import { StatsOverview } from '../components/StatsOverview'
-import { FuelPriceChart } from '../components/FuelPriceChart'
-import DayGroupComponent from '../components/DayGroup'
-import { RefuelingModal } from '../components/RefuelingModal'
-import { AnalyticsSummary, RefuelingLog, Vehicle, CreateRefuelingPayload } from '../types'
-import { groupByDay } from '../lib/groupByDay'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '../api/client'
+import { useState, useMemo } from 'react'
+import { Plus } from 'lucide-react'
+import { RefuelingList } from '../components/RefuelingList'
+import { AnalyticsSummary, RefuelingLog, Vehicle } from '../types'
 
 interface DashboardPageProps {
   vehicles: Vehicle[]
@@ -20,126 +15,200 @@ interface DashboardPageProps {
   onDeleteRefueling: (id: string) => void
 }
 
-function pad(n: number) { return String(n).padStart(2, '0') }
-
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   vehicles,
   refuelings,
-  analytics,
-  loadingVehicles,
   loadingRefuelings,
+  onOpenVehicleModal,
   onOpenRefuelingModal,
   onDeleteRefueling,
 }) => {
-  const now = new Date()
-  const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth())
-  const [modalOpen, setModalOpen] = useState(false)
-  const [modalDate, setModalDate] = useState('')
-  const dialogRef = useRef<HTMLDialogElement>(null)
+  const [filterVehicleId, setFilterVehicleId] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
 
-  const qc = useQueryClient()
-
-  const saveMutation = useMutation({
-    mutationFn: (data: CreateRefuelingPayload) => api.createRefueling(data),
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['refuelings'] })
-      qc.invalidateQueries({ queryKey: ['analytics'] })
-      qc.invalidateQueries({ queryKey: ['vehicles'] })
-    },
+  const filteredRefuelings = refuelings.filter((log) => {
+    if (filterVehicleId && log.vehicle_id !== filterVehicleId) return false
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase()
+      return (
+        log.vehicle_name?.toLowerCase().includes(q) ||
+        log.license_plate?.toLowerCase().includes(q) ||
+        log.station?.toLowerCase().includes(q) ||
+        log.fuel_type?.toLowerCase().includes(q)
+      )
+    }
+    return true
   })
 
-  function prevMonth() {
-    if (month === 0) { setYear((y) => y - 1); setMonth(11) }
-    else setMonth((m) => m - 1)
-  }
+  // Calculate Monthly Averages for each vehicle
+  const vehiclesMonthlyMetrics = useMemo(() => {
+    return vehicles.map((v) => {
+      const vLogs = refuelings.filter((r) => r.vehicle_id === v.id)
 
-  function nextMonth() {
-    if (month === 11) { setYear((y) => y + 1); setMonth(0) }
-    else setMonth((m) => m + 1)
-  }
+      if (vLogs.length === 0) {
+        return {
+          vehicle: v,
+          avgSpentPerMonthCents: 0,
+          avgKmPerMonth: 0,
+          avgKmL: 0,
+          avgCostPerKm: 0,
+        }
+      }
 
-  function goToday() {
-    setYear(now.getFullYear())
-    setMonth(now.getMonth())
-  }
+      // Group totals by YYYY-MM
+      const monthsMap = new Map<string, { spentCents: number; liters: number }>()
+      let minKm = vLogs[0].current_km
+      let maxKm = vLogs[0].current_km
 
-  function openModal(date: string) {
-    setModalDate(date)
-    setModalOpen(true)
-    dialogRef.current?.showModal()
-  }
+      vLogs.forEach((log) => {
+        const monthKey = log.date ? log.date.slice(0, 7) : new Date().toISOString().slice(0, 7)
+        const current = monthsMap.get(monthKey) || { spentCents: 0, liters: 0 }
 
-  function closeModal() {
-    dialogRef.current?.close()
-    setModalOpen(false)
-  }
+        current.spentCents += log.total_amount_cents || 0
+        current.liters += log.liters || 0
+        if (log.current_km < minKm) minKm = log.current_km
+        if (log.current_km > maxKm) maxKm = log.current_km
 
-  const groups = useMemo(() => groupByDay(refuelings, year, month), [refuelings, year, month])
-  const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+        monthsMap.set(monthKey, current)
+      })
 
-  const monthNames = [
-    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez',
-  ]
+      const totalMonths = Math.max(monthsMap.size, 1)
+      let totalSpentCents = 0
+      let totalLiters = 0
+      const totalKmDriven = maxKm > minKm ? maxKm - minKm : 0
+
+      monthsMap.forEach((m) => {
+        totalSpentCents += m.spentCents
+        totalLiters += m.liters
+      })
+
+      const avgSpentPerMonthCents = Math.round(totalSpentCents / totalMonths)
+      const avgKmPerMonth = totalKmDriven > 0 ? totalKmDriven / totalMonths : 0
+      const avgKmL = totalKmDriven > 0 && totalLiters > 0 ? totalKmDriven / totalLiters : v.avg_km_l || 0
+      const avgCostPerKm = totalKmDriven > 0 && totalSpentCents > 0 ? (totalSpentCents / 100) / totalKmDriven : v.avg_cost_per_km || 0
+
+      return {
+        vehicle: v,
+        avgSpentPerMonthCents,
+        avgKmPerMonth,
+        avgKmL,
+        avgCostPerKm,
+      }
+    })
+  }, [vehicles, refuelings])
 
   return (
     <div className="animate-fade-in">
-      <StatsOverview analytics={analytics} loading={loadingVehicles || loadingRefuelings} />
-      <FuelPriceChart analytics={analytics} />
+      {/* Minimalist Hero Card com Médias Mensuais por Veículo */}
+      <div className="veh-hero-card">
+        <div className="veh-hero-top-bar">
+          <div className="veh-hero-title-group">
+            <span className="veh-hero-title">Médias Mensuais</span>
+            <button
+              type="button"
+              onClick={() => onOpenVehicleModal()}
+              className="text-[11px] font-bold text-[#0284c7] hover:underline bg-transparent border-none cursor-pointer flex items-center gap-1"
+              title="Cadastrar novo veículo"
+            >
+              <span>+ Veículo</span>
+            </button>
+          </div>
 
-      <div className="month-nav">
-        <button className="today-chip" onClick={goToday} title="hoje">
-          {now.getDate()}
-        </button>
-        <button className="month-arrow" onClick={prevMonth}>‹</button>
-        <span className="month-label">{monthNames[month]}/{String(year).slice(2)}</span>
-        <button className="month-arrow" onClick={nextMonth}>›</button>
-      </div>
-
-      <div className="veh-table-header">
-        <span className="th-dia">DIA</span>
-        <span className="th-filter">ABASTECIMENTOS</span>
-        <span className="th-total">TOTAL</span>
-      </div>
-
-      {groups.map((g) => (
-        <DayGroupComponent
-          key={g.dateStr}
-          group={g}
-          isToday={g.dateStr === todayStr}
-          onAdd={openModal}
-          onEdit={(log) => onOpenRefuelingModal(log.vehicle_id, log)}
-          onDelete={onDeleteRefueling}
-        />
-      ))}
-
-      {refuelings.length === 0 && !loadingRefuelings && (
-        <div className="veh-empty">
-          <div className="veh-empty-icon">🚗</div>
-          <div className="veh-empty-title">Nenhum abastecimento</div>
-          <p>Adicione seu primeiro abastecimento clicando em qualquer dia.</p>
+          <button
+            type="button"
+            onClick={() => onOpenRefuelingModal()}
+            className="veh-hero-quick-btn"
+            title="Lançar novo abastecimento"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Novo Abastecimento</span>
+          </button>
         </div>
-      )}
 
-      <dialog
-        className="budget-dialog"
-        ref={dialogRef}
-        onClick={(e) => { if (e.target === dialogRef.current) closeModal() }}
-      >
-        {modalOpen && (
-          <RefuelingModal
-            isOpen={modalOpen}
-            onClose={closeModal}
-            onSave={async (data) => {
-              await saveMutation.mutateAsync(data)
-              closeModal()
-            }}
-            vehicles={vehicles}
-            preselectedVehicleId={vehicles.length > 0 ? vehicles[0].id : ''}
-          />
+        {vehiclesMonthlyMetrics.length === 0 ? (
+          <div className="text-xs text-[var(--text-muted)] py-2">
+            Nenhum veículo cadastrado para cálculo de médias.
+          </div>
+        ) : (
+          <div className="veh-hero-vehicles-list">
+            {vehiclesMonthlyMetrics.map((item) => (
+              <div key={item.vehicle.id} className="veh-hero-vehicle-row">
+                <div className="veh-hero-veh-info">
+                  <span className="veh-hero-veh-name">{item.vehicle.name}</span>
+                  {item.vehicle.license_plate && (
+                    <span className="veh-hero-veh-plate">{item.vehicle.license_plate}</span>
+                  )}
+                </div>
+
+                <div className="veh-hero-metrics-grid">
+                  <div className="veh-hero-metric">
+                    <span className="veh-hero-label">Gasto Médio / Mês</span>
+                    <span className="veh-hero-val">
+                      {item.avgSpentPerMonthCents > 0
+                        ? (item.avgSpentPerMonthCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                        : 'R$ 0,00'}
+                    </span>
+                  </div>
+
+                  <div className="veh-hero-metric">
+                    <span className="veh-hero-label">Dirigido / Mês</span>
+                    <span className="veh-hero-val">
+                      {item.avgKmPerMonth > 0
+                        ? `${Math.round(item.avgKmPerMonth).toLocaleString('pt-BR')} km/mês`
+                        : '—'}
+                    </span>
+                  </div>
+
+                  <div className="veh-hero-metric">
+                    <span className="veh-hero-label">Consumo</span>
+                    <span className="veh-hero-val">
+                      {item.avgKmL > 0 ? `${item.avgKmL.toFixed(1)} km/L` : '—'}
+                    </span>
+                  </div>
+
+                  <div className="veh-hero-metric">
+                    <span className="veh-hero-label">Custo / km</span>
+                    <span className="veh-hero-val">
+                      {item.avgCostPerKm > 0 ? `R$ ${item.avgCostPerKm.toFixed(2)}` : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
-      </dialog>
+      </div>
+
+      {/* Header Controls */}
+      <div className="flex items-center justify-between gap-3 mt-6 mb-3">
+        <h2 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-muted)]">
+          Abastecimentos Recentes
+        </h2>
+
+        {vehicles.length > 1 && (
+          <select
+            value={filterVehicleId}
+            onChange={(e) => setFilterVehicleId(e.target.value)}
+            className="veh-select !h-8 !py-0 !text-xs w-44"
+          >
+            <option value="">Todos os veículos</option>
+            {vehicles.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      {/* Full Chronological Refueling List */}
+      <RefuelingList
+        refuelings={filteredRefuelings}
+        vehicles={vehicles}
+        onEdit={(log) => onOpenRefuelingModal(log.vehicle_id, log)}
+        onDelete={onDeleteRefueling}
+        loading={loadingRefuelings}
+      />
     </div>
   )
 }

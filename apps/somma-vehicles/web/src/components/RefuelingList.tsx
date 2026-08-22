@@ -1,7 +1,7 @@
 import React from 'react'
-import { Droplet, Edit2, Trash2 } from 'lucide-react'
+import { Fuel, Edit2, Trash2 } from 'lucide-react'
 import { RefuelingLog, Vehicle } from '../types'
-import { formatMoney, formatKm } from '../api/client'
+import { formatMoney } from '../api/client'
 
 interface RefuelingListProps {
   refuelings: RefuelingLog[]
@@ -19,9 +19,9 @@ export const RefuelingList: React.FC<RefuelingListProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="veh-card animate-pulse space-y-3">
+      <div className="refuel-list">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-14 bg-[var(--border)] rounded-xl" />
+          <div key={i} className="refuel-row animate-pulse" style={{ height: 64 }} />
         ))}
       </div>
     )
@@ -29,76 +29,78 @@ export const RefuelingList: React.FC<RefuelingListProps> = ({
 
   if (refuelings.length === 0) {
     return (
-      <div className="veh-card text-center py-10">
-        <Droplet className="w-10 h-10 text-[var(--text-faint)] mx-auto mb-3" />
+      <div className="veh-empty">
+        <Fuel className="w-10 h-10 veh-empty-icon" />
         <div className="veh-empty-title">Nenhum abastecimento encontrado</div>
-        <p className="text-[var(--text-muted)] text-sm max-w-sm mx-auto mt-1">
-          Lance seu primeiro abastecimento para registrar o consumo.
+        <p className="text-xs text-[var(--text-muted)]">
+          Lance seu primeiro abastecimento para calcular as médias de consumo.
         </p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-2">
+    <div className="refuel-list">
       {refuelings.map((log) => {
-        const dateFormatted = new Date(log.date).toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-        })
+        const d = new Date(log.date)
+        const day = d.toLocaleDateString('pt-BR', { day: '2-digit' })
+        const month = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase()
         const pricePerLiter = log.price_per_liter_cents
-          ? (log.price_per_liter_cents / 100).toFixed(3)
-          : '—'
+          ? `R$ ${(log.price_per_liter_cents / 100).toFixed(2)}/L`
+          : ''
 
         return (
-          <div
-            key={log.id}
-            className="veh-card flex items-center gap-3 py-3 px-4"
-          >
-            <div className="w-10 h-10 rounded-full bg-[#0ea5e9]/10 flex items-center justify-center text-[#0ea5e9] shrink-0">
-              <Droplet className="w-5 h-5" />
+          <div key={log.id} className="refuel-row">
+            <div className="refuel-date-badge">
+              <span className="refuel-date-day">{day}</span>
+              <span className="refuel-date-month">{month}</span>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-[var(--text-strong)] text-sm truncate">
-                  {log.vehicle_name || 'Veículo'}
-                </span>
+            <div className="refuel-details">
+              <div className="refuel-title-line">
+                <span className="refuel-veh-name">{log.vehicle_name || 'Veículo'}</span>
                 {log.license_plate && (
-                  <span className="text-[10px] font-mono text-[var(--text-muted)] bg-[var(--surface-muted)] px-1.5 py-0.5 rounded">
-                    {log.license_plate}
-                  </span>
+                  <span className="refuel-tag">{log.license_plate}</span>
                 )}
+                {log.calculated_km_l && log.calculated_km_l > 0 ? (
+                  <span className="refuel-tag-km-l">{log.calculated_km_l.toFixed(1)} km/L</span>
+                ) : null}
               </div>
-              <div className="text-xs text-[var(--text-muted)] mt-0.5">
-                {dateFormatted} · {log.station || log.fuel_type} · {log.liters.toFixed(1)} L · R$ {pricePerLiter}/L
-                {log.calculated_km_l && log.calculated_km_l > 0 && (
-                  <span className="ml-2 text-[#059669]">{log.calculated_km_l.toFixed(1)} km/L</span>
+
+              <div className="refuel-meta-line">
+                <span>{log.station || log.fuel_type}</span>
+                <span className="refuel-bullet">•</span>
+                <span>{log.liters.toFixed(1)}L</span>
+                {pricePerLiter && (
+                  <>
+                    <span className="refuel-bullet">•</span>
+                    <span>{pricePerLiter}</span>
+                  </>
                 )}
               </div>
             </div>
 
-            <div className="text-right shrink-0">
-              <div className="font-bold text-[var(--text-strong)] text-sm">
-                {formatMoney(log.total_amount_cents)}
-              </div>
-              <div className="text-[10px] text-[var(--text-muted)]">
-                {formatKm(log.current_km)}
+            <div className="refuel-right">
+              <div className="refuel-amount">{formatMoney(log.total_amount_cents)}</div>
+              <div className="refuel-odometer">
+                {log.current_km ? `${log.current_km.toLocaleString('pt-BR')} km` : '—'}
               </div>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="refuel-actions">
               <button
+                type="button"
                 onClick={() => onEdit(log)}
-                className="veh-card-action"
-                title="Editar"
+                className="refuel-btn-action"
+                title="Editar abastecimento"
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
               <button
+                type="button"
                 onClick={() => onDelete(log.id)}
-                className="veh-card-action danger"
-                title="Excluir"
+                className="refuel-btn-action danger"
+                title="Excluir abastecimento"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

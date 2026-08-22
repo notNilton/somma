@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AppLayout } from './components/AppLayout'
 import { VehicleModal } from './components/VehicleModal'
 import { RefuelingModal } from './components/RefuelingModal'
 import { DashboardPage } from './pages/DashboardPage'
-import { VehiclesPage } from './pages/VehiclesPage'
-import { RefuelingsPage } from './pages/RefuelingsPage'
+import { ExpandedDataPage } from './pages/ExpandedDataPage'
 import { api } from './api/client'
 import { CreateRefuelingPayload, CreateVehiclePayload, RefuelingLog, Vehicle } from './types'
 
@@ -19,8 +19,6 @@ const queryClient = new QueryClient({
 })
 
 function VehiclesAppContent() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'vehicles' | 'refuelings'>('dashboard')
-
   // Modals state
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false)
   const [vehicleToEdit, setVehicleToEdit] = useState<Vehicle | null>(null)
@@ -42,7 +40,7 @@ function VehiclesAppContent() {
     queryFn: () => api.getRefuelings(),
   })
 
-  const { data: analytics } = useQuery({
+  const { data: analytics, isLoading: loadingAnalytics } = useQuery({
     queryKey: ['analytics'],
     queryFn: api.getAnalytics,
   })
@@ -69,7 +67,7 @@ function VehiclesAppContent() {
     },
   })
 
-  const saveRefuelingMutation = useMutation({
+  const createRefuelingMutation = useMutation({
     mutationFn: (data: CreateRefuelingPayload) =>
       refuelingToEdit ? api.updateRefueling(refuelingToEdit.id, data) : api.createRefueling(data),
     onSuccess: () => {
@@ -84,9 +82,8 @@ function VehiclesAppContent() {
     },
   })
 
-  // Handlers
-  const handleOpenVehicleModal = (v?: Vehicle) => {
-    setVehicleToEdit(v || null)
+  const handleOpenVehicleModal = (vehicle?: Vehicle) => {
+    setVehicleToEdit(vehicle || null)
     setVehicleModalOpen(true)
   }
 
@@ -96,59 +93,37 @@ function VehiclesAppContent() {
     setRefuelingModalOpen(true)
   }
 
-  const handleDeleteVehicle = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este veículo? Todos os abastecimentos vinculados também serão removidos.')) {
-      await deleteVehicleMutation.mutateAsync(id)
-    }
-  }
-
-  const handleDeleteRefueling = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este abastecimento? A despesa também será removida do Expenses.')) {
-      await deleteRefuelingMutation.mutateAsync(id)
-    }
-  }
-
   return (
-    <AppLayout
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      onOpenNewRefueling={() => handleOpenRefuelingModal()}
-    >
-      <div className="veh-page">
-        {activeTab === 'dashboard' && (
-          <DashboardPage
-            vehicles={vehicles}
-            refuelings={refuelings}
-            analytics={analytics}
-            loadingVehicles={loadingVehicles}
-            loadingRefuelings={loadingRefuelings}
-            onOpenVehicleModal={handleOpenVehicleModal}
-            onOpenRefuelingModal={handleOpenRefuelingModal}
-            onDeleteVehicle={handleDeleteVehicle}
-            onDeleteRefueling={handleDeleteRefueling}
-          />
-        )}
-
-        {activeTab === 'vehicles' && (
-          <VehiclesPage
-            vehicles={vehicles}
-            loading={loadingVehicles}
-            onOpenVehicleModal={handleOpenVehicleModal}
-            onOpenRefuelingModal={(vId) => handleOpenRefuelingModal(vId)}
-            onDeleteVehicle={handleDeleteVehicle}
-          />
-        )}
-
-        {activeTab === 'refuelings' && (
-          <RefuelingsPage
-            refuelings={refuelings}
-            vehicles={vehicles}
-            loading={loadingRefuelings}
-            onOpenRefuelingModal={handleOpenRefuelingModal}
-            onDeleteRefueling={handleDeleteRefueling}
-          />
-        )}
-      </div>
+    <AppLayout>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <DashboardPage
+              vehicles={vehicles}
+              refuelings={refuelings}
+              analytics={analytics}
+              loadingVehicles={loadingVehicles}
+              loadingRefuelings={loadingRefuelings}
+              onOpenVehicleModal={handleOpenVehicleModal}
+              onOpenRefuelingModal={handleOpenRefuelingModal}
+              onDeleteVehicle={(id) => deleteVehicleMutation.mutate(id)}
+              onDeleteRefueling={(id) => deleteRefuelingMutation.mutate(id)}
+            />
+          }
+        />
+        <Route
+          path="/bi"
+          element={
+            <ExpandedDataPage
+              vehicles={vehicles}
+              refuelings={refuelings}
+              analytics={analytics}
+              loading={loadingVehicles || loadingRefuelings || loadingAnalytics}
+            />
+          }
+        />
+      </Routes>
 
       {/* Modals */}
       <VehicleModal
@@ -156,6 +131,7 @@ function VehiclesAppContent() {
         onClose={() => setVehicleModalOpen(false)}
         onSave={async (data) => {
           await createVehicleMutation.mutateAsync(data)
+          setVehicleModalOpen(false)
         }}
         vehicleToEdit={vehicleToEdit}
       />
@@ -164,7 +140,8 @@ function VehiclesAppContent() {
         isOpen={refuelingModalOpen}
         onClose={() => setRefuelingModalOpen(false)}
         onSave={async (data) => {
-          await saveRefuelingMutation.mutateAsync(data)
+          await createRefuelingMutation.mutateAsync(data)
+          setRefuelingModalOpen(false)
         }}
         vehicles={vehicles}
         preselectedVehicleId={preselectedVehicleId}
@@ -177,7 +154,9 @@ function VehiclesAppContent() {
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <VehiclesAppContent />
+      <BrowserRouter>
+        <VehiclesAppContent />
+      </BrowserRouter>
     </QueryClientProvider>
   )
 }
