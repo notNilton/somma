@@ -151,7 +151,13 @@ export const RefuelingModal: React.FC<RefuelingModalProps> = ({
     <dialog
       className="budget-dialog"
       ref={dialogRef}
-      onClick={(e) => { if (e.target === dialogRef.current) onClose() }}
+      onCancel={(e) => {
+        e.preventDefault()
+        onClose()
+      }}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) onClose()
+      }}
     >
       <div className="veh-modal">
         <div className="veh-modal-header">
