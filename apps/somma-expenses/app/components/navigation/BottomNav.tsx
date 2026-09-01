@@ -1,47 +1,36 @@
 import { usePathname, useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import HomeIcon from "@/assets/icons/home.svg";
-import MetricsIcon from "@/assets/icons/metrics.svg";
+import { Ionicons } from "@expo/vector-icons";
 
 const TABS = [
-  { label: "Home", icon: HomeIcon, route: "/home" },
-  { label: "Relatórios", icon: MetricsIcon, route: "/metrics" },
+  { label: "Extrato", iconName: "wallet-outline", activeIcon: "wallet", route: "/home" },
+  { label: "Orçamentos", iconName: "pie-chart-outline", activeIcon: "pie-chart", route: "/wallet" },
+  { label: "Tendências", iconName: "analytics-outline", activeIcon: "analytics", route: "/metrics" },
+  { label: "Perfil", iconName: "person-outline", activeIcon: "person", route: "/profile" },
 ] as const;
 
-interface BottomNavProps {
-  readonly activeIndex?: number;
-  readonly onPageChange?: (index: number) => void;
-}
-
-export function BottomNav({ activeIndex, onPageChange }: BottomNavProps) {
+export function BottomNav() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
 
-  const isPagerMode = activeIndex !== undefined && onPageChange !== undefined;
-
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       <View style={styles.bar}>
-        {TABS.map(({ label, icon: Icon, route }, index) => {
-          const active = isPagerMode
-            ? activeIndex === index
-            : pathname === route;
+        {TABS.map(({ label, iconName, activeIcon, route }) => {
+          const active = pathname === route;
           return (
             <TouchableOpacity
               key={route}
               style={styles.tab}
-              onPress={() =>
-                isPagerMode ? onPageChange(index) : router.push(route as any)
-              }
+              onPress={() => router.push(route as any)}
               activeOpacity={0.7}
             >
-              <Icon
-                width={22}
-                height={22}
-                color={active ? "#FACC15" : "#888888"}
+              <Ionicons
+                name={active ? (activeIcon as any) : (iconName as any)}
+                size={22}
+                color={active ? "#10B981" : "#64748B"}
               />
               <Text style={[styles.label, active && styles.labelActive]}>
                 {label}
@@ -56,12 +45,12 @@ export function BottomNav({ activeIndex, onPageChange }: BottomNavProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#000000",
+    backgroundColor: "#090D16",
     borderTopWidth: 1,
-    borderTopColor: "#2a2a2a",
+    borderTopColor: "#1E293B",
   },
   bar: {
-    height: 64,
+    height: 60,
     flexDirection: "row",
   },
   tab: {
@@ -71,11 +60,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   label: {
-    fontSize: 10,
-    color: "#888888",
-    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: "#64748B",
+    fontWeight: "500",
   },
   labelActive: {
-    color: "#FACC15",
+    color: "#10B981",
+    fontWeight: "700",
   },
 });
