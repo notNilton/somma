@@ -17,15 +17,13 @@ jobs:
   build-expenses-backend:
     runs-on: runner
     steps:
-      - name: Checkout main with credentials
+      - name: Checkout main
         run: |
           git config --global credential.helper store
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
           git checkout "${{ gitea.sha }}" || true
-          git config user.name "${{ env.GIT_USER_NAME }}"
-          git config user.email "${{ env.GIT_USER_EMAIL }}"
 
       - name: Detect changes
         id: check
@@ -58,30 +56,16 @@ jobs:
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:${VERSION}"
 
-      - name: Bump expenses backend version
-        if: steps.check.outputs.CHANGED == 'true'
-        run: |
-          VERSION=$(cat apps/somma-expenses/backend/VERSION | tr -d '[:space:]')
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-          echo "$NEW_VERSION" > apps/somma-expenses/backend/VERSION
-          git add apps/somma-expenses/backend/VERSION
-          git commit -m "chore(release): expenses-backend $NEW_VERSION [skip ci]" || true
-          git pull --rebase origin main || true
-          git push origin main || true
-
   build-expenses-web:
     runs-on: runner
     steps:
-      - name: Checkout main with credentials
+      - name: Checkout main
         run: |
           git config --global credential.helper store
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
           git checkout "${{ gitea.sha }}" || true
-          git config user.name "${{ env.GIT_USER_NAME }}"
-          git config user.email "${{ env.GIT_USER_EMAIL }}"
 
       - name: Detect changes
         id: check
@@ -114,35 +98,16 @@ jobs:
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:${VERSION}"
 
-      - name: Bump expenses web version
-        if: steps.check.outputs.CHANGED == 'true'
-        run: |
-          VERSION=$(node -e "process.stdout.write(require('./apps/somma-expenses/web/package.json').version)")
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('apps/somma-expenses/web/package.json'));
-            pkg.version = '$NEW_VERSION';
-            fs.writeFileSync('apps/somma-expenses/web/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          git add apps/somma-expenses/web/package.json
-          git commit -m "chore(release): expenses-web $NEW_VERSION [skip ci]" || true
-          git pull --rebase origin main || true
-          git push origin main || true
-
   build-vehicles-backend:
     runs-on: runner
     steps:
-      - name: Checkout main with credentials
+      - name: Checkout main
         run: |
           git config --global credential.helper store
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
           git checkout "${{ gitea.sha }}" || true
-          git config user.name "${{ env.GIT_USER_NAME }}"
-          git config user.email "${{ env.GIT_USER_EMAIL }}"
 
       - name: Detect changes
         id: check
@@ -175,30 +140,16 @@ jobs:
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-backend:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-backend:${VERSION}"
 
-      - name: Bump vehicles backend version
-        if: steps.check.outputs.CHANGED == 'true'
-        run: |
-          VERSION=$(cat apps/somma-vehicles/backend/VERSION | tr -d '[:space:]')
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-          echo "$NEW_VERSION" > apps/somma-vehicles/backend/VERSION
-          git add apps/somma-vehicles/backend/VERSION
-          git commit -m "chore(release): vehicles-backend $NEW_VERSION [skip ci]" || true
-          git pull --rebase origin main || true
-          git push origin main || true
-
   build-vehicles-web:
     runs-on: runner
     steps:
-      - name: Checkout main with credentials
+      - name: Checkout main
         run: |
           git config --global credential.helper store
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
           git checkout "${{ gitea.sha }}" || true
-          git config user.name "${{ env.GIT_USER_NAME }}"
-          git config user.email "${{ env.GIT_USER_EMAIL }}"
 
       - name: Detect changes
         id: check
@@ -231,35 +182,16 @@ jobs:
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-web:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-web:${VERSION}"
 
-      - name: Bump vehicles web version
-        if: steps.check.outputs.CHANGED == 'true'
-        run: |
-          VERSION=$(node -e "process.stdout.write(require('./apps/somma-vehicles/web/package.json').version)")
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('apps/somma-vehicles/web/package.json'));
-            pkg.version = '$NEW_VERSION';
-            fs.writeFileSync('apps/somma-vehicles/web/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          git add apps/somma-vehicles/web/package.json
-          git commit -m "chore(release): vehicles-web $NEW_VERSION [skip ci]" || true
-          git pull --rebase origin main || true
-          git push origin main || true
-
   build-doc:
     runs-on: runner
     steps:
-      - name: Checkout main with credentials
+      - name: Checkout main
         run: |
           git config --global credential.helper store
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
           git checkout "${{ gitea.sha }}" || true
-          git config user.name "${{ env.GIT_USER_NAME }}"
-          git config user.email "${{ env.GIT_USER_EMAIL }}"
 
       - name: Detect changes
         id: check
@@ -291,18 +223,6 @@ jobs:
             apps/doc/
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/doc:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/doc:${VERSION}"
-
-      - name: Bump doc version
-        if: steps.check.outputs.CHANGED == 'true'
-        run: |
-          VERSION=$(cat apps/doc/VERSION | tr -d '[:space:]')
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-          echo "$NEW_VERSION" > apps/doc/VERSION
-          git add apps/doc/VERSION
-          git commit -m "chore(release): doc $NEW_VERSION [skip ci]" || true
-          git pull --rebase origin main || true
-          git push origin main || true
 
   deploy:
     needs: [build-expenses-backend, build-expenses-web, build-vehicles-backend, build-vehicles-web, build-doc]
