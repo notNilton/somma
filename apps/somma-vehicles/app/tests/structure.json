@@ -1,0 +1,87 @@
+{
+  "unit": {
+    "description": "Unit tests for pure functions, components, hooks, services",
+    "files": [
+      "components/**/*.test.tsx",
+      "hooks/**/*.test.tsx",
+      "services/**/*.test.ts",
+      "contexts/**/*.test.tsx",
+      "utils/**/*.test.ts"
+    ]
+  },
+  "components": {
+    "description": "Component-level tests",
+    "files": [
+      "components/**/*.test.tsx",
+      "components/**/*.test.ts"
+    ]
+  },
+  "hooks": {
+    "description": "Hook-specific tests",
+    "files": [
+      "hooks/**/*.test.tsx",
+      "hooks/**/*.test.ts"
+    ]
+  },
+  "services": {
+    "description": "API service tests",
+    "files": [
+      "services/**/*.test.ts",
+      "services/**/*.test.tsx"
+    ]
+  },
+  "contexts": {
+    "description": "Context API tests",
+    "files": [
+      "contexts/**/*.test.tsx"
+    ]
+  },
+  "integration": {
+    "description": "Integration tests for component interactions",
+    "files": [
+      "components/**/integration.test.tsx"
+    ]
+  },
+  "navigation": {
+    "description": "Navigation-related tests",
+    "files": [
+      "navigation/**/*.test.tsx"
+    ]
+  },
+  "e2e": {
+    "description": "End-to-end tests",
+    "files": [
+      "e2e/**/*.test.tsx"
+    ]
+  },
+  "mocks": {
+    "description": "Mock implementations",
+    "files": [
+      "mocks/**/*.mock.ts"
+    ]
+  },
+  "fixtures": {
+    "description": "Test data fixtures",
+    "files": [
+      "fixtures/**/*.json",
+      "fixtures/**/*.ts"
+    ]
+  },
+  "factories": {
+    "description": "Test data factories",
+    "files": [
+      "factories/**/*.ts"
+    ]
+  },
+  "utils": {
+    "description": "Utility functions for tests",
+    "files": [
+      "utils/**/*.test.ts"
+    ]
+  },
+  "helpers": {
+    "description": "Test helper functions",
+    "files": [
+      "utils/**/*.helper.ts"
+    ]
+  }

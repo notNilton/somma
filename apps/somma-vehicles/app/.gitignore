@@ -1,0 +1,61 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Artefato de build
+*.aab
+*.apk
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# IA
+.claude/settings.local.json
+
+# Google Play / Firebase Service Account — contém chave privada, NUNCA commitar
+google-service-account.json
+*-service-account.json
+
+# google-services.json (config do cliente Firebase) NÃO é ignorado de propósito:
+# o EAS Build precisa dele no upload para gerar o push token do Android.
+
+.env
+.pnpm-store/
+
+# Test coverage
+coverage/
