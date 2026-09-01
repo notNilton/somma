@@ -7,24 +7,27 @@ Personal finance and vehicle fleet management platform split into two integrated
 ```
 apps/
   somma-expenses/
-    backend/          Go API (Port 3300)
-    web/              React frontend (Port 3400)
+    app/              React Native Mobile App (Expo Router)
+    backend/          Rust Axum API (Port 3300)
+    web/              React Frontend (Port 3400)
   somma-vehicles/
-    backend/          Go API (Port 3310)
-    web/              React frontend (Port 3410)
+    app/              React Native Mobile App (Expo Router)
+    backend/          Rust Axum API (Port 3310)
+    web/              React Frontend (Port 3410)
   doc/                OpenAPI specification and Swagger UI
+crates/
+  somma-common/       Shared Rust models, authentication & DB utilities
 database/
-  migrations/         Shared SQL migrations
+  migrations/         Shared PostgreSQL migrations
   seeds/              Seed data scripts
-  cmd/migrate/        Database migration CLI
 docker-compose.yml     Docker orchestration
-go.work               Go workspace config
+Cargo.toml            Cargo workspace configuration
 ```
 
 ### Modules
 
-- `somma-expenses`: Personal finance module (income, expenses, budgets, categories, analytics).
-- `somma-vehicles`: Vehicle and fuel refill log module (consumption tracking, cost/km, odometer history).
+- `somma-expenses`: Personal finance module (income, expenses, budgets, envelopes, categories, analytics & recurring engine).
+- `somma-vehicles`: Vehicle and fuel refill log module (fleet management, consumption tracking, cost/km, odometer history).
 
 ### Shared Database Integration
 
@@ -35,8 +38,8 @@ When a refueling log is saved in `somma-vehicles`, a corresponding transaction i
 
 ### Prerequisites
 
-- Go 1.25+
-- Node.js 22+
+- Rust (1.80+) & Cargo
+- Node.js 22+ & pnpm / npm
 - Docker / Podman
 
 ### Running Services
@@ -51,12 +54,13 @@ make up
 
 | Service | Type | Port | Endpoint |
 |---------|------|------|----------|
-| Expenses Web | Frontend | `3400` | http://localhost:3400 |
-| Expenses API | Backend | `3300` | http://localhost:3300 |
-| Vehicles Web | Frontend | `3410` | http://localhost:3410 |
-| Vehicles API | Backend | `3310` | http://localhost:3310 |
+| Expenses Web | Web Frontend | `3400` | http://localhost:3400 |
+| Expenses API | Rust Backend | `3300` | http://localhost:3300 |
+| Expenses Mobile | React Native (Expo) | — | `apps/somma-expenses/app` |
+| Vehicles Web | Web Frontend | `3410` | http://localhost:3410 |
+| Vehicles API | Rust Backend | `3310` | http://localhost:3310 |
+| Vehicles Mobile | React Native (Expo) | — | `apps/somma-vehicles/app` |
 | PostgreSQL | Database | `5454` | localhost:5454/somma |
-
 
 ## Documentation
 
