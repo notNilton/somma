@@ -1,0 +1,21 @@
+[package]
+name = "somma-vehicles-backend"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+somma-common.workspace = true
+tokio.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+sqlx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+jsonwebtoken.workspace = true
+dotenvy.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

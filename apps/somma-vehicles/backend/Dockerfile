@@ -1,11 +1,30 @@
-FROM golang:1.25-alpine AS builder
-WORKDIR /app
-COPY database /database
-COPY apps/somma-vehicles/backend /app
-RUN go build -o vehicles-api ./cmd/main.go
+FROM rust:alpine AS builder
 
-FROM alpine:latest
+RUN apk add --no-cache musl-dev pkgconfig openssl-dev ca-certificates git
+
+WORKDIR /src
+
+# Copy workspace files needed for compilation
+COPY Cargo.toml Cargo.lock* ./
+COPY crates/ crates/
+COPY apps/somma-expenses/backend/ apps/somma-expenses/backend/
+COPY apps/somma-vehicles/backend/ apps/somma-vehicles/backend/
+
+WORKDIR /src/apps/somma-vehicles/backend
+
+RUN cargo build --release
+
+FROM alpine:3.19
+
 WORKDIR /app
-COPY --from=builder /app/vehicles-api .
+
+RUN apk --no-cache add ca-certificates tzdata && \
+    addgroup -S appgroup && adduser -S appuser -G appgroup
+
+COPY --from=builder /src/target/release/somma-vehicles-backend ./vehicles-api
+
+USER appuser
+
 EXPOSE 3310
+
 CMD ["./vehicles-api"]

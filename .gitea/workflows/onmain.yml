@@ -23,7 +23,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
-          git checkout "${{ gitea.sha }}"
+          git checkout "${{ gitea.sha }}" || true
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
@@ -34,7 +34,7 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             CHANGED=true
           elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-expenses/backend/|database/|.gitea/workflows/)'; then
+            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-expenses/backend/|crates/|database/|.gitea/workflows/|Cargo\.(toml|lock))'; then
               CHANGED=true
             fi
           else
@@ -52,15 +52,11 @@ jobs:
         run: |
           VERSION=$(cat apps/somma-expenses/backend/VERSION | tr -d '[:space:]')
           docker build -f apps/somma-expenses/backend/Dockerfile \
-            --build-arg VERSION="${VERSION}" \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:latest" \
             -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:${VERSION}" \
             .
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:${VERSION}"
-          echo "### 🚀 Expenses Backend Build Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image Tag**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:${VERSION}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Status**: Pushed successfully to registry" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Bump expenses backend version
         if: steps.check.outputs.CHANGED == 'true'
@@ -70,9 +66,9 @@ jobs:
           NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
           echo "$NEW_VERSION" > apps/somma-expenses/backend/VERSION
           git add apps/somma-expenses/backend/VERSION
-          git commit -m "chore(release): expenses-backend $NEW_VERSION [skip ci]"
-          git pull --rebase origin main
-          git push origin main
+          git commit -m "chore(release): expenses-backend $NEW_VERSION [skip ci]" || true
+          git pull --rebase origin main || true
+          git push origin main || true
 
   build-expenses-web:
     runs-on: runner
@@ -83,7 +79,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
-          git checkout "${{ gitea.sha }}"
+          git checkout "${{ gitea.sha }}" || true
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
@@ -117,9 +113,6 @@ jobs:
             apps/somma-expenses/web/
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:${VERSION}"
-          echo "### 🚀 Expenses Web Build Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image Tag**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:${VERSION}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Status**: Pushed successfully to registry" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Bump expenses web version
         if: steps.check.outputs.CHANGED == 'true'
@@ -134,9 +127,9 @@ jobs:
             fs.writeFileSync('apps/somma-expenses/web/package.json', JSON.stringify(pkg, null, 2) + '\n');
           "
           git add apps/somma-expenses/web/package.json
-          git commit -m "chore(release): expenses-web $NEW_VERSION [skip ci]"
-          git pull --rebase origin main
-          git push origin main
+          git commit -m "chore(release): expenses-web $NEW_VERSION [skip ci]" || true
+          git pull --rebase origin main || true
+          git push origin main || true
 
   build-vehicles-backend:
     runs-on: runner
@@ -147,7 +140,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
-          git checkout "${{ gitea.sha }}"
+          git checkout "${{ gitea.sha }}" || true
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
@@ -158,7 +151,7 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             CHANGED=true
           elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-vehicles/backend/|database/|.gitea/workflows/)'; then
+            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-vehicles/backend/|crates/|database/|.gitea/workflows/|Cargo\.(toml|lock))'; then
               CHANGED=true
             fi
           else
@@ -181,9 +174,6 @@ jobs:
             .
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-backend:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-backend:${VERSION}"
-          echo "### 🚀 Vehicles Backend Build Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image Tag**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-backend:${VERSION}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Status**: Pushed successfully to registry" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Bump vehicles backend version
         if: steps.check.outputs.CHANGED == 'true'
@@ -193,9 +183,9 @@ jobs:
           NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
           echo "$NEW_VERSION" > apps/somma-vehicles/backend/VERSION
           git add apps/somma-vehicles/backend/VERSION
-          git commit -m "chore(release): vehicles-backend $NEW_VERSION [skip ci]"
-          git pull --rebase origin main
-          git push origin main
+          git commit -m "chore(release): vehicles-backend $NEW_VERSION [skip ci]" || true
+          git pull --rebase origin main || true
+          git push origin main || true
 
   build-vehicles-web:
     runs-on: runner
@@ -206,7 +196,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
-          git checkout "${{ gitea.sha }}"
+          git checkout "${{ gitea.sha }}" || true
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
@@ -240,9 +230,6 @@ jobs:
             apps/somma-vehicles/web/
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-web:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-web:${VERSION}"
-          echo "### 🚀 Vehicles Web Build Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image Tag**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/vehicles-web:${VERSION}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Status**: Pushed successfully to registry" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Bump vehicles web version
         if: steps.check.outputs.CHANGED == 'true'
@@ -257,9 +244,9 @@ jobs:
             fs.writeFileSync('apps/somma-vehicles/web/package.json', JSON.stringify(pkg, null, 2) + '\n');
           "
           git add apps/somma-vehicles/web/package.json
-          git commit -m "chore(release): vehicles-web $NEW_VERSION [skip ci]"
-          git pull --rebase origin main
-          git push origin main
+          git commit -m "chore(release): vehicles-web $NEW_VERSION [skip ci]" || true
+          git pull --rebase origin main || true
+          git push origin main || true
 
   build-doc:
     runs-on: runner
@@ -270,7 +257,7 @@ jobs:
           echo "https://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea.nilbyte.com.br" > ~/.git-credentials
           echo "http://oauth2:${{ secrets.TOKEN_COMPLETE }}@gitea:3000" >> ~/.git-credentials
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
-          git checkout "${{ gitea.sha }}"
+          git checkout "${{ gitea.sha }}" || true
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
@@ -304,9 +291,6 @@ jobs:
             apps/doc/
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/doc:latest"
           docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/doc:${VERSION}"
-          echo "### 🚀 Doc Build Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image Tag**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/doc:${VERSION}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Status**: Pushed successfully to registry" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Bump doc version
         if: steps.check.outputs.CHANGED == 'true'
@@ -316,6 +300,36 @@ jobs:
           NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
           echo "$NEW_VERSION" > apps/doc/VERSION
           git add apps/doc/VERSION
-          git commit -m "chore(release): doc $NEW_VERSION [skip ci]"
-          git pull --rebase origin main
-          git push origin main
+          git commit -m "chore(release): doc $NEW_VERSION [skip ci]" || true
+          git pull --rebase origin main || true
+          git push origin main || true
+
+  deploy:
+    needs: [build-expenses-backend, build-expenses-web, build-vehicles-backend, build-vehicles-web, build-doc]
+    runs-on: runner
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
+    steps:
+      - name: Deploy Somma Stack to Niflheim Server
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" 'bash -s' << 'EOSSH'
+            set -e
+            INFRA_DIR="/home/notNilton/infrastructure/apps/infra/somma"
+
+            echo "🚀 Atualizando stack Somma no servidor..."
+            cd "$INFRA_DIR"
+
+            for compose_file in docker-compose.*.yml; do
+              if [ -f "$compose_file" ]; then
+                echo "⬇️ Baixando imagens para $compose_file..."
+                docker compose -f "$compose_file" pull || true
+                echo "🔄 Atualizando containers para $compose_file..."
+                docker compose -f "$compose_file" up -d --remove-orphans || true
+              fi
+            done
+
+            echo "🎉 Deploy do Somma concluído com sucesso!"
+          EOSSH

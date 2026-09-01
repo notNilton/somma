@@ -38,5 +38,9 @@ app/tmp/
 apps/*/backend/tmp/
 database/migrate
 
+# Rust
+/target/
+**/*.rs.bk
+
 # TypeScript incremental build cache
 *.tsbuildinfo
