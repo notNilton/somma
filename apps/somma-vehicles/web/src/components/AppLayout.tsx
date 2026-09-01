@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Activity, LayoutDashboard, ArrowUpRight } from 'lucide-react'
+import { Activity, LayoutDashboard, ArrowUpRight, LogOut } from 'lucide-react'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -8,6 +8,14 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const expensesUrl = import.meta.env.VITE_EXPENSES_URL || 'https://sommae.nilbyte.com.br'
+
+  const handleLogout = () => {
+    localStorage.removeItem('somma-expenses:authed')
+    localStorage.removeItem('somma-expenses:email')
+    localStorage.removeItem('somma-vehicles:authed')
+    localStorage.removeItem('token')
+    window.location.href = `${expensesUrl}/login`
+  }
 
   const navItems = [
     { to: '/', label: 'Visão geral', icon: LayoutDashboard, end: true },
@@ -55,6 +63,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <span className="font-semibold text-xs text-[var(--text-strong)]">Ir para Expenses</span>
             <ArrowUpRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
           </a>
+
+          <button
+            onClick={handleLogout}
+            className="sidebar-logout-btn"
+            title="Encerrar sessão"
+          >
+            <LogOut className="w-4 h-4 text-red-500" />
+            <span>Sair da conta</span>
+          </button>
         </div>
       </aside>
 
@@ -83,6 +100,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </NavLink>
           )
         })}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="bottom-nav-item text-red-500"
+          title="Sair"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Sair</span>
+        </button>
       </nav>
     </div>
   )
