@@ -32,7 +32,7 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             CHANGED=true
           elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-expenses/backend/|crates/|database/|.gitea/workflows/|Cargo\.(toml|lock))'; then
+            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-expenses/backend/|database/|.gitea/workflows/|go\.(work|sum))'; then
               CHANGED=true
             fi
           else
@@ -116,7 +116,7 @@ jobs:
           if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
             CHANGED=true
           elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-vehicles/backend/|crates/|database/|.gitea/workflows/|Cargo\.(toml|lock))'; then
+            if git diff --name-only HEAD^ HEAD | grep -Eq '^(apps/somma-vehicles/backend/|database/|.gitea/workflows/|go\.(work|sum))'; then
               CHANGED=true
             fi
           else
