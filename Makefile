@@ -4,7 +4,6 @@ APP_NAME ?= somma
 ifeq ($(OS),Windows_NT)
   SHELL := bash
   CONTAINER_ENGINE ?= docker
-  # Convert backslashes so Docker bind-mount paths work
   CURDIR_UNIX := $(subst \,/,$(CURDIR))
 else
   SHELL := /usr/bin/env bash
@@ -22,17 +21,19 @@ POSTGRES_PORT ?= 5454
 
 BACKEND_PORT ?= 3300
 WEBAPP_PORT ?= 3400
-VEHICLES_BACKEND_PORT ?= 3310
-VEHICLES_WEBAPP_PORT ?= 3410
 ENV ?= development
 JWT_SECRET ?= dev-secret-change-in-production-x
 WEBAPP_URL ?= http://localhost:$(WEBAPP_PORT)
 API_URL ?= http://localhost:$(BACKEND_PORT)
 WEB_DEV_API_URL ?= http://$(APP_NAME)-backend-dev:$(BACKEND_PORT)
-VEHICLES_WEB_DEV_API_URL ?= http://$(APP_NAME)-vehicles-backend-dev:$(VEHICLES_BACKEND_PORT)
 DATABASE_URL ?= postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable
 CONTAINER_DATABASE_URL ?= postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_CONTAINER):5432/$(POSTGRES_DB)?sslmode=disable
 DEV_NETWORK ?= $(APP_NAME)-dev
+SMTP_HOST ?=
+SMTP_PORT ?= 587
+SMTP_USER ?=
+SMTP_PASS ?=
+FROM_EMAIL ?= noreply@somma.local
 
 ENABLE_MINIO ?= 0
 MINIO_IMAGE ?= docker.io/minio/minio:latest
@@ -43,22 +44,18 @@ MINIO_ROOT_PASSWORD ?= minioadmin
 MINIO_PORT ?= 9000
 MINIO_CONSOLE_PORT ?= 9001
 REMOVE_VOLUME ?= 0
-DOC_PORT ?= 8090
 MIGRATE_IMAGE ?= $(APP_NAME)-database-dev
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up dev deps-up deps-down deps-reset net db-up db-wait db-down db-reset db-setup minio-up minio-down env backend web vehicles-backend vehicles-web doc migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones test clean migrate-image
+.PHONY: help up dev deps-up deps-down deps-reset net db-up db-wait db-down db-reset db-setup minio-up minio-down env backend web migrate-up migrate-down migrate-version seed db-seed-complete db-seed-barebones seed-complete seed-barebones test clean migrate-image
 
 help:
 	@printf '%s\n' 'Somma local dev'
 	@printf '\n%s\n' 'Fluxo principal:'
 	@printf '  make up              Sobe Postgres, migra, semeia e inicia todos os servicos em background\n'
-	@printf '  make backend         Inicia a API Go Expenses em localhost:$(BACKEND_PORT) (Docker + hot reload)\n'
-	@printf '  make web             Inicia o Web Expenses em localhost:$(WEBAPP_PORT) (Docker + hot reload)\n'
-	@printf '  make vehicles-backend Inicia a API Go Vehicles em localhost:$(VEHICLES_BACKEND_PORT)\n'
-	@printf '  make vehicles-web     Inicia o Web Vehicles em localhost:$(VEHICLES_WEBAPP_PORT)\n'
-	@printf '  make doc             Inicia o Swagger UI em localhost:$(DOC_PORT)/doc\n'
+	@printf '  make backend         Inicia a API Go em localhost:$(BACKEND_PORT) (Docker + hot reload)\n'
+	@printf '  make web             Inicia o Web em localhost:$(WEBAPP_PORT) (Docker + hot reload)\n'
 	@printf '  make db-setup        Sobe o banco, aplica migrations e insere dados iniciais (seeds)\n'
 	@printf '  make deps-up         Sobe dependencias locais: Postgres\n'
 	@printf '  make deps-down       Para dependencias locais\n'
@@ -70,7 +67,7 @@ help:
 	@printf '  make migrate-up      Aplica migrations\n'
 	@printf '  make migrate-down    Reverte uma migration\n'
 	@printf '  make migrate-version Mostra a versao atual\n'
-	@printf '  make db-seed-complete   Aplica o seed completo com transacoes e veiculos\n'
+	@printf '  make db-seed-complete   Aplica o seed completo com transacoes\n'
 	@printf '  make db-seed-barebones  Aplica o seed basico\n'
 	@printf '\n%s\n' 'App:'
 	@printf '  make test            Roda testes Go\n'
@@ -79,66 +76,37 @@ help:
 	@printf '  ENABLE_MINIO=1 make up inclui MinIO nas dependencias locais\n'
 
 up: db-setup
-	@$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-backend-dev -f apps/somma-expenses/backend/Dockerfile.dev apps/somma-expenses/backend/
-	@$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-web-dev -f apps/somma-expenses/web/Dockerfile.dev apps/somma-expenses/web/
-	@$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-vehicles-backend-dev -f apps/somma-vehicles/backend/Dockerfile.dev apps/somma-vehicles/backend/
-	@$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-vehicles-web-dev -f apps/somma-vehicles/web/Dockerfile.dev apps/somma-vehicles/web/
-	@-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-backend-dev $(APP_NAME)-web-dev $(APP_NAME)-vehicles-backend-dev $(APP_NAME)-vehicles-web-dev $(APP_NAME)-doc-dev 2>/dev/null || true
+	@$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-backend-dev -f backend/Dockerfile.dev backend/
+	@$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-web-dev -f web/Dockerfile.dev web/
+	@-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-backend-dev $(APP_NAME)-web-dev 2>/dev/null || true
 	@$(CONTAINER_ENGINE) run -d \
 		--network $(DEV_NETWORK) \
-		-v "$(CURDIR_UNIX)/apps/somma-expenses/backend:/app:z" \
+		-v "$(CURDIR_UNIX)/backend:/app:z" \
 		-p $(BACKEND_PORT):$(BACKEND_PORT) \
 		-e PORT=$(BACKEND_PORT) \
 		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
 		-e JWT_SECRET=$(JWT_SECRET) \
 		-e WEBAPP_URL=$(WEBAPP_URL) \
 		-e ENV=$(ENV) \
+		-e SMTP_HOST=$(SMTP_HOST) \
+		-e SMTP_PORT=$(SMTP_PORT) \
+		-e SMTP_USER=$(SMTP_USER) \
+		-e SMTP_PASS=$(SMTP_PASS) \
+		-e FROM_EMAIL=$(FROM_EMAIL) \
 		--name $(APP_NAME)-backend-dev \
 		$(APP_NAME)-backend-dev >/dev/null
 	@$(CONTAINER_ENGINE) run -d \
 		--network $(DEV_NETWORK) \
 		--add-host=host.docker.internal:host-gateway \
-		-v "$(CURDIR_UNIX)/apps/somma-expenses/web:/app:z" \
+		-v "$(CURDIR_UNIX)/web:/app:z" \
 		-v "$(APP_NAME)-web-node-modules:/app/node_modules:z" \
 		-p $(WEBAPP_PORT):$(WEBAPP_PORT) \
 		-e API_URL=$(WEB_DEV_API_URL) \
 		--name $(APP_NAME)-web-dev \
 		$(APP_NAME)-web-dev >/dev/null
-	@$(CONTAINER_ENGINE) run -d \
-		--network $(DEV_NETWORK) \
-		-v "$(CURDIR_UNIX)/apps/somma-vehicles/backend:/app:z" \
-		-p $(VEHICLES_BACKEND_PORT):$(VEHICLES_BACKEND_PORT) \
-		-e PORT=$(VEHICLES_BACKEND_PORT) \
-		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
-		-e JWT_SECRET=$(JWT_SECRET) \
-		-e EXPENSES_URL=$(WEBAPP_URL) \
-		-e ENV=$(ENV) \
-		--name $(APP_NAME)-vehicles-backend-dev \
-		$(APP_NAME)-vehicles-backend-dev >/dev/null
-	@$(CONTAINER_ENGINE) run -d \
-		--network $(DEV_NETWORK) \
-		--add-host=host.docker.internal:host-gateway \
-		-v "$(CURDIR_UNIX)/apps/somma-vehicles/web:/app:z" \
-		-v "$(APP_NAME)-vehicles-web-node-modules:/app/node_modules:z" \
-		-p $(VEHICLES_WEBAPP_PORT):$(VEHICLES_WEBAPP_PORT) \
-		-e API_URL=$(VEHICLES_WEB_DEV_API_URL) \
-		--name $(APP_NAME)-vehicles-web-dev \
-		$(APP_NAME)-vehicles-web-dev >/dev/null
-	@$(CONTAINER_ENGINE) run -d \
-		--network $(DEV_NETWORK) \
-		-v "$(CURDIR_UNIX)/apps/doc/openapi.yml:/openapi.yml:ro" \
-		-p $(DOC_PORT):8080 \
-		-e SWAGGER_JSON=/openapi.yml \
-		-e BASE_URL=/doc \
-		-e DEEP_LINKING=true \
-		--name $(APP_NAME)-doc-dev \
-		docker.io/swaggerapi/swagger-ui:latest >/dev/null
 	@printf 'Servicos iniciados:\n'
-	@printf '  Expenses API   : http://localhost:$(BACKEND_PORT)\n'
-	@printf '  Expenses Web   : http://localhost:$(WEBAPP_PORT)\n'
-	@printf '  Vehicles API   : http://localhost:$(VEHICLES_BACKEND_PORT)\n'
-	@printf '  Vehicles Web   : http://localhost:$(VEHICLES_WEBAPP_PORT)\n'
-	@printf '  Documentacao   : http://localhost:$(DOC_PORT)/doc\n'
+	@printf '  Somma API   : http://localhost:$(BACKEND_PORT)\n'
+	@printf '  Somma Web   : http://localhost:$(WEBAPP_PORT)\n'
 	@printf 'Logs: docker logs -f <container>\n'
 
 dev:
@@ -256,58 +224,47 @@ minio-down:
 	@printf 'MinIO local parado.\n'
 
 env:
-	@if [ ! -f apps/somma-expenses/backend/.env ]; then \
-		cp apps/somma-expenses/backend/.env.example apps/somma-expenses/backend/.env; \
-		printf 'Criado apps/somma-expenses/backend/.env a partir do exemplo.\n'; \
+	@if [ ! -f backend/.env ]; then \
+		cp backend/.env.example backend/.env; \
+		printf 'Criado backend/.env a partir do exemplo.\n'; \
 	fi
 
 # ── Backend (Docker + Air hot reload) ────────────────────────────────────────
 backend: env net
-	$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-backend-dev -f apps/somma-expenses/backend/Dockerfile.dev apps/somma-expenses/backend/
+	$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-backend-dev -f backend/Dockerfile.dev backend/
 	-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-backend-dev
 	-$(CONTAINER_ENGINE) ps -q --filter publish=$(BACKEND_PORT) | xargs -r $(CONTAINER_ENGINE) rm -f
 	$(CONTAINER_ENGINE) run --rm -it \
 		--network $(DEV_NETWORK) \
-		-v "$(CURDIR_UNIX)/apps/somma-expenses/backend:/app" \
+		-v "$(CURDIR_UNIX)/backend:/app" \
 		-p $(BACKEND_PORT):$(BACKEND_PORT) \
 		-e PORT=$(BACKEND_PORT) \
 		-e DATABASE_URL=$(CONTAINER_DATABASE_URL) \
 		-e JWT_SECRET=$(JWT_SECRET) \
 		-e WEBAPP_URL=$(WEBAPP_URL) \
 		-e ENV=$(ENV) \
+		-e SMTP_HOST=$(SMTP_HOST) \
+		-e SMTP_PORT=$(SMTP_PORT) \
+		-e SMTP_USER=$(SMTP_USER) \
+		-e SMTP_PASS=$(SMTP_PASS) \
+		-e FROM_EMAIL=$(FROM_EMAIL) \
 		--name $(APP_NAME)-backend-dev \
 		$(APP_NAME)-backend-dev
 
 # ── Web (Vite + React, HMR) ──────────────────────────────────────────────────
-# node_modules ficam em volume separado para nao sobrescrever o mount do codigo.
-# Se mudar o package.json rode: docker volume rm $(APP_NAME)-web-node-modules
 web: net
-	$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-web-dev -f apps/somma-expenses/web/Dockerfile.dev apps/somma-expenses/web/
+	$(CONTAINER_ENGINE) build -q -t $(APP_NAME)-web-dev -f web/Dockerfile.dev web/
 	-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-web-dev
 	-$(CONTAINER_ENGINE) ps -q --filter publish=$(WEBAPP_PORT) | xargs -r $(CONTAINER_ENGINE) rm -f
 	$(CONTAINER_ENGINE) run --rm -it \
 		--network $(DEV_NETWORK) \
 		--add-host=host.docker.internal:host-gateway \
-		-v "$(CURDIR_UNIX)/apps/somma-expenses/web:/app" \
+		-v "$(CURDIR_UNIX)/web:/app" \
 		-v "$(APP_NAME)-web-node-modules:/app/node_modules" \
 		-p $(WEBAPP_PORT):$(WEBAPP_PORT) \
 		-e API_URL=$(WEB_DEV_API_URL) \
 		--name $(APP_NAME)-web-dev \
 		$(APP_NAME)-web-dev
-
-# ── Doc (Swagger UI com volume mount para hot reload) ────────────────────────
-doc: net
-	-$(CONTAINER_ENGINE) rm -f $(APP_NAME)-doc-dev
-	-$(CONTAINER_ENGINE) ps -q --filter publish=$(DOC_PORT) | xargs -r $(CONTAINER_ENGINE) rm -f
-	$(CONTAINER_ENGINE) run --rm -it \
-		--network $(DEV_NETWORK) \
-		-v "$(CURDIR_UNIX)/apps/doc/openapi.yml:/openapi.yml:ro" \
-		-p $(DOC_PORT):8080 \
-		-e SWAGGER_JSON=/openapi.yml \
-		-e BASE_URL=/doc \
-		-e DEEP_LINKING=true \
-		--name $(APP_NAME)-doc-dev \
-		docker.io/swaggerapi/swagger-ui:latest
 
 migrate-up:
 	@$(MAKE) --no-print-directory migrate-image
@@ -354,14 +311,12 @@ seed-complete: db-seed-complete
 seed-barebones: db-seed-barebones
 
 test:
-	@cd apps/somma-expenses/backend && go test ./...
+	@cd backend && go test ./...
 	@cd database && go test ./...
 
 clean:
-	@rm -rf apps/somma-expenses/backend/tmp
+	@rm -rf backend/tmp
 
 migrate-image:
-	@set -euo pipefail; \
-	if ! $(CONTAINER_ENGINE) image inspect "$(MIGRATE_IMAGE)" >/dev/null 2>&1; then \
-		$(CONTAINER_ENGINE) build -q -t "$(MIGRATE_IMAGE)" -f database/Dockerfile . >/dev/null; \
-	fi
+	@$(CONTAINER_ENGINE) build -q -t "$(MIGRATE_IMAGE)" -f database/Dockerfile . >/dev/null
+

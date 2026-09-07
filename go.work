@@ -1,7 +1,6 @@
 go 1.25.0
 
 use (
-	./apps/somma-expenses/backend
-	./apps/somma-vehicles/backend
+	./backend
 	./database
 )

@@ -1,4 +1,22 @@
 services:
+  db:
+    image: docker.io/library/postgres:18-alpine
+    container_name: somma-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-somma}
+    ports:
+      - "${POSTGRES_PORT:-5454}:5432"
+    volumes:
+      - somma-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d somma"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   migrate:
     build:
       context: .
@@ -6,69 +24,42 @@ services:
     container_name: somma-migrate
     restart: "no"
     environment:
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/somma?sslmode=disable}
+    depends_on:
+      db:
+        condition: service_healthy
 
-  expenses-backend:
+  backend:
     build:
       context: .
-      dockerfile: apps/somma-expenses/backend/Dockerfile
-    container_name: api.somma.nilbyte
+      dockerfile: backend/Dockerfile
+    container_name: somma-backend
     restart: always
     ports:
       - "3300:3300"
     environment:
-      ENV: production
+      ENV: ${ENV:-development}
       PORT: 3300
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      WEBAPP_URL: ${WEBAPP_URL:-http://web.somma.nilbyte:3400}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/somma?sslmode=disable}
+      WEBAPP_URL: ${WEBAPP_URL:-http://localhost:3400}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production-x}
     depends_on:
       migrate:
         condition: service_completed_successfully
 
-  expenses-web:
+  web:
     build:
-      context: apps/somma-expenses/web
+      context: web
       dockerfile: Dockerfile
-    container_name: web.somma.nilbyte
+    container_name: somma-web
     restart: always
     ports:
       - "3400:3400"
     environment:
       PORT: 3400
-      API_URL: ${API_URL:-http://api.somma.nilbyte:3300}
+      API_URL: ${API_URL:-http://localhost:3300}
     depends_on:
-      - expenses-backend
+      - backend
 
-  vehicles-backend:
-    build:
-      context: .
-      dockerfile: apps/somma-vehicles/backend/Dockerfile
-    container_name: vehicles-api.somma.nilbyte
-    restart: always
-    ports:
-      - "3310:3310"
-    environment:
-      ENV: production
-      PORT: 3310
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      EXPENSES_URL: ${WEBAPP_URL:-http://web.somma.nilbyte:3400}
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-
-  vehicles-web:
-    build:
-      context: apps/somma-vehicles/web
-      dockerfile: Dockerfile
-    container_name: vehicles-web.somma.nilbyte
-    restart: always
-    ports:
-      - "3410:3410"
-    environment:
-      PORT: 3410
-      API_URL: ${VEHICLES_API_URL:-http://vehicles-api.somma.nilbyte:3310}
-      VITE_EXPENSES_URL: ${WEBAPP_URL:-http://web.somma.nilbyte:3400}
-    depends_on:
-      - vehicles-backend
+volumes:
+  somma-postgres-data:
