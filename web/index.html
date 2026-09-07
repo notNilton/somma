@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Somma - Gestão financeira pessoal simplificada, inteligente e focada em privacidade. Controle despesas, orçamentos, cartões e relatórios com agilidade." />
+    <meta name="keywords" content="finanças pessoais, controle financeiro, despesas, orçamento, envelopes, economia, dinheiro, nilbyte, somma" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Somma — Finanças Inteligentes e Controle de Despesas" />
+    <meta property="og:description" content="Controle suas receitas, despesas, cartões e metas em uma plataforma limpa, rápida e focada em privacidade." />
+    <meta property="og:image" content="/icons/icon.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Somma — Finanças Inteligentes" />
+    <meta name="twitter:description" content="Controle suas finanças pessoais com facilidade, sem anúncios e com total privacidade." />
+    <title>Somma — Finanças Inteligentes</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css">
+    <script>
+      const t = localStorage.getItem('somma-expenses:theme') || localStorage.getItem('somma:theme')
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
