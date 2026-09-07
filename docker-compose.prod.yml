@@ -1,0 +1,135 @@
+services:
+  db:
+    image: docker.io/library/postgres:18-alpine
+    container_name: somma-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-somma}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - somma-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d somma"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  migrate:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    container_name: somma-migrate
+    restart: "no"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL required}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: somma-backend
+    restart: always
+    ports:
+      - "3300:3300"
+    environment:
+      ENV: production
+      PORT: 3300
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL required}
+      DATABASE_READONLY_URL: ${DATABASE_READONLY_URL:-}
+      WEBAPP_URL: ${WEBAPP_URL:?WEBAPP_URL required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      FROM_EMAIL: ${FROM_EMAIL:-noreply@somma.app}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3300/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: web
+      dockerfile: Dockerfile
+    container_name: somma-web
+    restart: always
+    ports:
+      - "3400:3400"
+    environment:
+      PORT: 3400
+      API_URL: ${API_URL:-http://somma-backend:3300}
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 64M
+    depends_on:
+      - backend
+
+  # Centralized Log Aggregation: Grafana Loki
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: somma-loki
+    restart: always
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./infra/logging/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - somma-loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # Centralized Log Shipper: Promtail
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: somma-promtail
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infra/logging/promtail-config.yaml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+    depends_on:
+      - loki
+
+volumes:
+  somma-postgres-data:
+  somma-loki-data:
