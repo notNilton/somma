@@ -8,8 +8,12 @@ import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import TransactionsPage from './pages/TransactionsPage'
+import ProjectionsPage from './pages/ProjectionsPage'
 import BudgetsPage from './pages/BudgetsPage'
 import ConfigPage from './pages/ConfigPage'
+import AccountsPage from './pages/AccountsPage'
+import ReportsPage from './pages/ReportsPage'
+import NewTransactionPage from './pages/NewTransactionPage'
 
 function RequireAuth() {
   const { authed } = useAuth()
@@ -82,10 +86,44 @@ export const router = createBrowserRouter([
                 <TransactionsPage />
               </Suspense>
             ),
+            children: [
+              {
+                path: 'new',
+                element: <NewTransactionPage />,
+              },
+              {
+                path: 'transfer',
+                element: <NewTransactionPage />,
+              },
+              {
+                path: 'transactions/:id/edit',
+                element: <NewTransactionPage />,
+              },
+            ],
+          },
+          {
+            path: 'projections',
+            element: <ProjectionsPage />,
+          },
+          {
+            path: 'runway',
+            element: <Navigate to="/app/projections" replace />,
+          },
+          {
+            path: 'accounts',
+            element: <AccountsPage />,
           },
           {
             path: 'budgets',
             element: <BudgetsPage />,
+          },
+          {
+            path: 'reports',
+            element: <ReportsPage />,
+          },
+          {
+            path: 'import',
+            element: <Navigate to="/app/reports" replace />,
           },
           {
             path: 'config',

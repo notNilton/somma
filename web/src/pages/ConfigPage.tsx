@@ -1,35 +1,17 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { useLocale } from '../i18n'
 import { settingsApi } from '../api'
 import type { Locale } from '../i18n/translations'
 import { version } from '../../package.json'
-import AccountsSettingsSection from '../components/AccountsSettingsSection'
-import CardsSettingsSection from '../components/CardsSettingsSection'
-
-type Theme = 'auto' | 'light' | 'dark'
-
-function getStoredTheme(): Theme {
-  return (localStorage.getItem('somma:theme') as Theme) ?? 'auto'
-}
-
-function applyTheme(th: Theme) {
-  localStorage.setItem('somma:theme', th)
-  if (th === 'auto') {
-    document.documentElement.removeAttribute('data-theme')
-  } else {
-    document.documentElement.setAttribute('data-theme', th)
-  }
-}
 
 export default function ConfigPage() {
   const { email, logout } = useAuth()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { t, locale, setLocale } = useLocale()
-  const [theme, setTheme] = useState<Theme>(getStoredTheme)
   const [cacheCleared, setCacheCleared] = useState(false)
 
   const [editingName, setEditingName] = useState(false)
@@ -91,11 +73,6 @@ export default function ConfigPage() {
     },
   })
 
-  function handleTheme(th: Theme) {
-    setTheme(th)
-    applyTheme(th)
-  }
-
   function handleClearCache() {
     qc.clear()
     localStorage.removeItem('somma:cache')
@@ -115,21 +92,19 @@ export default function ConfigPage() {
     changePwdMutation.mutate()
   }
 
-  const themeLabels: Record<Theme, string> = {
-    auto: t.config.themeAuto,
-    light: t.config.themeLight,
-    dark: t.config.themeDark,
-  }
-
   return (
     <div className="config-page">
       <h2 className="config-title">{t.config.title}</h2>
 
       {/* Gestão de Contas Bancárias & Carteiras */}
-      <AccountsSettingsSection />
+      <section className="config-section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 className="config-section-title" style={{ margin: 0 }}>Contas e cartões de crédito</h3>
+          <Link to="/app/accounts" className="btn-action-sm">Gerenciar contas</Link>
+        </div>
+      </section>
 
       {/* Gestão e Ciclo de Cartões de Crédito */}
-      <CardsSettingsSection />
 
       <section className="config-section">
         <h3 className="config-section-title">{t.config.sections.account}</h3>
@@ -167,24 +142,6 @@ export default function ConfigPage() {
               </button>
             </div>
           )}
-        </div>
-      </section>
-
-      <section className="config-section">
-        <h3 className="config-section-title">{t.config.sections.appearance}</h3>
-        <div className="config-row">
-          <span className="config-label">{t.config.theme}</span>
-          <div className="config-pills">
-            {(['auto', 'light', 'dark'] as Theme[]).map(th => (
-              <span
-                key={th}
-                className={`pill neutral${theme === th ? ' active-neutral' : ''}`}
-                onClick={() => handleTheme(th)}
-              >
-                {themeLabels[th]}
-              </span>
-            ))}
-          </div>
         </div>
       </section>
 

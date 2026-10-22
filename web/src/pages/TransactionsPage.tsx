@@ -1,35 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate, Outlet } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { accountsApi, cardsApi, categoriesApi, transactionsApi } from '../api'
-import { useAuth } from '../contexts/AuthContext'
+import { transactionsApi } from '../api'
 import { useLocale } from '../i18n'
 import { groupByDay } from '../lib/groupByDay'
 import DayGroupComponent from '../components/DayGroup'
-import TransactionModal from '../components/TransactionModal'
 import EmptyState from '../components/EmptyState'
 import UndoToast from '../components/UndoToast'
 import ShortcutsHint from '../components/ShortcutsHint'
-import AccountsSummaryCard from '../components/AccountsSummaryCard'
-import CashflowRunwaySimulator from '../components/CashflowRunwaySimulator'
-import TransferModal from '../components/TransferModal'
-import ImportModal from '../components/ImportModal'
-import AnalyticsModal from '../components/AnalyticsModal'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import type { CreateInput, Transaction, TxKind, UpdateInput, TransferInput } from '../types'
+import type { Transaction } from '../types'
 
-interface ModalState {
-  open: boolean
-  date: string
-  kind: TxKind
-  transaction?: Transaction
-}
 type UiFilterType = 'ALL' | 'INCOME' | 'EXPENSE'
 
 function pad(n: number) { return String(n).padStart(2, '0') }
 
 export default function TransactionsPage() {
-  const { logout } = useAuth()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { t } = useLocale()
@@ -38,13 +24,6 @@ export default function TransactionsPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
   const [filterType, setFilterType] = useState<UiFilterType>('ALL')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedAccountId, setSelectedAccountId] = useState('')
-  const [selectedCategoryId, setSelectedCategoryId] = useState('')
-
-  const [transferModalOpen, setTransferModalOpen] = useState(false)
-  const [importModalOpen, setImportModalOpen] = useState(false)
-  const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false)
 
   // Seleção múltipla para bulk actions
   const [selectedTxIds, setSelectedTxIds] = useState<Set<string>>(new Set())
@@ -64,72 +43,17 @@ export default function TransactionsPage() {
   const to = `${year}-${pad(month + 1)}-${pad(lastDay)}`
   const txKey = ['transactions', year, month]
 
-  const { data: txs = [], error: txError } = useQuery({
+  const { data: txs = [] } = useQuery({
     queryKey: txKey,
     queryFn: () => transactionsApi.list(from, to),
   })
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => categoriesApi.list(),
-    staleTime: 5 * 60 * 1000,
-  })
+  const prevMonthEnd = new Date(year, month, 0)
+  const before = `${prevMonthEnd.getFullYear()}-${pad(prevMonthEnd.getMonth() + 1)}-${pad(prevMonthEnd.getDate())}`
 
-  const { data: accounts = [] } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: () => accountsApi.list(),
-  })
-
-  const { data: cards = [] } = useQuery({
-    queryKey: ['cards'],
-    queryFn: () => cardsApi.list(),
-  })
-
-  useEffect(() => {
-    if ((txError as Error)?.message === 'UNAUTHORIZED') {
-      logout()
-      navigate('/login', { replace: true })
-    }
-  }, [txError, logout, navigate])
-
-  const createMutation = useMutation({
-    mutationFn: (input: CreateInput) => transactionsApi.create(input),
-    onMutate: async (input) => {
-      await qc.cancelQueries({ queryKey: txKey })
-      const previous = qc.getQueryData<Transaction[]>(txKey)
-      qc.setQueryData<Transaction[]>(txKey, (old = []) => [
-        ...old,
-        {
-          id: 'optimistic-' + Date.now(),
-          type: input.type,
-          kind: input.kind ?? (input.type === 'INCOME' ? 'INCOME' : 'EXPENSE'),
-          status: input.status ?? 'COMPLETED',
-          amount: input.amount,
-          description: input.description,
-          date: input.date + 'T00:00:00Z',
-          categoryId: input.categoryId,
-        },
-      ])
-      return { previous }
-    },
-    onError: (_err, _input, ctx) => {
-      if (ctx?.previous) qc.setQueryData(txKey, ctx.previous)
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: txKey })
-      qc.invalidateQueries({ queryKey: ['accounts'] })
-      qc.invalidateQueries({ queryKey: ['cards'] })
-    },
-  })
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateInput }) =>
-      transactionsApi.update(id, input),
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: txKey })
-      qc.invalidateQueries({ queryKey: ['accounts'] })
-      qc.invalidateQueries({ queryKey: ['cards'] })
-    },
+  const { data: priorTxs = [] } = useQuery({
+    queryKey: ['transactions-before', before],
+    queryFn: () => transactionsApi.list('1970-01-01', before),
   })
 
   const deleteMutation = useMutation({
@@ -147,8 +71,7 @@ export default function TransactionsPage() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: txKey })
-      qc.invalidateQueries({ queryKey: ['accounts'] })
-      qc.invalidateQueries({ queryKey: ['cards'] })
+      qc.invalidateQueries({ queryKey: ['transactions-before'] })
     },
   })
 
@@ -156,17 +79,7 @@ export default function TransactionsPage() {
     mutationFn: (id: string) => transactionsApi.restore(id),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: txKey })
-      qc.invalidateQueries({ queryKey: ['accounts'] })
-      qc.invalidateQueries({ queryKey: ['cards'] })
-    },
-  })
-
-  const transferMutation = useMutation({
-    mutationFn: (input: TransferInput) => accountsApi.transfer(input),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: txKey })
-      qc.invalidateQueries({ queryKey: ['accounts'] })
-      setTransferModalOpen(false)
+      qc.invalidateQueries({ queryKey: ['transactions-before'] })
     },
   })
 
@@ -180,44 +93,14 @@ export default function TransactionsPage() {
     }
     setSelectedTxIds(new Set())
     qc.invalidateQueries({ queryKey: txKey })
-    qc.invalidateQueries({ queryKey: ['accounts'] })
-    qc.invalidateQueries({ queryKey: ['cards'] })
-  }
-
-  // Exportação CSV
-  function handleExportCSV() {
-    const headers = ['ID', 'Data', 'Tipo', 'Descrição', 'Valor (R$)', 'Status', 'Categoria']
-    const rows = filteredTxs.map(t => [
-      t.id,
-      t.date.slice(0, 10),
-      t.type,
-      `"${(t.description || '').replace(/"/g, '""')}"`,
-      t.amount.toFixed(2),
-      t.status,
-      `"${(t.category?.name || '').replace(/"/g, '""')}"`,
-    ])
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `somma_transacoes_${year}_${month + 1}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  function handleExportPDF() {
-    window.print()
+    qc.invalidateQueries({ queryKey: ['transactions-before'] })
   }
 
   const [undoState, setUndoState] = useState<{ id: string; label: string } | null>(null)
-  const [modal, setModal] = useState<ModalState>({ open: false, date: '', kind: 'EXPENSE' })
-  const dialogRef = useRef<HTMLDialogElement>(null)
 
   useKeyboardShortcuts({
     onNewTransaction: () => {
-      const todayDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-      openModal(todayDate, 'EXPENSE')
+      navigate('/app/new')
     },
     onToggleFilter: () => {
       setFilterType(current => {
@@ -228,31 +111,8 @@ export default function TransactionsPage() {
     },
   })
 
-  function openModal(date: string, kind: TxKind, transaction?: Transaction) {
-    setModal({ open: true, date, kind, transaction })
-  }
-
-  function closeModal() {
-    setModal(m => ({ ...m, open: false }))
-  }
-
-  function handleCreate(input: CreateInput) {
-    createMutation.mutate(input, {
-      onSuccess: () => closeModal(),
-    })
-  }
-
-  function handleUpdate(input: CreateInput) {
-    if (!modal.transaction) return
-    updateMutation.mutate(
-      { id: modal.transaction.id, input },
-      { onSuccess: () => closeModal() }
-    )
-  }
-
   function handleEdit(t: Transaction) {
-    const d = t.date.slice(0, 10)
-    openModal(d, t.kind, t)
+    navigate(`/app/new?edit=${t.id}`)
   }
 
   function handleUndo() {
@@ -261,144 +121,35 @@ export default function TransactionsPage() {
     setUndoState(null)
   }
 
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    if (modal.open && !dialog.open) {
-      dialog.showModal()
-    } else if (!modal.open && dialog.open) {
-      dialog.close()
-    }
-  }, [modal.open])
+  const openingBalance = priorTxs.reduce(
+    (sum, t) => t.status === 'CANCELED' ? sum : sum + (t.type === 'INCOME' ? t.amount : -t.amount),
+    0
+  )
 
-  // Filtragem combinada
-  const filteredTxs = txs.filter(t => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      const descMatch = (t.description || '').toLowerCase().includes(q)
-      const catMatch = (t.category?.name || '').toLowerCase().includes(q)
-      if (!descMatch && !catMatch) return false
-    }
-    if (selectedAccountId && t.accountId !== selectedAccountId) {
-      return false
-    }
-    if (selectedCategoryId && t.categoryId !== selectedCategoryId) {
-      return false
-    }
-    return true
-  })
-
-  const groups = groupByDay(filteredTxs, year, month)
+  const groups = groupByDay(txs, year, month, openingBalance)
+  // Só aparecem os dias com lançamento visível no filtro atual; novos lançamentos entram pelo botão flutuante.
+  const visibleGroups = groups.filter(g =>
+    g.transactions.some(tx =>
+      filterType === 'ALL' ? true :
+      filterType === 'INCOME' ? tx.type === 'INCOME' :
+      tx.type !== 'INCOME'
+    )
+  )
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
   return (
     <>
       <div className="tx-page">
-        {/* Painel de saldos consolidados por conta e cartão */}
-        <AccountsSummaryCard
-          accounts={accounts}
-          cards={cards}
-          onOpenTransfer={() => setTransferModalOpen(true)}
-        />
-
-        {/* Projeção Preditiva e Fluxo de Caixa Futuro (Runway) */}
-        <CashflowRunwaySimulator
-          accounts={accounts}
-          cards={cards}
-          transactions={txs}
-        />
-
-        {/* Barra de Ferramentas: Importação, Analytics e Exportações */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.6rem',
-            marginBottom: '1rem',
-          }}
-        >
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="btn-action-sm"
-              onClick={() => setImportModalOpen(true)}
-            >
-              📥 Importar Extrato (OFX/CSV)
+        {/* Barra Superior Centralizada: Navegação de Mês */}
+        <div className="tx-header-toolbar centralized">
+          <div className="month-nav">
+            <button className="today-chip" onClick={goToday} title="Ir para o dia de hoje">
+              Hoje
             </button>
-            <button
-              type="button"
-              className="btn-action-sm btn-action-ghost"
-              onClick={() => setAnalyticsModalOpen(true)}
-            >
-              📊 Relatórios & MoM
-            </button>
+            <button className="month-arrow" onClick={prevMonth} title="Mês anterior">‹</button>
+            <span className="month-label">{t.months[month]} <span className="month-year-badge">{year}</span></span>
+            <button className="month-arrow" onClick={nextMonth} title="Próximo mês">›</button>
           </div>
-
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="btn-action-sm btn-action-ghost"
-              title="Exportar dados do mês em planilha CSV"
-              onClick={handleExportCSV}
-            >
-              📄 CSV
-            </button>
-            <button
-              type="button"
-              className="btn-action-sm btn-action-ghost"
-              title="Exportar / Imprimir relatório em PDF"
-              onClick={handleExportPDF}
-            >
-              🖨️ PDF
-            </button>
-          </div>
-        </div>
-
-        {/* Filtros Avançados e Busca Global */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '0.5rem',
-            marginBottom: '1.25rem',
-            background: 'var(--card-bg, #fff)',
-            padding: '0.75rem',
-            border: '1px solid var(--border-color, #e2e8f0)',
-            borderRadius: '8px',
-          }}
-        >
-          <input
-            className="config-inline-input"
-            style={{ width: '100%' }}
-            type="text"
-            placeholder="🔍 Buscar descrição ou categoria..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-
-          <select
-            className="budget-input"
-            value={selectedAccountId}
-            onChange={e => setSelectedAccountId(e.target.value)}
-          >
-            <option value="">Todas as Contas</option>
-            {accounts.map(a => (
-              <option key={a.id} value={a.id}>{a.name}</option>
-            ))}
-          </select>
-
-          <select
-            className="budget-input"
-            value={selectedCategoryId}
-            onChange={e => setSelectedCategoryId(e.target.value)}
-          >
-            <option value="">Todas as Categorias</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
         </div>
 
         {/* Barra de Ações em Lote (Bulk Actions) */}
@@ -409,7 +160,7 @@ export default function TransactionsPage() {
               background: 'var(--bg-subtle, #f8fafc)',
               border: '1px solid var(--border-color, #e2e8f0)',
               borderRadius: '8px',
-              marginBottom: '1rem',
+              marginBottom: '0.75rem',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -437,15 +188,6 @@ export default function TransactionsPage() {
           </div>
         )}
 
-        <div className="month-nav">
-          <button className="today-chip" onClick={goToday} title="hoje">
-            {now.getDate()}
-          </button>
-          <button className="month-arrow" onClick={prevMonth}>‹</button>
-          <span className="month-label">{t.months[month]}/{String(year).slice(2)}</span>
-          <button className="month-arrow" onClick={nextMonth}>›</button>
-        </div>
-
         <div className="tx-table-header">
           <span className="th-dia">{t.table.day}</span>
           <span className="th-filter">
@@ -462,7 +204,7 @@ export default function TransactionsPage() {
           <span className="th-total">{t.table.total}</span>
         </div>
 
-        {groups.map(g => (
+        {visibleGroups.map(g => (
           <DayGroupComponent
             key={g.dateStr}
             group={g}
@@ -477,22 +219,18 @@ export default function TransactionsPage() {
                 return next
               })
             }}
-            onAdd={openModal}
+            onAdd={(date, kind) => navigate(`/app/new?date=${date}${kind ? `&kind=${kind}` : ''}`)}
             onDelete={id => deleteMutation.mutate(id)}
             onEdit={handleEdit}
           />
         ))}
-        {groups.length === 0 && (
+        {visibleGroups.length === 0 && (
           <EmptyState
-            icon="💸"
             title={t.emptyState.title}
             hint={t.emptyState.hint}
             action={{
               label: `+ ${t.modal.title}`,
-              onClick: () => {
-                const todayDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-                openModal(todayDate, 'EXPENSE')
-              },
+              onClick: () => navigate('/app/new'),
             }}
           />
         )}
@@ -500,58 +238,13 @@ export default function TransactionsPage() {
         <button
           type="button"
           className="fab-add"
-          onClick={() => {
-            const todayDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-            openModal(todayDate, 'EXPENSE')
-          }}
+          onClick={() => navigate('/app/new')}
           aria-label="Novo lançamento"
-          title="Novo lançamento"
+          title="Novo lançamento (Atalho: N)"
         >
           +
         </button>
       </div>
-
-      <dialog
-        className="budget-dialog"
-        ref={dialogRef}
-        onClick={e => { if (e.target === dialogRef.current) closeModal() }}
-      >
-        {modal.open && (
-          <TransactionModal
-            date={modal.date}
-            kind={modal.kind}
-            categories={categories}
-            accounts={accounts}
-            cards={cards}
-            transaction={modal.transaction}
-            onClose={closeModal}
-            onSubmit={modal.transaction ? handleUpdate : handleCreate}
-            error={createMutation.error?.message ?? updateMutation.error?.message}
-          />
-        )}
-      </dialog>
-
-      {transferModalOpen && (
-        <TransferModal
-          accounts={accounts}
-          onClose={() => setTransferModalOpen(false)}
-          onSubmit={input => transferMutation.mutate(input)}
-          error={transferMutation.error?.message}
-        />
-      )}
-
-      {importModalOpen && (
-        <ImportModal
-          onClose={() => setImportModalOpen(false)}
-        />
-      )}
-
-      {analyticsModalOpen && (
-        <AnalyticsModal
-          transactions={txs}
-          onClose={() => setAnalyticsModalOpen(false)}
-        />
-      )}
 
       {undoState && (
         <UndoToast
@@ -561,6 +254,7 @@ export default function TransactionsPage() {
         />
       )}
       <ShortcutsHint />
+      <Outlet />
     </>
   )
 }

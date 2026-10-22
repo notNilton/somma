@@ -6,7 +6,7 @@ export interface T {
   months: [string,string,string,string,string,string,string,string,string,string,string,string]
   filter: { all: string; income: string; expense: string }
   table: { day: string; type: string; total: string }
-  kind: Record<'INCOME'|'EXPENSE'|'CREDIT', { label: string; letter: string }>
+  kind: Record<'INCOME'|'EXPENSE'|'CREDIT'|'SAVING'|'BUDGET', { label: string; letter: string }>
   status: { pending: string }
   emptyState: { title: string; hint: string }
   modal: {
@@ -115,11 +115,13 @@ export const translations: Record<Locale, T> = {
       INCOME:  { label: 'Renda',        letter: 'R' },
       EXPENSE: { label: 'Débito / Pix', letter: 'D' },
       CREDIT:  { label: 'Crédito',      letter: 'C' },
+      SAVING:  { label: 'Poupança',     letter: 'P' },
+      BUDGET:  { label: 'Orçamento',    letter: 'O' },
     },
     status: { pending: 'Pend.' },
     emptyState: {
       title: 'Nenhum lançamento',
-      hint: 'Adicione seu primeiro lançamento clicando em qualquer dia',
+      hint: 'Use o botão + para adicionar um lançamento neste mês.',
     },
     modal: {
       title: 'Novo lançamento',
@@ -230,11 +232,13 @@ export const translations: Record<Locale, T> = {
       INCOME:  { label: 'Income',      letter: 'I' },
       EXPENSE: { label: 'Debit / Pix', letter: 'D' },
       CREDIT:  { label: 'Credit',      letter: 'C' },
+      SAVING:  { label: 'Savings',     letter: 'S' },
+      BUDGET:  { label: 'Budget',      letter: 'B' },
     },
     status: { pending: 'Pend.' },
     emptyState: {
       title: 'No entries',
-      hint: 'Add your first entry by tapping any day',
+      hint: 'Use the + button to add an entry this month.',
     },
     modal: {
       title: 'New entry',
@@ -342,14 +346,16 @@ export const translations: Record<Locale, T> = {
     filter: { all: '⊙ Todos', income: 'Ingreso', expense: 'Gasto' },
     table: { day: 'Día', type: 'Tipo', total: 'Total' },
     kind: {
-      INCOME:  { label: 'Ingreso',     letter: 'I' },
+      INCOME:  { label: 'Ingreso',      letter: 'I' },
       EXPENSE: { label: 'Débito / Pix', letter: 'D' },
-      CREDIT:  { label: 'Crédito',     letter: 'C' },
+      CREDIT:  { label: 'Crédito',      letter: 'C' },
+      SAVING:  { label: 'Ahorro',       letter: 'A' },
+      BUDGET:  { label: 'Presupuesto',  letter: 'P' },
     },
     status: { pending: 'Pend.' },
     emptyState: {
       title: 'Sin movimientos',
-      hint: 'Añade tu primer movimiento tocando cualquier día',
+      hint: 'Usa el botón + para añadir un movimiento este mes.',
     },
     modal: {
       title: 'Nuevo movimiento',

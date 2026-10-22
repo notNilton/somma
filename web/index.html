@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,10 +15,6 @@
     <title>Somma — Finanças Inteligentes</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css">
-    <script>
-      const t = localStorage.getItem('somma-expenses:theme') || localStorage.getItem('somma:theme')
-      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
-    </script>
   </head>
   <body>
     <div id="root"></div>

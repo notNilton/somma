@@ -1,5 +1,5 @@
 interface Props {
-  icon: string
+  icon?: string
   title: string
   hint?: string
   action?: { label: string; onClick: () => void }
@@ -8,7 +8,7 @@ interface Props {
 export default function EmptyState({ icon, title, hint, action }: Props) {
   return (
     <div className="empty-state-card">
-      <span className="empty-state-icon">{icon}</span>
+      {icon && <span className="empty-state-icon">{icon}</span>}
       <p className="empty-state-title">{title}</p>
       {hint && <p className="empty-state-hint">{hint}</p>}
       {action && (

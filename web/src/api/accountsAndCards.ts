@@ -6,6 +6,7 @@ import type {
   TransferInput,
   TransferResponse,
   CreditCard,
+  AccountCardInput,
   CreateCardInput,
   UpdateCardInput,
   CardInvoice,
@@ -29,6 +30,18 @@ export const accountsApi = {
   remove: (id: string) =>
     req<void>(`/api/v1/accounts/${id}`, {
       method: 'DELETE',
+    }),
+  /** Configura (e cria, se preciso) o cartão de crédito da conta. */
+  saveCard: (accountId: string, input: AccountCardInput) =>
+    req<CreditCard>(`/api/v1/accounts/${accountId}/card`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+  /** Pagamento da fatura do cartão da conta; o dinheiro sai de fromAccountId (padrão: a própria conta). */
+  payCard: (accountId: string, input: { amount: number; date: string; fromAccountId?: string }) =>
+    req<Transaction>(`/api/v1/accounts/${accountId}/card/payments`, {
+      method: 'POST',
+      body: JSON.stringify(input),
     }),
   transfer: (input: TransferInput) =>
     req<TransferResponse>('/api/v1/transfers', {

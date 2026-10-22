@@ -69,7 +69,7 @@ export default function LoginPage() {
             <Link to="/register">{t.login.registerLink}</Link>
           </p>
           <p className="login-home-link">
-            <Link to="/">← Voltar para a página inicial</Link>
+            <Link to="/">Voltar para a página inicial</Link>
           </p>
         </div>
       </div>

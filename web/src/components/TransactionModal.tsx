@@ -10,6 +10,7 @@ interface Props {
   cards?: CreditCard[]
   onClose: () => void
   onSubmit: (input: CreateInput) => void
+  onOpenTransfer?: () => void
   transaction?: Transaction
   error?: string
 }
@@ -35,6 +36,7 @@ export default function TransactionModal({
   cards = [],
   onClose,
   onSubmit,
+  onOpenTransfer,
   transaction,
   error,
 }: Props) {
@@ -137,13 +139,26 @@ export default function TransactionModal({
             required
           />
         </div>
-        <button type="button" className="budget-modal-close" onClick={onClose}>×</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          {onOpenTransfer && !isEdit && (
+            <button
+              type="button"
+              className="btn-toolbar"
+              style={{ fontSize: '0.78rem', height: '32px', padding: '0 0.65rem' }}
+              onClick={onOpenTransfer}
+              title="Fazer transferência entre contas"
+            >
+              ⇄ Transferência
+            </button>
+          )}
+          <button type="button" className="budget-modal-close" onClick={onClose}>×</button>
+        </div>
       </div>
 
       {error && <div className="budget-modal-error">{error}</div>}
 
       <div className="tx-modal-type-switch">
-        {(['INCOME', 'EXPENSE', 'CREDIT'] as TxKind[]).map(k => (
+        {(['INCOME', 'EXPENSE', 'CREDIT', 'SAVING', 'BUDGET'] as TxKind[]).map(k => (
           <button
             key={k}
             type="button"

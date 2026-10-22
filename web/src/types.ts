@@ -1,5 +1,5 @@
 export type TxType = 'INCOME' | 'EXPENSE'
-export type TxKind = 'INCOME' | 'EXPENSE' | 'CREDIT'
+export type TxKind = 'INCOME' | 'EXPENSE' | 'CREDIT' | 'SAVING' | 'BUDGET'
 export type TxStatus = 'COMPLETED' | 'PENDING' | 'CANCELED'
 
 export interface Transaction {
@@ -21,6 +21,9 @@ export interface Transaction {
   installmentNumber?: number
   totalInstallments?: number
   isInvoicePayment?: boolean
+  /** Ocorrência de uma saída/entrada mensal recorrente. */
+  isRecurring?: boolean
+  recurringOriginId?: string
 }
 
 export interface Category {
@@ -49,6 +52,9 @@ export interface CreateInput {
   cardId?: string
   accountId?: string
   totalInstallments?: number
+  /** Repete todo mês; sem recurrenceEndDate gera 12 meses. */
+  isRecurring?: boolean
+  recurrenceEndDate?: string
 }
 
 export interface UpdateInput {
@@ -76,6 +82,11 @@ export interface Account {
   initialBalanceCents: number
   balance: number
   balanceCents: number
+  bankCode: string | null
+  bankName: string | null
+  holderName: string | null
+  holderDocumentType: 'CPF' | 'CNPJ' | null
+  holderDocument: string | null
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -86,6 +97,13 @@ export interface CreateAccountInput {
   type?: AccountType
   currencyCode?: string
   initialBalance?: number
+  /** Data (YYYY-MM-DD) do lançamento do depósito inicial; padrão: hoje. */
+  depositDate?: string
+  bankCode?: string
+  bankName?: string
+  holderName?: string
+  /** CPF ou CNPJ, com ou sem pontuação. */
+  holderDocument?: string
 }
 
 export interface UpdateAccountInput {
@@ -93,6 +111,10 @@ export interface UpdateAccountInput {
   type?: AccountType
   currencyCode?: string
   initialBalance?: number
+  bankCode?: string
+  bankName?: string
+  holderName?: string
+  holderDocument?: string
 }
 
 export interface TransferInput {
@@ -118,6 +140,8 @@ export interface CreditCard {
   id: string
   userId: string
   name: string
+  /** Conta bancária dona do cartão (cada conta tem no máximo um). */
+  accountId: string | null
   brand?: string
   last4?: string
   creditLimit: number
@@ -138,6 +162,12 @@ export interface CreateCardInput {
   creditLimit: number
   closingDay: number
   dueDay: number
+}
+
+export interface AccountCardInput {
+  creditLimit?: number
+  closingDay?: number
+  dueDay?: number
 }
 
 export interface UpdateCardInput {

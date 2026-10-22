@@ -9,7 +9,7 @@ export interface DayGroup {
   runningTotal: number
 }
 
-export function groupByDay(transactions: Transaction[], year: number, month: number): DayGroup[] {
+export function groupByDay(transactions: Transaction[], year: number, month: number, openingBalance = 0): DayGroup[] {
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
   const map = new Map<string, DayGroup>()
@@ -35,7 +35,7 @@ export function groupByDay(transactions: Transaction[], year: number, month: num
   }
 
   const sorted = Array.from(map.values()).sort((a, b) => a.dateStr.localeCompare(b.dateStr))
-  let running = 0
+  let running = openingBalance
   for (const g of sorted) {
     running += g.netAmount
     g.runningBalance = running

@@ -103,7 +103,7 @@ export default function RegisterPage() {
             <Link to="/login">{t.register.loginLink}</Link>
           </p>
           <p className="login-home-link">
-            <Link to="/">← Voltar para a página inicial</Link>
+            <Link to="/">Voltar para a página inicial</Link>
           </p>
         </div>
       </div>

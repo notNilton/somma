@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { accountsApi } from '../api'
-import type { Account, AccountType } from '../types'
+import { accountsApi, cardsApi } from '../api'
+import type { Account, AccountCardInput, AccountType, CreateAccountInput } from '../types'
+import { BANKS, formatDocument, maskDocument, onlyDigits } from '../lib/banks'
+import { ACCOUNT_GROUPS, groupAccounts } from '../lib/accountGroups'
+import { formatMoney } from '../lib/format'
+import MoneyInput from './MoneyInput'
+
+const OTHER_BANK = 'OTHER'
+
 
 const accountTypes: Array<{ value: AccountType; label: string }> = [
   { value: 'CHECKING', label: 'Conta Corrente' },
@@ -19,7 +26,15 @@ export default function AccountsSettingsSection() {
 
   const [name, setName] = useState('')
   const [type, setType] = useState<AccountType>('CHECKING')
-  const [initialBalance, setInitialBalance] = useState('')
+  // bankCode: código COMPE da lista, OTHER_BANK para nome livre, '' para nenhum
+  const [bankCode, setBankCode] = useState('')
+  const [otherBankName, setOtherBankName] = useState('')
+  const [holderName, setHolderName] = useState('')
+  const [holderDocument, setHolderDocument] = useState('')
+  // Cartão de crédito da conta
+  const [cardLimit, setCardLimit] = useState('')
+  const [closingDay, setClosingDay] = useState('5')
+  const [dueDay, setDueDay] = useState('15')
   const [error, setError] = useState('')
 
   const { data: accounts = [], isLoading } = useQuery({
@@ -27,19 +42,40 @@ export default function AccountsSettingsSection() {
     queryFn: () => accountsApi.list(),
   })
 
+  const { data: cards = [] } = useQuery({
+    queryKey: ['cards'],
+    queryFn: () => cardsApi.list(),
+  })
+  const cardByAccount = new Map(cards.filter(c => c.accountId).map(c => [c.accountId!, c]))
+
+  const groups = groupAccounts(accounts)
+  const total = accounts.reduce((sum, a) => sum + a.balance, 0)
+
+  // Salva a conta e, se pedido, o cartão de crédito dela.
   const createMutation = useMutation({
-    mutationFn: accountsApi.create,
+    mutationFn: async ({ input, card }: { input: CreateAccountInput; card?: AccountCardInput }) => {
+      const acc = await accountsApi.create(input)
+      if (card) await accountsApi.saveCard(acc.id, card)
+      return acc
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['accounts'] })
+      qc.invalidateQueries({ queryKey: ['cards'] })
+      qc.invalidateQueries({ queryKey: ['transactions'] })
       resetForm()
     },
     onError: (err: Error) => setError(err.message),
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, input }: { id: string; input: any }) => accountsApi.update(id, input),
+    mutationFn: async ({ id, input, card }: { id: string; input: any; card?: AccountCardInput }) => {
+      const acc = await accountsApi.update(id, input)
+      if (card) await accountsApi.saveCard(id, card)
+      return acc
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['accounts'] })
+      qc.invalidateQueries({ queryKey: ['cards'] })
       qc.invalidateQueries({ queryKey: ['transactions'] })
       resetForm()
       setReconcilingAccount(null)
@@ -55,7 +91,13 @@ export default function AccountsSettingsSection() {
   function resetForm() {
     setName('')
     setType('CHECKING')
-    setInitialBalance('')
+    setBankCode('')
+    setOtherBankName('')
+    setHolderName('')
+    setHolderDocument('')
+    setCardLimit('')
+    setClosingDay('5')
+    setDueDay('15')
     setError('')
     setOpenNew(false)
     setEditingId(null)
@@ -65,7 +107,15 @@ export default function AccountsSettingsSection() {
     setEditingId(acc.id)
     setName(acc.name)
     setType(acc.type)
-    setInitialBalance(String(acc.initialBalance))
+    const known = BANKS.find(b => b.code === acc.bankCode)
+    setBankCode(known ? known.code : acc.bankName ? OTHER_BANK : '')
+    setOtherBankName(known ? '' : acc.bankName ?? '')
+    setHolderName(acc.holderName ?? '')
+    setHolderDocument(formatDocument(acc.holderDocument ?? ''))
+    const card = cardByAccount.get(acc.id)
+    setCardLimit(card && card.creditLimit > 0 ? String(card.creditLimit) : '')
+    setClosingDay(String(card?.closingDay ?? 5))
+    setDueDay(String(card?.dueDay ?? 15))
     setOpenNew(true)
   }
 
@@ -90,31 +140,56 @@ export default function AccountsSettingsSection() {
     })
   }
 
+  function selectedBank() {
+    if (bankCode === OTHER_BANK) return { code: '', name: otherBankName.trim() }
+    const bank = BANKS.find(b => b.code === bankCode)
+    return bank ? { code: bank.code, name: bank.name } : { code: '', name: '' }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim()) {
-      setError('Nome é obrigatório')
+    const bank = selectedBank()
+    // Sem nome próprio, a conta leva o nome do banco.
+    const accountName = name.trim() || bank.name
+    if (!accountName) {
+      setError('Escolha um banco ou dê um nome à conta')
       return
     }
-    const balanceNum = parseFloat(initialBalance) || 0
+    const doc = onlyDigits(holderDocument)
+    if (doc && doc.length !== 11 && doc.length !== 14) {
+      setError('CPF deve ter 11 dígitos e CNPJ 14')
+      return
+    }
+    const closing = parseInt(closingDay, 10)
+    const due = parseInt(dueDay, 10)
+    if (!(closing >= 1 && closing <= 31 && due >= 1 && due <= 31)) {
+      setError('Fechamento e vencimento do cartão devem ser dias entre 1 e 31')
+      return
+    }
+    const input = {
+      name: accountName,
+      type,
+      bankCode: bank.code,
+      bankName: bank.name,
+      holderName: holderName.trim(),
+      holderDocument: doc,
+    }
+    // O cartão só é gravado se já existir ou se um limite foi informado;
+    // sem isso ele nasce sozinho na primeira compra no crédito.
+    const limit = parseFloat(cardLimit) || 0
+    const hasCard = editingId ? cardByAccount.has(editingId) : false
+    const card = hasCard || limit > 0 ? { creditLimit: limit, closingDay: closing, dueDay: due } : undefined
     if (editingId) {
-      updateMutation.mutate({
-        id: editingId,
-        input: { name, type, initialBalance: balanceNum },
-      })
+      updateMutation.mutate({ id: editingId, input, card })
     } else {
-      createMutation.mutate({
-        name,
-        type,
-        initialBalance: balanceNum,
-      })
+      createMutation.mutate({ input, card })
     }
   }
 
   return (
     <section className="config-section">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 className="config-section-title">Contas Bancárias & Carteiras</h3>
+        <h3 className="config-section-title">Suas contas</h3>
         {!openNew && (
           <button
             type="button"
@@ -138,13 +213,12 @@ export default function AccountsSettingsSection() {
             Informe o saldo real exibido no aplicativo do seu banco para ajustar a reconciliação do saldo:
           </p>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <input
+            <MoneyInput
               className="config-inline-input"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
+              placeholder="0,00"
               value={realBalanceInput}
-              onChange={e => setRealBalanceInput(e.target.value)}
+              onChange={setRealBalanceInput}
+              allowNegative
               required
               autoFocus
             />
@@ -171,21 +245,25 @@ export default function AccountsSettingsSection() {
           <h4>{editingId ? 'Editar Conta' : 'Cadastrar Nova Conta'}</h4>
           {error && <div className="config-form-error">{error}</div>}
 
-          <label className="budget-field">
-            <span className="budget-field-label">Nome da Conta / Banco</span>
-            <input
-              className="config-inline-input"
-              placeholder="Ex: Nubank, Itaú, Carteira física"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-              autoFocus
-            />
-          </label>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <label className="budget-field">
-              <span className="budget-field-label">Tipo de Conta</span>
+              <span className="budget-field-label">Banco</span>
+              <select
+                className="budget-input"
+                value={bankCode}
+                onChange={e => setBankCode(e.target.value)}
+                autoFocus
+              >
+                <option value="">Nenhum (carteira, dinheiro)</option>
+                {BANKS.map(b => (
+                  <option key={b.code} value={b.code}>{b.code} · {b.name}</option>
+                ))}
+                <option value={OTHER_BANK}>Outro…</option>
+              </select>
+            </label>
+
+            <label className="budget-field">
+              <span className="budget-field-label">Tipo de conta</span>
               <select
                 className="budget-input"
                 value={type}
@@ -196,18 +274,90 @@ export default function AccountsSettingsSection() {
                 ))}
               </select>
             </label>
+          </div>
 
+          {bankCode === OTHER_BANK && (
             <label className="budget-field">
-              <span className="budget-field-label">Saldo Inicial (R$)</span>
+              <span className="budget-field-label">Nome do banco</span>
               <input
                 className="config-inline-input"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={initialBalance}
-                onChange={e => setInitialBalance(e.target.value)}
+                placeholder="Ex: Banco Pan"
+                value={otherBankName}
+                onChange={e => setOtherBankName(e.target.value)}
+                required
               />
             </label>
+          )}
+
+          <label className="budget-field">
+            <span className="budget-field-label">Nome da conta (opcional)</span>
+            <input
+              className="config-inline-input"
+              placeholder={selectedBank().name || 'Ex: Carteira física'}
+              value={name}
+              onChange={e => setName(e.target.value)}
+            />
+          </label>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <label className="budget-field">
+              <span className="budget-field-label">Titular (opcional)</span>
+              <input
+                className="config-inline-input"
+                placeholder="Nome ou razão social"
+                value={holderName}
+                onChange={e => setHolderName(e.target.value)}
+              />
+            </label>
+
+            <label className="budget-field">
+              <span className="budget-field-label">CPF ou CNPJ (opcional)</span>
+              <input
+                className="config-inline-input"
+                inputMode="numeric"
+                placeholder="000.000.000-00"
+                value={holderDocument}
+                onChange={e => setHolderDocument(formatDocument(e.target.value))}
+              />
+            </label>
+          </div>
+
+          <div className="acc-card-fields">
+            <span className="acc-card-fields-title">Cartão de crédito</span>
+            <span className="config-hint">Compras no crédito feitas nesta conta usam este cartão.</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.75rem' }}>
+              <label className="budget-field">
+                <span className="budget-field-label">Limite (opcional)</span>
+                <MoneyInput
+                  className="config-inline-input"
+                  placeholder="0,00"
+                  value={cardLimit}
+                  onChange={setCardLimit}
+                />
+              </label>
+              <label className="budget-field">
+                <span className="budget-field-label">Fecha dia</span>
+                <input
+                  className="config-inline-input"
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={closingDay}
+                  onChange={e => setClosingDay(e.target.value)}
+                />
+              </label>
+              <label className="budget-field">
+                <span className="budget-field-label">Vence dia</span>
+                <input
+                  className="config-inline-input"
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={dueDay}
+                  onChange={e => setDueDay(e.target.value)}
+                />
+              </label>
+            </div>
           </div>
 
           <div className="config-form-actions">
@@ -228,63 +378,91 @@ export default function AccountsSettingsSection() {
           Nenhuma conta bancária cadastrada. Adicione sua conta corrente, poupança ou dinheiro físico.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.75rem' }}>
-          {accounts.map(acc => (
-            <div
-              key={acc.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.6rem 0.8rem',
-                border: '1px solid var(--border-color, #e2e8f0)',
-                borderRadius: '6px',
-              }}
-            >
-              <div>
-                <strong>{acc.name}</strong>
-                <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  ({accountTypes.find(t => t.value === acc.type)?.label ?? acc.type})
-                </span>
-                <div style={{ fontSize: '0.85rem', marginTop: '0.2rem' }}>
-                  Saldo Calculado: <strong>R$ {acc.balance.toFixed(2)}</strong>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.4rem' }}>
-                    (Inicial: R$ {acc.initialBalance.toFixed(2)})
-                  </span>
-                </div>
+        ACCOUNT_GROUPS.map(g => {
+          const group = groups.get(g.key)
+          if (!group || group.accounts.length === 0) return null
+          return (
+            <div key={g.key} className="acc-group">
+              <div className="acc-group-head">
+                <span><span className={`acc-swatch ${g.key}`} aria-hidden="true" />{g.label}</span>
+                <span className="acc-num">{formatMoney(group.total)}</span>
               </div>
+              {group.accounts.map(acc => (
+                <div key={acc.id} className="acc-row">
+                  <div className="acc-row-main">
+                    <div className="acc-row-name">
+                      {acc.bankCode && <span className="acc-bank-code">{acc.bankCode}</span>}
+                      <strong>{acc.name}</strong>
+                      <span className="acc-row-type">
+                        {accountTypes.find(t => t.value === acc.type)?.label ?? acc.type}
+                      </span>
+                    </div>
+                    {(acc.bankName || acc.holderName || acc.holderDocument) && (
+                      <div className="acc-row-meta">
+                        {[
+                          acc.bankName !== acc.name && acc.bankName,
+                          acc.holderName,
+                          acc.holderDocument &&
+                            `${acc.holderDocumentType} ${maskDocument(acc.holderDocument, acc.holderDocumentType)}`,
+                        ].filter(Boolean).join(' · ')}
+                      </div>
+                    )}
+                    {(() => {
+                      const card = cardByAccount.get(acc.id)
+                      if (!card) return null
+                      const used = card.creditLimit - card.availableLimit
+                      return (
+                        <div className="acc-row-meta acc-row-card">
+                          Cartão ·{' '}
+                          {card.creditLimit > 0
+                            ? `disponível ${formatMoney(card.availableLimit)} de ${formatMoney(card.creditLimit)}`
+                            : `usado ${formatMoney(used)} · sem limite definido`}
+                          {` · fecha dia ${card.closingDay} · vence dia ${card.dueDay}`}
+                        </div>
+                      )
+                    })()}
+                  </div>
 
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <button
-                  type="button"
-                  className="btn-action-sm"
-                  title="Reconciliar com saldo do extrato bancário"
-                  onClick={() => handleStartReconcile(acc)}
-                >
-                  Reconciliar
-                </button>
-                <button
-                  type="button"
-                  className="btn-action-sm btn-action-ghost"
-                  onClick={() => handleStartEdit(acc)}
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  className="btn-action-sm btn-action-danger"
-                  onClick={() => {
-                    if (confirm(`Deseja realmente remover a conta "${acc.name}"?`)) {
-                      removeMutation.mutate(acc.id)
-                    }
-                  }}
-                >
-                  Excluir
-                </button>
-              </div>
+                  <div className="acc-row-values">
+                    <strong className="acc-num">{formatMoney(acc.balance)}</strong>
+                    <span className="acc-row-meta">
+                      {total > 0 ? `${((acc.balance / total) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% do total` : ''}
+                    </span>
+                  </div>
+
+                  <div className="acc-row-actions">
+                    <button
+                      type="button"
+                      className="btn-action-sm btn-action-ghost"
+                      title="Ajustar ao saldo do extrato bancário"
+                      onClick={() => handleStartReconcile(acc)}
+                    >
+                      Reconciliar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-action-sm btn-action-ghost"
+                      onClick={() => handleStartEdit(acc)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-action-sm btn-action-ghost btn-action-danger"
+                      onClick={() => {
+                        if (confirm(`Deseja realmente remover a conta "${acc.name}"?`)) {
+                          removeMutation.mutate(acc.id)
+                        }
+                      }}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )
+        })
       )}
     </section>
   )

@@ -8,9 +8,11 @@ const KIND_TONES: Record<TxKind, string> = {
   INCOME: 'income',
   EXPENSE: 'expense',
   CREDIT: 'credit',
+  SAVING: 'saving',
+  BUDGET: 'budget',
 }
 
-const ALL_KINDS: TxKind[] = ['INCOME', 'EXPENSE', 'CREDIT']
+const ALL_KINDS: TxKind[] = ['INCOME', 'EXPENSE', 'CREDIT', 'SAVING', 'BUDGET']
 
 interface Props {
   group: DayGroup
@@ -18,7 +20,7 @@ interface Props {
   isToday: boolean
   selectedTxIds?: Set<string>
   onToggleSelectTx?: (id: string) => void
-  onAdd: (date: string, kind: TxKind) => void
+  onAdd: (date: string, kind?: TxKind) => void
   onDelete: (id: string) => void
   onEdit: (tx: Transaction) => void
 }
@@ -36,19 +38,19 @@ export default function DayGroupComponent({
   const [expanded, setExpanded] = useState<TxKind | null>(null)
   const { t } = useLocale()
 
-  const visibleKinds = ALL_KINDS.filter(kind =>
+  const allowedKinds = ALL_KINDS.filter(kind =>
     filterType === 'ALL' ? true :
     filterType === 'INCOME' ? kind === 'INCOME' :
     kind !== 'INCOME'
   )
+  // Só aparecem as linhas dos tipos que têm lançamento no dia.
+  const visibleKinds = allowedKinds.filter(kind => txsFor(kind).length > 0)
 
   const saldoClass = group.runningBalance > 0 ? 'pos' : group.runningBalance < 0 ? 'neg' : 'zero'
   const totalClass = group.runningTotal > 0 ? 'pos' : group.runningTotal < 0 ? 'neg' : 'zero'
 
   function getEffectiveKind(tx: Transaction): TxKind {
-    if (tx.kind === 'CREDIT') return 'CREDIT'
-    if (tx.kind === 'INCOME') return 'INCOME'
-    if (tx.kind === 'EXPENSE') return 'EXPENSE'
+    if (tx.kind === 'CREDIT' || tx.kind === 'SAVING' || tx.kind === 'BUDGET') return tx.kind
     return tx.type === 'INCOME' ? 'INCOME' : 'EXPENSE'
   }
 
@@ -61,50 +63,51 @@ export default function DayGroupComponent({
   }
 
   function handleRowClick(kind: TxKind) {
-    if (totalFor(kind) > 0) {
-      setExpanded(prev => prev === kind ? null : kind)
-      return
-    }
-    onAdd(group.dateStr, kind)
+    setExpanded(prev => prev === kind ? null : kind)
   }
 
   return (
-    <div className={`day-group${isToday ? ' is-today' : ''}`}>
-      <div className="day-col">
-        <span className="dia-num">{group.dayNum}</span>
-        <span className="dia-sem">{new Date(group.dateStr + 'T12:00:00Z').toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}</span>
+    <div className={`tx-day-row${isToday ? ' is-today' : ''}`}>
+      <div className={`tx-day-num${isToday ? ' today' : ''}`}>
+        {group.dayNum}
       </div>
 
-      <div className="tx-kinds">
+      <div>
         {visibleKinds.map(kind => {
           const txs = txsFor(kind)
           const total = totalFor(kind)
           const isExp = expanded === kind
           const label = t.kind[kind].label
+          const tone = KIND_TONES[kind]
+          const hasItems = txs.length > 0
 
           return (
-            <div key={kind} className={`tx-kind-block ${KIND_TONES[kind]}`}>
+            <div key={kind}>
               <div
-                className={`tx-kind-row ${KIND_TONES[kind]}${total === 0 ? ' is-empty' : ''}`}
+                className="tx-type-row"
                 onClick={() => handleRowClick(kind)}
+                title={hasItems ? `${label}: ${formatMoney(total)}` : label}
               >
-                <span className="tx-kind-label">{label}</span>
-                <span className="tx-kind-total">
+                <span className={`tx-type-icon ${tone}${hasItems ? '' : ' dim'}`}>
+                  {t.kind[kind].letter}
+                </span>
+                <span className="tx-type-label">{label}</span>
+                <span className={`tx-type-amt ${hasItems ? tone : 'zero'}`}>
                   {total > 0 ? formatMoney(total) : '—'}
                 </span>
-                {txs.length > 0 && (
-                  <span className={`tx-kind-chevron ${isExp ? 'open' : ''}`}>›</span>
+                {hasItems && (
+                  <span className="tx-expand-arrow">{isExp ? '▴' : '▾'}</span>
                 )}
               </div>
 
-              {isExp && txs.length > 0 && (
-                <div className="tx-detail-list">
+              {isExp && hasItems && (
+                <div className="tx-type-detail">
                   {txs.map(tx => {
                     const isSelected = selectedTxIds.has(tx.id)
                     return (
                       <div
                         key={tx.id}
-                        className={`tx-detail-item ${isSelected ? 'tx-selected' : ''}`}
+                        className={`tx-detail-row${isSelected ? ' tx-selected' : ''}`}
                         onClick={e => {
                           if (onToggleSelectTx) {
                             e.stopPropagation()
@@ -123,6 +126,12 @@ export default function DayGroupComponent({
                         <span className="tx-detail-desc">
                           {tx.category?.name || tx.description || label}
                         </span>
+                        {tx.isInvoicePayment && (
+                          <span className="tx-badge recurring" title="Pagamento de fatura do cartão">fatura</span>
+                        )}
+                        {tx.isRecurring && (
+                          <span className="tx-badge recurring" title="Repete todo mês">mensal</span>
+                        )}
                         {tx.status === 'PENDING' && (
                           <span className="tx-badge pending">{t.status.pending}</span>
                         )}
