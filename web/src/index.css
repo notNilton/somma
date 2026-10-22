@@ -3698,9 +3698,12 @@ body:has(.app-nav) :is(input, select, textarea):focus {
   -webkit-backdrop-filter: none;
 }
 .drawer-panel {
-  max-width: 440px;
+  max-width: 540px;
   border-left: 1px solid var(--border);
   font-size: 0.875rem;
+}
+@media (max-width: 560px) {
+  .drawer-panel { max-width: 100%; }
 }
 
 /* Cabeçalho */
