@@ -8,93 +8,82 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nilbyte/somma/backend/internal/cache"
+	"github.com/nilbyte/somma/backend/internal/database"
 	"github.com/nilbyte/somma/backend/internal/handlers"
-	"github.com/nilbyte/somma/backend/internal/mail"
 	"github.com/nilbyte/somma/backend/internal/routes"
+	"github.com/nilbyte/somma/backend/internal/services"
 )
 
-var JWTKey = []byte("test-secret-key")
+var JWTKey = []byte("test-jwt-secret-key-32-bytes-long!")
 
-var migrateOnce sync.Once
-var migrateErr error
+var (
+	migrateOnce sync.Once
+	migrateErr  error
+)
 
-// Setup conecta no banco de teste e retorna pool + handler + mux.
-// Usa DATABASE_URL quando disponível. Sem DATABASE_URL, tenta o DSN local padrão.
-// Se o banco padrão local não estiver disponível, o teste é pulado com instrução clara.
-func Setup(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
+func SetupTestApp(t *testing.T) (*pgxpool.Pool, *http.ServeMux) {
 	t.Helper()
 
 	dsn := os.Getenv("DATABASE_URL")
-	usingDefaultDSN := dsn == ""
 	if dsn == "" {
-		dsn = "postgres://postgres:postgres@localhost:5454/somma_test?sslmode=disable"
+		dsn = "postgres://somma:somma@localhost:5432/somma_test?sslmode=disable"
 	}
-	dsn = normalizeDSN(dsn)
 
-	pool, err := pgxpool.New(context.Background(), dsn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cfg, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		t.Fatalf("testutil: parse dsn: %v", err)
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		t.Fatalf("testutil: connect db: %v", err)
 	}
 
-	if err := pool.Ping(context.Background()); err != nil {
-		if usingDefaultDSN {
+	if err := pool.Ping(ctx); err != nil {
+		if os.Getenv("CI") == "" {
 			pool.Close()
-			t.Skipf("testutil: banco de integração indisponível em %s; suba o banco de teste ou defina DATABASE_URL: %v", dsn, err)
+			t.Skipf("testutil: banco de integração indisponível em %s: %v", dsn, err)
 		}
 		t.Fatalf("testutil: ping db: %v", err)
 	}
 
-	if err := ensureMigrations(dsn); err != nil {
-		t.Fatalf("testutil: migrate db: %v", err)
-	}
-
 	t.Cleanup(func() { pool.Close() })
 
+	queries := database.New(pool)
+	cardService := services.NewCardService(pool, queries)
+	paymentService := services.NewPaymentService(pool, queries)
+	h := handlers.New(pool, queries, cardService, paymentService, JWTKey)
+
 	mux := http.NewServeMux()
-	dummyMailer := mail.NewMailer(mail.SMTPOptions{})
-	routes.Register(mux, pool, JWTKey, cache.New(), false, dummyMailer, "http://localhost:3400")
+	routes.Register(mux, h, JWTKey)
 
 	return pool, mux
 }
 
-// CleanTables trunca todas as tabelas em ordem segura (FK).
 func CleanTables(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	tables := []string{
-		"password_reset_tokens",
-		"transactions",
-		"budgets",
-		"categories",
+		"invoice_installments",
+		"credit_card_purchases",
+		"account_transactions",
+		"credit_card_invoices",
+		"credit_cards",
+		"accounts",
 		"users",
 	}
 	for _, tbl := range tables {
-		if _, err := pool.Exec(context.Background(), fmt.Sprintf("DELETE FROM %s", tbl)); err != nil {
-			t.Fatalf("testutil: clean %s: %v", tbl, err)
-		}
+		_, _ = pool.Exec(context.Background(), fmt.Sprintf("DELETE FROM %s", tbl))
 	}
 }
 
-// RegisterUser registra um usuário e retorna o token JWT.
-func RegisterUser(t *testing.T, mux *http.ServeMux, email, password string) string {
-	t.Helper()
-	body := map[string]string{"email": email, "password": password}
-	rec := Do(t, mux, "POST", "/auth/register", body, "")
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("RegisterUser: got %d, body: %s", rec.Code, rec.Body.String())
-	}
-	return Token(t, rec)
-}
-
-// Do executa uma request no mux e retorna o ResponseRecorder.
 func Do(t *testing.T, mux *http.ServeMux, method, path string, body any, token string) *httptest.ResponseRecorder {
 	t.Helper()
 	var b *bytes.Buffer
@@ -108,13 +97,6 @@ func Do(t *testing.T, mux *http.ServeMux, method, path string, body any, token s
 		b = bytes.NewBuffer(nil)
 	}
 
-	if !strings.HasPrefix(path, "/api") {
-		if strings.HasPrefix(path, "/auth") || strings.HasPrefix(path, "/users") || strings.HasPrefix(path, "/health") {
-			path = "/api" + path
-		} else {
-			path = "/api/v1" + path
-		}
-	}
 	req := httptest.NewRequest(method, path, b)
 	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
@@ -126,25 +108,6 @@ func Do(t *testing.T, mux *http.ServeMux, method, path string, body any, token s
 	return rec
 }
 
-// Token extrai o token JWT do cookie de sessão ou do body JSON.
-func Token(t *testing.T, rec *httptest.ResponseRecorder) string {
-	t.Helper()
-	for _, c := range rec.Result().Cookies() {
-		if c.Name == "somma_session" && c.Value != "" {
-			return c.Value
-		}
-	}
-	var resp map[string]string
-	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err == nil {
-		if tok, ok := resp["sessionToken"]; ok && tok != "" {
-			return tok
-		}
-	}
-	t.Fatalf("Token: session token/cookie not found in response (body: %s)", rec.Body.String())
-	return ""
-}
-
-// DecodeJSON decodifica o body JSON do recorder em v.
 func DecodeJSON(t *testing.T, rec *httptest.ResponseRecorder, v any) {
 	t.Helper()
 	if err := json.Unmarshal(rec.Body.Bytes(), v); err != nil {
@@ -152,66 +115,9 @@ func DecodeJSON(t *testing.T, rec *httptest.ResponseRecorder, v any) {
 	}
 }
 
-// NewHandler cria um Handler isolado para testes que precisam injetar deps direto.
 func NewHandler(pool *pgxpool.Pool) *handlers.Handler {
-	return handlers.New(pool, JWTKey, cache.New(), false, mail.NewMailer(mail.SMTPOptions{}), "http://localhost:3400")
-}
-
-func ensureMigrations(dsn string) error {
-	migrateOnce.Do(func() {
-		_, filename, _, ok := runtime.Caller(0)
-		if !ok {
-			migrateErr = fmt.Errorf("runtime caller failed")
-			return
-		}
-
-		root := filepath.Clean(filepath.Join(filepath.Dir(filename), "..", "..", ".."))
-		if err := resetTestDatabase(dsn); err != nil {
-			migrateErr = fmt.Errorf("reset test db: %v", err)
-			return
-		}
-
-		run := func() ([]byte, error) {
-			cmd := exec.Command("go", "run", "./cmd/migrate", "up")
-			cmd.Dir = filepath.Join(root, "database")
-			cmd.Env = append(os.Environ(), "DATABASE_URL="+dsn)
-			return cmd.CombinedOutput()
-		}
-
-		if out, err := run(); err != nil {
-			if err != nil {
-				migrateErr = fmt.Errorf("%v: %s", err, string(out))
-			}
-		}
-	})
-	return migrateErr
-}
-
-func resetTestDatabase(dsn string) error {
-	pool, err := pgxpool.New(context.Background(), dsn)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-
-	for _, stmt := range []string{
-		`DROP SCHEMA IF EXISTS public CASCADE`,
-		`CREATE SCHEMA public`,
-		`GRANT ALL ON SCHEMA public TO public`,
-	} {
-		if _, err := pool.Exec(context.Background(), stmt); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func normalizeDSN(dsn string) string {
-	if strings.Contains(dsn, "sslmode=") {
-		return dsn
-	}
-	if strings.Contains(dsn, "?") {
-		return dsn + "&sslmode=disable"
-	}
-	return dsn + "?sslmode=disable"
+	queries := database.New(pool)
+	cardService := services.NewCardService(pool, queries)
+	paymentService := services.NewPaymentService(pool, queries)
+	return handlers.New(pool, queries, cardService, paymentService, JWTKey)
 }

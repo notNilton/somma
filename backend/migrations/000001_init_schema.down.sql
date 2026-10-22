@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS invoice_installments;
+DROP TABLE IF EXISTS credit_card_purchases;
+DROP TABLE IF EXISTS account_transactions;
+DROP TABLE IF EXISTS credit_card_invoices;
+DROP TABLE IF EXISTS credit_cards;
+DROP TABLE IF EXISTS accounts;
+DROP TABLE IF EXISTS users;
+DROP TYPE IF EXISTS transaction_type;
+DROP TYPE IF EXISTS invoice_status;

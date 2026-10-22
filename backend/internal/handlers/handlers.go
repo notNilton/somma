@@ -2,56 +2,60 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nilbyte/somma/backend/internal/cache"
-	"github.com/nilbyte/somma/backend/internal/mail"
+	"github.com/nilbyte/somma/backend/internal/database"
+	"github.com/nilbyte/somma/backend/internal/services"
 )
 
 type Handler struct {
-	db           *pgxpool.Pool
-	readDB       *pgxpool.Pool
-	jwtKey       []byte
-	cache        *cache.Cache
-	isProduction bool
-	mailer       mail.Mailer
-	webappURL    string
+	db             *pgxpool.Pool
+	queries        *database.Queries
+	cardService    *services.CardService
+	paymentService *services.PaymentService
+	jwtKey         []byte
 }
 
-func New(db *pgxpool.Pool, jwtKey []byte, c *cache.Cache, isProduction bool, mailer mail.Mailer, webappURL string) *Handler {
-	return NewWithReadDB(db, db, jwtKey, c, isProduction, mailer, webappURL)
-}
-
-func NewWithReadDB(db *pgxpool.Pool, readDB *pgxpool.Pool, jwtKey []byte, c *cache.Cache, isProduction bool, mailer mail.Mailer, webappURL string) *Handler {
-	if readDB == nil {
-		readDB = db
-	}
+func New(
+	db *pgxpool.Pool,
+	queries *database.Queries,
+	cardService *services.CardService,
+	paymentService *services.PaymentService,
+	jwtKey []byte,
+) *Handler {
 	return &Handler{
-		db:           db,
-		readDB:       readDB,
-		jwtKey:       jwtKey,
-		cache:        c,
-		isProduction: isProduction,
-		mailer:       mailer,
-		webappURL:    webappURL,
+		db:             db,
+		queries:        queries,
+		cardService:    cardService,
+		paymentService: paymentService,
+		jwtKey:         jwtKey,
 	}
 }
 
-// dbRead returns the read replica pool if configured, or the primary db pool
-func (h *Handler) getReadDB() *pgxpool.Pool {
-	if h.readDB != nil {
-		return h.readDB
-	}
-	return h.db
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
+func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
-func writeError(w http.ResponseWriter, status int, msg string) {
-	writeJSON(w, status, map[string]string{"error": msg})
+func writeError(w http.ResponseWriter, status int, message string) {
+	writeJSON(w, status, map[string]string{"error": message})
+}
+
+func uuidToString(u pgtype.UUID) string {
+	if !u.Valid {
+		return ""
+	}
+	src := u.Bytes
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+		src[0:4], src[4:6], src[6:8], src[8:10], src[10:16])
+}
+
+func stringToUUID(s string) (pgtype.UUID, error) {
+	var u pgtype.UUID
+	err := u.Scan(s)
+	return u, err
 }

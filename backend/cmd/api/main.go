@@ -8,66 +8,43 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/nilbyte/somma/backend/internal/cache"
 	"github.com/nilbyte/somma/backend/internal/config"
-	"github.com/nilbyte/somma/backend/internal/jobs"
-	"github.com/nilbyte/somma/backend/internal/mail"
+	"github.com/nilbyte/somma/backend/internal/database"
+	"github.com/nilbyte/somma/backend/internal/handlers"
 	"github.com/nilbyte/somma/backend/internal/middleware"
 	"github.com/nilbyte/somma/backend/internal/routes"
-	"github.com/nilbyte/somma/database"
+	"github.com/nilbyte/somma/backend/internal/services"
+	dbpkg "github.com/nilbyte/somma/database"
 )
 
 func main() {
-	log.Printf("STARTING BACKEND VERSION 1.0.60 (DEBUG)")
+	log.Printf("STARTING BACKEND - SOMMA FINANCE")
 
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: .env file not found")
 	}
 
-	log.Printf("CHECKPOINT: Loading config")
 	cfg := config.Load()
 	log.Printf("CHECKPOINT: Config loaded (Env: %s, Port: %s)", cfg.Env, cfg.Port)
 
-	log.Printf("CHECKPOINT: Connecting to database")
-	db, err := database.Connect(cfg.DatabaseURL)
+	db, err := dbpkg.Connect(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("FATAL: failed to connect to database: %v", err)
 	}
 	defer db.Close()
 	log.Printf("CHECKPOINT: Database connected successfully")
 
-	readDB := db
-	if cfg.DatabaseReadOnlyURL != "" && cfg.DatabaseReadOnlyURL != cfg.DatabaseURL {
-		log.Printf("CHECKPOINT: Connecting to read replica database")
-		rPool, err := database.Connect(cfg.DatabaseReadOnlyURL)
-		if err != nil {
-			log.Printf("WARNING: failed to connect to read replica: %v. Falling back to primary DB", err)
-		} else {
-			readDB = rPool
-			defer readDB.Close()
-			log.Printf("CHECKPOINT: Read replica connected successfully")
-		}
-	}
-
-	c := cache.New()
-
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	log.Printf("CHECKPOINT: Starting scheduler")
-	scheduler := jobs.New(db, ctx)
-	scheduler.Start()
+	// Inicialização da nova arquitetura (sqlc + services + handlers)
+	queries := database.New(db)
+	cardService := services.NewCardService(db, queries)
+	paymentService := services.NewPaymentService(db, queries)
+	h := handlers.New(db, queries, cardService, paymentService, []byte(cfg.JWTSecret))
 
-	log.Printf("CHECKPOINT: Registering routes")
-	mailer := mail.NewMailer(mail.SMTPOptions{
-		Host:      cfg.SMTPHost,
-		Port:      cfg.SMTPPort,
-		User:      cfg.SMTPUser,
-		Pass:      cfg.SMTPPass,
-		FromEmail: cfg.FromEmail,
-	})
 	mux := http.NewServeMux()
-	routes.RegisterWithReadDB(mux, db, readDB, []byte(cfg.JWTSecret), c, cfg.IsProduction(), mailer, cfg.WebappURL)
+	routes.Register(mux, h, []byte(cfg.JWTSecret))
 
 	logger := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +61,7 @@ func main() {
 	}
 
 	log.Printf("CHECKPOINT: Starting HTTP server on :%s", cfg.Port)
-	rl := middleware.NewRateLimiter(2, 10)
+	rl := middleware.NewRateLimiter(5, 30)
 	handler := middleware.CORS(cfg.WebappURL, cfg.IsProduction())(rl.Limit(securityHeaders(logger(mux))))
 	if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
 		log.Fatalf("FATAL: server error: %v", err)
