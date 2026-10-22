@@ -44,3 +44,8 @@ database/migrate
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# build artifacts
+backend/api
+backend/tmp/
+tmp/
