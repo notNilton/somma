@@ -7,6 +7,8 @@ on:
       - main
   workflow_dispatch:
 
+# As imagens usam os nomes que o servidor (repo infrastructure, apps/infra/somma)
+# já puxa: expenses-backend (inclui migrate + migrations) e expenses-web.
 env:
   REGISTRY: "gitea.nilbyte.com.br"
   IMAGE_NAMESPACE: "nilbyte/somma"
@@ -50,11 +52,11 @@ jobs:
         run: |
           VERSION=$(cat backend/VERSION | tr -d '[:space:]')
           docker build -f backend/Dockerfile \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest" \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:${VERSION}" \
             .
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:latest"
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/backend:${VERSION}"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-backend:${VERSION}"
 
   build-web:
     runs-on: runner
@@ -92,11 +94,11 @@ jobs:
         run: |
           VERSION=$(node -e "process.stdout.write(require('./web/package.json').version)")
           docker build -f web/Dockerfile \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:latest" \
-            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:${VERSION}" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:latest" \
+            -t "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:${VERSION}" \
             web/
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:latest"
-          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/web:${VERSION}"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:latest"
+          docker push "${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/expenses-web:${VERSION}"
 
   deploy:
     needs: [build-backend, build-web]
