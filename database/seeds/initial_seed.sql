@@ -1,16 +1,21 @@
 BEGIN;
 
+-- Limpar dados existentes de forma segura e cascateada
 TRUNCATE TABLE
     transactions,
     budgets,
+    budget_alerts,
     categories,
+    category_rules,
     credit_cards,
     card_invoice_payments,
+    goals,
+    expense_splits,
     accounts,
     users
 RESTART IDENTITY CASCADE;
 
--- dev credentials: nilton.naab@gmail.com / dev-password-123
+-- Usuário Principal: nilton.naab@gmail.com / dev-password-123
 INSERT INTO users (id, email, name, phone, cpf, privacy_mode_enabled, password_hash)
 VALUES
     (
@@ -30,118 +35,218 @@ SET
     privacy_mode_enabled = EXCLUDED.privacy_mode_enabled,
     password_hash = EXCLUDED.password_hash;
 
+-- Contas Bancárias e de Investimentos
 INSERT INTO accounts (id, user_id, name, type, currency_code, initial_balance_cents, is_active)
 VALUES
-    ('acc-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Conta Corrente Nubank', 'CHECKING', 'BRL', 500000, TRUE),
-    ('acc-2', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Reserva de Emergência', 'EMERGENCY', 'BRL', 1500000, TRUE),
-    ('acc-3', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Carteira Física', 'WALLET', 'BRL', 20000, TRUE)
+    ('acc-nubank', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank Conta Principal', 'CHECKING', 'BRL', 645000, TRUE),
+    ('acc-itau', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Itaú Personnalité', 'CHECKING', 'BRL', 1280000, TRUE),
+    ('acc-inter', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Banco Inter Corrente', 'CHECKING', 'BRL', 345000, TRUE),
+    ('acc-reserva', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Reserva Selic & CDI 100%', 'EMERGENCY', 'BRL', 3500000, TRUE),
+    ('acc-carteira', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Carteira Dinheiro em Espécie', 'WALLET', 'BRL', 42000, TRUE),
+    ('acc-invest', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'XP Investimentos / NuInvest', 'INVESTMENT', 'BRL', 4800000, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- Cartões de Crédito com limites expressivos
 INSERT INTO credit_cards (id, user_id, name, brand, last4, credit_limit_cents, closing_day, due_day, is_active)
 VALUES
-    ('card-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank Ultravioleta', 'Mastercard', '4321', 1200000, 20, 27, TRUE)
+    ('card-nu', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Nubank Ultravioleta Black', 'Mastercard', '4321', 1800000, 20, 27, TRUE),
+    ('card-itau', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Itaú Visa Infinite', 'Visa', '8890', 2500000, 10, 17, TRUE),
+    ('card-inter', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Inter Black Mastercard', 'Mastercard', '1092', 1200000, 5, 12, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO categories (id, user_id, name, type, description, color, parent_id)
+-- Categorias de Receitas e Despesas com cores e classificações
+INSERT INTO categories (id, user_id, name, type, budget_class, description, color, parent_id)
 VALUES
-    ('cat-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Renda Principal', 'INCOME', 'Salário e remuneração mensal', '#16a34a', NULL),
-    ('cat-2', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Freelancer & Projetos', 'INCOME', 'Consultorias e desenvolvimento', '#0f766e', NULL),
-    ('cat-3', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Rendimentos', 'INCOME', 'Dividendos e juros sobre capital', '#059669', NULL),
-    ('cat-4', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Moradia & Contas', 'EXPENSE', 'Aluguel, condomínio, luz, internet', '#dc2626', NULL),
-    ('cat-5', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Alimentação & Mercado', 'EXPENSE', 'Compras de mês, açougue e feira', '#ea580c', NULL),
-    ('cat-6', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Restaurantes & Lazer', 'EXPENSE', 'Jantares, bares e passeios', '#d97706', NULL),
-    ('cat-7', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Transporte & Mobilidade', 'EXPENSE', 'Uber, combustível e estacionamento', '#0284c7', NULL),
-    ('cat-8', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Saúde & Bem-Estar', 'EXPENSE', 'Farmácia, convênio e academia', '#e11d48', NULL),
-    ('cat-9', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Assinaturas & Nuvem', 'EXPENSE', 'Netflix, Spotify, AWS, GitHub', '#7c3aed', NULL),
-    ('cat-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Reserva & Aportes', 'EXPENSE', 'Investimentos futuros e poupança', '#2563eb', NULL),
-    ('cat-11', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Cartão de Crédito', 'EXPENSE', 'Compras parceladas diversas', '#9333ea', NULL)
+    ('cat-inc-sal', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Salário & Pró-labore', 'INCOME', 'ESSENTIAL', 'Remuneração mensal fixa', '#16a34a', NULL),
+    ('cat-inc-free', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Freelance & Consultoria', 'INCOME', 'LIFESTYLE', 'Desenvolvimento de software e arquitetura', '#0f766e', NULL),
+    ('cat-inc-div', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Dividendos & Rendimentos', 'INCOME', 'FINANCIAL', 'Proventos de FIIs, ações e renda fixa', '#059669', NULL),
+    ('cat-inc-cb', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Cashback & Reembolsos', 'INCOME', 'FINANCIAL', 'Estornos e recompensas de cartões', '#10b981', NULL),
+
+    ('cat-exp-mor', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Moradia & Contas Fixas', 'EXPENSE', 'ESSENTIAL', 'Aluguel, condomínio, luz, internet', '#dc2626', NULL),
+    ('cat-exp-mer', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Supermercado & Feira', 'EXPENSE', 'ESSENTIAL', 'Compras de mês, feira e hortifruti', '#ea580c', NULL),
+    ('cat-exp-res', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Restaurantes & Lazer', 'EXPENSE', 'LIFESTYLE', 'Jantares, bares, cinema e passeios', '#d97706', NULL),
+    ('cat-exp-tra', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Transporte & Mobilidade', 'EXPENSE', 'ESSENTIAL', 'Combustível, Uber, pedágio e estacionamento', '#0284c7', NULL),
+    ('cat-exp-sau', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Saúde & Bem-Estar', 'EXPENSE', 'ESSENTIAL', 'Farmácia, academia e plano de saúde', '#e11d48', NULL),
+    ('cat-exp-edu', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Educação & Livros', 'EXPENSE', 'LIFESTYLE', 'Cursos, livros técnicos e certificações', '#8b5cf6', NULL),
+    ('cat-exp-ass', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Assinaturas & Nuvem', 'EXPENSE', 'LIFESTYLE', 'Netflix, Spotify, GitHub, AWS, ChatGPT', '#7c3aed', NULL),
+    ('cat-exp-com', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Compras Pessoais', 'EXPENSE', 'LIFESTYLE', 'Roupas, acessórios e equipamentos', '#ec4899', NULL),
+    ('cat-exp-fat', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Pagamento de Fatura', 'EXPENSE', 'FINANCIAL', 'Liquidação mensal de faturas de cartão', '#64748b', NULL),
+    ('cat-exp-inv', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Reserva & Aportes', 'EXPENSE', 'FINANCIAL', 'Aportes em caixinhas e investimentos', '#2563eb', NULL)
 ON CONFLICT (user_id, name, type) DO NOTHING;
 
+-- Orçamentos Planejados (Budgets)
 INSERT INTO budgets (id, user_id, name, allocated_amount_cents, notes, is_active)
 VALUES
-    ('bud-1', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Viagem Fim de Ano', 800000, 'Passagens e hospedagem para a viagem', TRUE),
-    ('bud-2', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Reforma do Escritório', 350000, 'Mesa ergonômica, monitor e setup dev', TRUE),
-    ('bud-3', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Reserva de Emergência 2026', 1200000, 'Aporte planejado para 6 meses de segurança', TRUE)
+    ('bud-mer', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Supermercado & Alimentação Mês', 220000, 'Compras quinzenais no atacado e feira orgânica', TRUE),
+    ('bud-laz', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Restaurantes & Lazer Fim de Semana', 140000, 'Jantares, cafés e delivery iFood', TRUE),
+    ('bud-tra', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Transporte, Combustível & Uber', 80000, 'Abastecimentos e viagens por app', TRUE),
+    ('bud-cld', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Assinaturas, SaaS & IA', 45000, 'GitHub Copilot, Supabase, Netflix e Spotify', TRUE),
+    ('bud-set', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Setup & Reforma Escritório', 400000, 'Mesa elevatória, cadeira ergonômica e monitor', TRUE),
+    ('bud-via', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Viagem Fim de Ano Réveillon', 800000, 'Passagens aéreas e hospedagem', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- Metas de Poupança & Caixinhas Financeiras (Goals)
+INSERT INTO goals (id, user_id, name, description, target_amount_cents, color, target_date, is_achieved, is_active)
+VALUES
+    ('goal-reserva', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Reserva de Emergência (6 Meses)', 'Meta de segurança cobrindo 6 meses de custos fixos essenciais', 5000000, '#10b981', '2026-12-31', FALSE, TRUE),
+    ('goal-europa', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Viagem Europa 2027', 'Eurotrip: Portugal, Espanha e Itália com hotel e passeios', 2800000, '#8b5cf6', '2027-07-15', FALSE, TRUE),
+    ('goal-mac', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Setup MacBook Pro M4 Max', 'Upgrade de equipamento principal para desenvolvimento e IA', 1800000, '#3b82f6', '2026-11-30', FALSE, TRUE),
+    ('goal-carro', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Entrada Veículo Híbrido', 'Troca por automóvel híbrido/elétrico econômico', 4500000, '#f59e0b', '2027-12-20', FALSE, TRUE),
+    ('goal-curso', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'Certificação Cloud Architecture & AI', 'Cursos avançados de especialização e vouchers de exames', 650000, '#06b6d4', '2026-10-31', FALSE, TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Pagamentos Históricos de Fatura de Cartão (Julho e Agosto 2026)
+INSERT INTO card_invoice_payments (id, user_id, card_id, reference_month, amount_cents, paid_at, transaction_id)
+VALUES
+    ('pay-nu-jul', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'card-nu', '2026-07-01', 195000, TIMESTAMPTZ '2026-07-27 10:00:00Z', NULL),
+    ('pay-nu-ago', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'card-nu', '2026-08-01', 234000, TIMESTAMPTZ '2026-08-27 10:00:00Z', NULL),
+    ('pay-itau-jul', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'card-itau', '2026-07-01', 142000, TIMESTAMPTZ '2026-07-17 11:30:00Z', NULL),
+    ('pay-itau-ago', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'card-itau', '2026-08-01', 188000, TIMESTAMPTZ '2026-08-17 11:30:00Z', NULL)
+ON CONFLICT (card_id, reference_month) DO NOTHING;
+
+-- Transações Completas (Julho, Agosto, Setembro [mês atual] e Outubro 2026)
 INSERT INTO transactions (
-    id, user_id, category_id, budget_id, type, kind, status,
-    amount_cents, date, description, notes, currency_code, is_active
+    id, user_id, account_id, card_id, category_id, budget_id, goal_id,
+    type, kind, status, amount_cents, date, description, notes, currency_code,
+    installment_group_id, installment_number, total_installments, is_active
 )
 VALUES
-    -- ================= SETEMBRO 2026 =================
-    -- Rendas de Setembro
-    ('tx-sep-01', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-1', NULL, 'INCOME', 'INCOME', 'COMPLETED', 1450000, TIMESTAMPTZ '2026-09-01 10:00:00Z', 'Salário Mensal Nilbyte', 'Depósito em conta corrente', 'BRL', TRUE),
-    ('tx-sep-02', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2', NULL, 'INCOME', 'INCOME', 'COMPLETED', 380000, TIMESTAMPTZ '2026-09-05 14:30:00Z', 'Projeto Backend Fintech', 'Pagamento da sprint 1', 'BRL', TRUE),
-    ('tx-sep-03', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-3', NULL, 'INCOME', 'INCOME', 'COMPLETED', 45200, TIMESTAMPTZ '2026-09-15 11:00:00Z', 'Dividendos FIIs', 'Rendimentos mensais da carteira', 'BRL', TRUE),
-    ('tx-sep-04', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2', NULL, 'INCOME', 'INCOME', 'COMPLETED', 220000, TIMESTAMPTZ '2026-09-22 16:00:00Z', 'Consultoria Arquitetura Cloud', 'Workshop 4h com equipe externa', 'BRL', TRUE),
+    -- ==========================================
+    -- JULHO 2026 (Histórico)
+    -- ==========================================
+    ('tx-jul-01', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-inc-sal', NULL, NULL, 'INCOME', 'INCOME', 'COMPLETED', 1450000, TIMESTAMPTZ '2026-07-01 10:00:00Z', 'Salário Mensal Nilbyte', 'Depósito em conta', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-jul-02', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mor', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 320000, TIMESTAMPTZ '2026-07-02 09:00:00Z', 'Aluguel Apartamento', 'PIX proprietário', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-jul-03', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-reserva', 'EXPENSE', 'SAVING', 'COMPLETED', 300000, TIMESTAMPTZ '2026-07-03 14:00:00Z', 'Aporte Reserva Selic', 'Caixinha Reserva', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-jul-04', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-europa', 'EXPENSE', 'SAVING', 'COMPLETED', 150000, TIMESTAMPTZ '2026-07-05 14:00:00Z', 'Aporte Viagem Europa', 'Caixinha Eurotrip', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-jul-05', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-inc-free', NULL, NULL, 'INCOME', 'INCOME', 'COMPLETED', 380000, TIMESTAMPTZ '2026-07-08 16:00:00Z', 'Projeto Go Microserviços', 'Consultoria entrega', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-jul-06', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-invest', NULL, 'cat-inc-div', NULL, NULL, 'INCOME', 'INCOME', 'COMPLETED', 59000, TIMESTAMPTZ '2026-07-15 11:00:00Z', 'Dividendos FIIs & Ações', 'Proventos creditados', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-jul-07', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-com', 'bud-set', NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 35000, TIMESTAMPTZ '2026-07-18 15:30:00Z', 'Suporte Articulado Monitor (1/3)', 'Setup home office', 'BRL', 'grp-inst-jul-01', 1, 3, TRUE),
 
-    -- Despesas de Setembro (Moradia & Fixas)
-    ('tx-sep-05', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 320000, TIMESTAMPTZ '2026-09-02 09:00:00Z', 'Aluguel Apartamento', 'PIX proprietário', 'BRL', TRUE),
-    ('tx-sep-06', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 78000, TIMESTAMPTZ '2026-09-03 10:15:00Z', 'Condomínio', 'Boleto bancário pago', 'BRL', TRUE),
-    ('tx-sep-07', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 34500, TIMESTAMPTZ '2026-09-04 11:00:00Z', 'Energia Elétrica (Energisa)', 'Fatura mês 08/2026', 'BRL', TRUE),
-    ('tx-sep-08', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 14990, TIMESTAMPTZ '2026-09-05 08:30:00Z', 'Internet Fibra 1Gbps', 'Débito automático', 'BRL', TRUE),
+    -- ==========================================
+    -- AGOSTO 2026 (Histórico)
+    -- ==========================================
+    ('tx-ago-01', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-inc-sal', NULL, NULL, 'INCOME', 'INCOME', 'COMPLETED', 1450000, TIMESTAMPTZ '2026-08-01 10:00:00Z', 'Salário Mensal Nilbyte', 'Depósito em conta', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-ago-02', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mor', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 320000, TIMESTAMPTZ '2026-08-02 09:00:00Z', 'Aluguel Apartamento', 'PIX proprietário', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-ago-03', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mor', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 78000, TIMESTAMPTZ '2026-08-03 10:15:00Z', 'Condomínio Residencial', 'Boleto bancário', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-ago-04', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-reserva', 'EXPENSE', 'SAVING', 'COMPLETED', 250000, TIMESTAMPTZ '2026-08-03 14:00:00Z', 'Aporte Reserva Selic', 'Aporte mensal de segurança', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-ago-05', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-europa', 'EXPENSE', 'SAVING', 'COMPLETED', 120000, TIMESTAMPTZ '2026-08-05 14:00:00Z', 'Aporte Viagem Europa', 'Caixinha Eurotrip', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-ago-06', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-inc-free', NULL, NULL, 'INCOME', 'INCOME', 'COMPLETED', 450000, TIMESTAMPTZ '2026-08-07 15:30:00Z', 'Projeto E-commerce React/Go', 'Entrega de sprint', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-ago-07', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-invest', NULL, 'cat-inc-div', NULL, NULL, 'INCOME', 'INCOME', 'COMPLETED', 64000, TIMESTAMPTZ '2026-08-15 11:00:00Z', 'Dividendos FIIs & Ações', 'Rendimentos da carteira', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-ago-08', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-com', 'bud-set', NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 35000, TIMESTAMPTZ '2026-08-18 15:30:00Z', 'Suporte Articulado Monitor (2/3)', 'Setup home office', 'BRL', 'grp-inst-jul-01', 2, 3, TRUE),
+    ('tx-ago-09', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-mac', 'EXPENSE', 'SAVING', 'COMPLETED', 100000, TIMESTAMPTZ '2026-08-20 16:00:00Z', 'Aporte Setup Mac M4', 'Caixinha MacBook', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-ago-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-carro', 'EXPENSE', 'SAVING', 'COMPLETED', 150000, TIMESTAMPTZ '2026-08-22 17:00:00Z', 'Aporte Carro Híbrido', 'Caixinha Entrada Carro', 'BRL', NULL, NULL, NULL, TRUE),
 
-    -- Alimentação e Mercado Setembro
-    ('tx-sep-09', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 89040, TIMESTAMPTZ '2026-09-02 18:40:00Z', 'Compras de Mês Supermercado', 'Assaí Atacadista', 'BRL', TRUE),
-    ('tx-sep-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 16500, TIMESTAMPTZ '2026-09-08 17:20:00Z', 'Feira Orgânica & Hortifruti', 'Feira livre do bairro', 'BRL', TRUE),
-    ('tx-sep-11', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 34020, TIMESTAMPTZ '2026-09-16 19:10:00Z', 'Mercado Reposição', 'Carrefour Express', 'BRL', TRUE),
-    ('tx-sep-12', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 21000, TIMESTAMPTZ '2026-09-24 18:00:00Z', 'Açougue e Frios', 'Cortes para a quinzena', 'BRL', TRUE),
+    -- =========================================================================
+    -- SETEMBRO 2026 (MÊS ATUAL - DIA 1 AO DIA 30 COM TODOS OS 5 TIPOS / KINDS)
+    -- =========================================================================
 
-    -- Restaurantes & Lazer Setembro
-    ('tx-sep-13', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-6', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 14500, TIMESTAMPTZ '2026-09-06 20:30:00Z', 'Jantar Japonês', 'Rodízio com amigos', 'BRL', TRUE),
-    ('tx-sep-14', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-6', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 8900, TIMESTAMPTZ '2026-09-12 13:00:00Z', 'Almoço Restaurante Italiano', 'Comemoração de entrega', 'BRL', TRUE),
-    ('tx-sep-15', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-6', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 5400, TIMESTAMPTZ '2026-09-20 21:00:00Z', 'Cinema & Pipoca', 'Ingressos IMAX', 'BRL', TRUE),
+    -- DIA 01: Renda Principal + Contas
+    ('tx-sep-01a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-inc-sal', NULL, NULL, 'INCOME', 'INCOME', 'COMPLETED', 1450000, TIMESTAMPTZ '2026-09-01 10:00:00Z', 'Salário Mensal Nilbyte', 'Depósito líquido em conta corrente', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-01b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mor', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 78000, TIMESTAMPTZ '2026-09-01 11:30:00Z', 'Condomínio Residencial', 'Boleto taxa ordinária mês 09', 'BRL', NULL, NULL, NULL, TRUE),
 
-    -- Mobilidade Setembro
-    ('tx-sep-16', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 4250, TIMESTAMPTZ '2026-09-07 15:10:00Z', 'Uber Aeroporto / Centro', 'Viagem de volta do evento', 'BRL', TRUE),
-    ('tx-sep-17', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 23000, TIMESTAMPTZ '2026-09-14 09:30:00Z', 'Combustível Etanol 40L', 'Posto Ipiranga', 'BRL', TRUE),
-    ('tx-sep-18', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 6500, TIMESTAMPTZ '2026-09-25 18:20:00Z', 'Estacionamento & Pedágios', 'Shopping e retorno', 'BRL', TRUE),
+    -- DIA 02: Aluguel + Aporte Poupança Meta + Jantar Crédito
+    ('tx-sep-02a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mor', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 320000, TIMESTAMPTZ '2026-09-02 09:00:00Z', 'Aluguel Apartamento', 'Transferência PIX proprietário', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-02b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-reserva', 'EXPENSE', 'SAVING', 'COMPLETED', 150000, TIMESTAMPTZ '2026-09-02 11:30:00Z', 'Aporte Reserva de Emergência', 'Aporte mensal programado Tesouro Selic', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-02c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-res', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 18500, TIMESTAMPTZ '2026-09-02 20:30:00Z', 'Jantar Japonês Hanami', 'Rodízio comemoração início do mês', 'BRL', NULL, NULL, NULL, TRUE),
 
-    -- Saúde, Assinaturas & Aportes Setembro
-    ('tx-sep-19', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-8', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 18900, TIMESTAMPTZ '2026-09-04 07:30:00Z', 'Mensalidade Academia SmartFit', 'Plano Black', 'BRL', TRUE),
-    ('tx-sep-20', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-8', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 11240, TIMESTAMPTZ '2026-09-18 16:40:00Z', 'Farmácia Drogasil', 'Vitaminas e suplementos', 'BRL', TRUE),
-    ('tx-sep-21', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-9', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 5590, TIMESTAMPTZ '2026-09-05 02:00:00Z', 'Netflix Premium 4K', 'Assinatura familiar', 'BRL', TRUE),
-    ('tx-sep-22', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-9', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 3490, TIMESTAMPTZ '2026-09-10 02:00:00Z', 'Spotify Family', 'Música e podcasts', 'BRL', TRUE),
-    ('tx-sep-23', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-9', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 12000, TIMESTAMPTZ '2026-09-12 02:00:00Z', 'GitHub Copilot + Cloud VPS', 'Ferramentas de desenvolvimento', 'BRL', TRUE),
-    ('tx-sep-24', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-10', 'bud-3', 'EXPENSE', 'SAVING', 'COMPLETED', 300000, TIMESTAMPTZ '2026-09-02 11:30:00Z', 'Aporte Reserva Selic', 'Tesouro Direto 2029', 'BRL', TRUE),
-    ('tx-sep-25', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-11', 'bud-2', 'EXPENSE', 'BUDGET', 'COMPLETED', 145000, TIMESTAMPTZ '2026-09-15 15:00:00Z', 'Monitor UltraWide 34"', 'Setup para produtividade', 'BRL', TRUE),
-    ('tx-sep-26', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-11', 'bud-1', 'EXPENSE', 'BUDGET', 'COMPLETED', 210000, TIMESTAMPTZ '2026-09-28 17:00:00Z', 'Hospedagem Hotel Booking', 'Reserva de 4 diárias', 'BRL', TRUE),
+    -- DIA 03: Energia Elétrica + Orçamento Feira + Livros Técnicos Crédito
+    ('tx-sep-03a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-exp-mor', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 34500, TIMESTAMPTZ '2026-09-03 10:00:00Z', 'Energia Elétrica (Energisa)', 'Fatura mês de referência 08/2026', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-03b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mer', 'bud-mer', NULL, 'EXPENSE', 'BUDGET', 'COMPLETED', 16500, TIMESTAMPTZ '2026-09-03 17:00:00Z', 'Feira Livre Orgânica', 'Legumes, frutas e ovos caipiras', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-03c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-edu', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 14250, TIMESTAMPTZ '2026-09-03 19:40:00Z', 'Amazon Livros Técnicos Go & Arquitetura', 'Livros O''Reilly e Pragmatic Programmer', 'BRL', NULL, NULL, NULL, TRUE),
 
-    -- ================= OUTUBRO 2026 =================
-    -- Rendas de Outubro
-    ('tx-oct-01', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-1', NULL, 'INCOME', 'INCOME', 'COMPLETED', 1450000, TIMESTAMPTZ '2026-10-01 10:00:00Z', 'Salário Mensal Nilbyte', 'Depósito em conta corrente', 'BRL', TRUE),
-    ('tx-oct-02', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2', NULL, 'INCOME', 'INCOME', 'COMPLETED', 520000, TIMESTAMPTZ '2026-10-06 15:00:00Z', 'Projeto E-commerce Go/React', 'Entrega do MVP e deploy', 'BRL', TRUE),
-    ('tx-oct-03', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-3', NULL, 'INCOME', 'INCOME', 'COMPLETED', 51000, TIMESTAMPTZ '2026-10-15 11:00:00Z', 'Rendimentos FIIs & Ações', 'Proventos creditados', 'BRL', TRUE),
-    ('tx-oct-04', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-2', NULL, 'INCOME', 'INCOME', 'PENDING', 250000, TIMESTAMPTZ '2026-10-25 14:00:00Z', 'Consultoria Otimização PostgreSQL', 'Fatura a receber no fim do mês', 'BRL', TRUE),
+    -- DIA 04: Internet Fibra + Academia + Uber
+    ('tx-sep-04a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mor', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 14990, TIMESTAMPTZ '2026-09-04 08:30:00Z', 'Internet Fibra 1Gbps', 'Débito automático plano corporativo', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-04b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-exp-sau', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 18900, TIMESTAMPTZ '2026-09-04 07:45:00Z', 'Mensalidade SmartFit Black', 'Plano mensal com acesso livre', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-04c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-tra', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 4250, TIMESTAMPTZ '2026-09-04 18:20:00Z', 'Uber Black Reunião Centro', 'Deslocamento encontro executivo', 'BRL', NULL, NULL, NULL, TRUE),
 
-    -- Despesas de Outubro (Moradia & Fixas)
-    ('tx-oct-05', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 320000, TIMESTAMPTZ '2026-10-02 09:00:00Z', 'Aluguel Apartamento', 'PIX proprietário', 'BRL', TRUE),
-    ('tx-oct-06', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 81000, TIMESTAMPTZ '2026-10-03 10:15:00Z', 'Condomínio', 'Boleto bancário pago', 'BRL', TRUE),
-    ('tx-oct-07', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 31200, TIMESTAMPTZ '2026-10-04 11:00:00Z', 'Energia Elétrica', 'Fatura mês 09/2026', 'BRL', TRUE),
-    ('tx-oct-08', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-4', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 14990, TIMESTAMPTZ '2026-10-05 08:30:00Z', 'Internet Fibra 1Gbps', 'Débito automático', 'BRL', TRUE),
+    -- DIA 05: Freelance Entrada + Mercado Mês Orçamento + Aporte Europa + Netflix Crédito
+    ('tx-sep-05a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-inc-free', NULL, NULL, 'INCOME', 'INCOME', 'COMPLETED', 420000, TIMESTAMPTZ '2026-09-05 14:00:00Z', 'Projeto Backend Fintech Sprint 1', 'Pagamento recebido via transferência PJ', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-05b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mer', 'bud-mer', NULL, 'EXPENSE', 'BUDGET', 'COMPLETED', 89040, TIMESTAMPTZ '2026-09-05 18:30:00Z', 'Supermercado Assaí Atacadista', 'Compras gerais de mantimentos do mês', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-05c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-europa', 'EXPENSE', 'SAVING', 'COMPLETED', 80000, TIMESTAMPTZ '2026-09-05 16:30:00Z', 'Aporte Viagem Europa 2027', 'Aporte programado caixinha Eurotrip', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-05d', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-ass', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 5590, TIMESTAMPTZ '2026-09-05 02:00:00Z', 'Netflix Premium 4K HDR', 'Assinatura mensal plano familiar', 'BRL', NULL, NULL, NULL, TRUE),
 
-    -- Alimentação e Mercado Outubro
-    ('tx-oct-09', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 94000, TIMESTAMPTZ '2026-10-02 19:15:00Z', 'Mercado Completo Quinzena 1', 'Sams Club & Atacadão', 'BRL', TRUE),
-    ('tx-oct-10', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 18500, TIMESTAMPTZ '2026-10-09 17:30:00Z', 'Feira Livre Semanal', 'Legumes, frutas e ovos', 'BRL', TRUE),
-    ('tx-oct-11', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 41000, TIMESTAMPTZ '2026-10-17 18:50:00Z', 'Reposição Mercado & Padaria', 'Pão francês, laticínios e café', 'BRL', TRUE),
-    ('tx-oct-12', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-5', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 26000, TIMESTAMPTZ '2026-10-26 18:20:00Z', 'Carnes & Congelados', 'Swift Carnes Nobres', 'BRL', TRUE),
+    -- DIA 06: Padaria Dinheiro + Almoço Lazer Orçamento + Cinema Crédito
+    ('tx-sep-06a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-carteira', NULL, 'cat-exp-mer', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 4800, TIMESTAMPTZ '2026-09-06 09:30:00Z', 'Padaria & Café Artesanal', 'Pão de fermentação natural e queijo', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-06b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-res', 'bud-laz', NULL, 'EXPENSE', 'BUDGET', 'COMPLETED', 14500, TIMESTAMPTZ '2026-09-06 13:30:00Z', 'Almoço Restaurante Italiano Famiglia', 'Almoço de domingo', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-06c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-itau', 'cat-exp-res', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 9600, TIMESTAMPTZ '2026-09-06 20:15:00Z', 'Cinema IMAX & Pipoca', 'Dois ingressos para estreia', 'BRL', NULL, NULL, NULL, TRUE),
 
-    -- Restaurantes, Lazer & Mobilidade Outubro
-    ('tx-oct-13', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-6', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 17800, TIMESTAMPTZ '2026-10-10 21:00:00Z', 'Hamburgueria Artesanal', 'Lanche fim de semana', 'BRL', TRUE),
-    ('tx-oct-14', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-6', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 11500, TIMESTAMPTZ '2026-10-18 13:30:00Z', 'Churrascaria de Domingo', 'Almoço em família', 'BRL', TRUE),
-    ('tx-oct-15', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 24500, TIMESTAMPTZ '2026-10-07 10:00:00Z', 'Combustível Gasolina 45L', 'Posto Shell', 'BRL', TRUE),
-    ('tx-oct-16', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-7', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 5800, TIMESTAMPTZ '2026-10-21 16:45:00Z', 'Corridas Uber Centro', 'Reuniões externas de negócio', 'BRL', TRUE),
+    -- DIA 07: Farmácia Débito + Combustível Crédito + Pedágio Orçamento
+    ('tx-sep-07a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-sau', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 8750, TIMESTAMPTZ '2026-09-07 10:45:00Z', 'Farmácia Panvel Cuidados', 'Protetor solar e vitaminas', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-07b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-tra', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 23000, TIMESTAMPTZ '2026-09-07 11:30:00Z', 'Combustível Posto Shell V-Power 45L', 'Tanque completo carro', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-07c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-tra', 'bud-tra', NULL, 'EXPENSE', 'BUDGET', 'COMPLETED', 4500, TIMESTAMPTZ '2026-09-07 18:00:00Z', 'Pedágios Rodovia & Estacionamento', 'Retorno passeio de fim de semana', 'BRL', NULL, NULL, NULL, TRUE),
 
-    -- Saúde, Assinaturas & Orçamentos Outubro
-    ('tx-oct-17', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-8', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 18900, TIMESTAMPTZ '2026-10-04 07:30:00Z', 'Mensalidade Academia SmartFit', 'Plano Black', 'BRL', TRUE),
-    ('tx-oct-18', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-8', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 8750, TIMESTAMPTZ '2026-10-14 15:10:00Z', 'Farmácia Pacheco', 'Remédios e cuidados pessoais', 'BRL', TRUE),
-    ('tx-oct-19', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-9', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 5590, TIMESTAMPTZ '2026-10-05 02:00:00Z', 'Netflix Premium 4K', 'Assinatura mensal', 'BRL', TRUE),
-    ('tx-oct-20', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-9', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 3490, TIMESTAMPTZ '2026-10-10 02:00:00Z', 'Spotify Family', 'Música e podcasts', 'BRL', TRUE),
-    ('tx-oct-21', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-9', NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 12000, TIMESTAMPTZ '2026-10-12 02:00:00Z', 'GitHub Copilot + Cloud VPS', 'Infraestrutura e IA', 'BRL', TRUE),
-    ('tx-oct-22', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-10', 'bud-3', 'EXPENSE', 'SAVING', 'COMPLETED', 450000, TIMESTAMPTZ '2026-10-02 11:30:00Z', 'Aporte Ações & FIIs', 'Compra mensal de ativos', 'BRL', TRUE),
-    ('tx-oct-23', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-11', 'bud-1', 'EXPENSE', 'BUDGET', 'COMPLETED', 380000, TIMESTAMPTZ '2026-10-19 14:20:00Z', 'Passagens Aéreas Férias', 'Compra 2 passagens ida e volta', 'BRL', TRUE),
-    ('tx-oct-24', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'cat-11', 'bud-2', 'EXPENSE', 'BUDGET', 'PENDING', 95000, TIMESTAMPTZ '2026-10-28 10:00:00Z', 'Cadeira Ergonômica Herman Miller', 'Parcela 1/5 planejada', 'BRL', TRUE)
+    -- DIA 08: Hortifruti Débito + Churrascaria Crédito + Happy Hour Orçamento
+    ('tx-sep-08a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mer', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 12000, TIMESTAMPTZ '2026-09-08 16:30:00Z', 'Feira Hortifruti do Bairro', 'Frutas da estação e verduras', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-08b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-itau', 'cat-exp-res', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 24000, TIMESTAMPTZ '2026-09-08 21:00:00Z', 'Churrascaria Fogo de Chão', 'Jantar de negócios com parceiros', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-08c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-res', 'bud-laz', NULL, 'EXPENSE', 'BUDGET', 'COMPLETED', 11000, TIMESTAMPTZ '2026-09-08 19:00:00Z', 'Happy Hour Cervejaria Artesanal', 'Chopp e petiscos com equipe', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 09: Drogaria Débito + Apple One Crédito
+    ('tx-sep-09a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-sau', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 6400, TIMESTAMPTZ '2026-09-09 14:10:00Z', 'Drogaria Pacheco', 'Medicamentos uso contínuo', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-09b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-ass', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 4290, TIMESTAMPTZ '2026-09-09 03:00:00Z', 'Apple One Familiar (Music/Cloud)', 'Assinatura iCloud 2TB e Apple Music', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 10: Dividendos Renda + Aporte Mac Poupança + Cloud SaaS Orçamento + Spotify Crédito
+    ('tx-sep-10a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-invest', NULL, 'cat-inc-div', NULL, NULL, 'INCOME', 'INCOME', 'COMPLETED', 68000, TIMESTAMPTZ '2026-09-10 11:00:00Z', 'Dividendos FIIs MXRF11 & HGLG11', 'Proventos creditados na carteira', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-10b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-mac', 'EXPENSE', 'SAVING', 'COMPLETED', 60000, TIMESTAMPTZ '2026-09-10 14:00:00Z', 'Aporte Setup MacBook Pro M4', 'Caixinha upgrade hardware de trabalho', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-10c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-exp-ass', 'bud-cld', NULL, 'EXPENSE', 'BUDGET', 'COMPLETED', 19500, TIMESTAMPTZ '2026-09-10 09:30:00Z', 'Infraestrutura Cloud Hetzner & Supabase', 'Servidores VPS e instâncias de banco', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-10d', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-ass', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 3490, TIMESTAMPTZ '2026-09-10 02:00:00Z', 'Spotify Premium Family', 'Streaming de música e podcasts', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 11: Almoço Débito + Teclado Mecânico Parcelado Crédito (1/3)
+    ('tx-sep-11a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-res', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 6200, TIMESTAMPTZ '2026-09-11 12:45:00Z', 'Almoço Executivo Steakhouse', 'Prato executivo meio de semana', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-11b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-com', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 24000, TIMESTAMPTZ '2026-09-11 16:30:00Z', 'Teclado Mecânico Keychron Q1 Pro (1/3)', 'Switch banana táctil para produtividade', 'BRL', 'grp-inst-01', 1, 3, TRUE),
+
+    -- DIA 12: Cadeira DT3 Orçamento + iFood Crédito
+    ('tx-sep-12a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-exp-com', 'bud-set', NULL, 'EXPENSE', 'BUDGET', 'COMPLETED', 89000, TIMESTAMPTZ '2026-09-12 11:15:00Z', 'Cadeira Ergonômica DT3 Helora', 'Cadeira ergonômica com mesh para o setup', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-12b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-res', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 7850, TIMESTAMPTZ '2026-09-12 21:30:00Z', 'iFood Hamburgueria Artesanal Smash', 'Jantar de sexta à noite', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 13: Cafeteria Dinheiro + Abastecimento Etanol Crédito
+    ('tx-sep-13a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-carteira', NULL, 'cat-exp-res', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 3600, TIMESTAMPTZ '2026-09-13 15:40:00Z', 'Cafeteria Grão Gourmet', 'Dois expressos duplos e cookies', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-13b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-tra', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 18000, TIMESTAMPTZ '2026-09-13 18:20:00Z', 'Posto Ipiranga Etanol 35L', 'Abastecimento fim de semana', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 14 (HOJE): Mercado Reposição Débito + Diária Hospedagem Orçamento + Setup Mercado Livre Crédito (1/4)
+    ('tx-sep-14a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mer', NULL, NULL, 'EXPENSE', 'EXPENSE', 'COMPLETED', 14520, TIMESTAMPTZ '2026-09-14 09:10:00Z', 'Supermercado Reposição Rápida', 'Pães, café, leite e queijos', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-14b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-exp-res', 'bud-via', NULL, 'EXPENSE', 'BUDGET', 'COMPLETED', 45000, TIMESTAMPTZ '2026-09-14 11:00:00Z', 'Reserva Pousada Feriado Booking', 'Sinal de confirmação estadia serra', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-14c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-com', NULL, NULL, 'EXPENSE', 'CREDIT', 'COMPLETED', 12500, TIMESTAMPTZ '2026-09-14 14:30:00Z', 'Cabos Thunderbolt 4 & Hub Anker (1/4)', 'Compra Mercado Livre setup', 'BRL', 'grp-inst-02', 1, 4, TRUE),
+
+    -- DIA 15 (Agendado / Planejado): Consultoria Renda + Aporte Carro Poupança + Monitor UltraWide Crédito (2/5)
+    ('tx-sep-15a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-inc-free', NULL, NULL, 'INCOME', 'INCOME', 'PENDING', 350000, TIMESTAMPTZ '2026-09-15 15:00:00Z', 'Consultoria Arquitetura Cloud AWS', 'Fatura honorários técnicos consultoria', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-15b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-carro', 'EXPENSE', 'SAVING', 'PENDING', 100000, TIMESTAMPTZ '2026-09-15 16:00:00Z', 'Aporte Entrada Carro Híbrido', 'Aporte programado quinzena', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-15c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-itau', 'cat-exp-com', NULL, NULL, 'EXPENSE', 'CREDIT', 'PENDING', 35000, TIMESTAMPTZ '2026-09-15 17:00:00Z', 'Monitor LG UltraWide 34WQ650 (2/5)', 'Parcela 2 de 5 programada na fatura', 'BRL', 'grp-inst-03', 2, 5, TRUE),
+
+    -- DIA 16: Manutenção Condomínio Débito
+    ('tx-sep-16a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mor', NULL, NULL, 'EXPENSE', 'EXPENSE', 'PENDING', 9500, TIMESTAMPTZ '2026-09-16 10:00:00Z', 'Fundo de Reserva Condomínio Extra', 'Chamada de capital pintura fachada', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 18: Carnes Débito + Jantar Crédito
+    ('tx-sep-18a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mer', NULL, NULL, 'EXPENSE', 'EXPENSE', 'PENDING', 21000, TIMESTAMPTZ '2026-09-18 17:30:00Z', 'Açougue Swift Carnes Nobres', 'Cortes selecionados para a quinzena', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-18b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-itau', 'cat-exp-res', NULL, NULL, 'EXPENSE', 'CREDIT', 'PENDING', 19500, TIMESTAMPTZ '2026-09-18 20:30:00Z', 'Jantar Outback Steakhouse', 'Jantar de comemoração de sprint', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 20: Projeto Go Renda + Aporte Certificação Poupança + GitHub Copilot Crédito
+    ('tx-sep-20a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-itau', NULL, 'cat-inc-free', NULL, NULL, 'INCOME', 'INCOME', 'PENDING', 280000, TIMESTAMPTZ '2026-09-20 14:00:00Z', 'Projeto Go Microserviços Sprint 2', 'Entrega e deploy em staging', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-20b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-inv', NULL, 'goal-curso', 'EXPENSE', 'SAVING', 'PENDING', 50000, TIMESTAMPTZ '2026-09-20 15:30:00Z', 'Aporte Certificação AI & Cloud', 'Caixinha de aperfeiçoamento profissional', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-20c', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-ass', NULL, NULL, 'EXPENSE', 'CREDIT', 'PENDING', 12000, TIMESTAMPTZ '2026-09-20 02:00:00Z', 'GitHub Enterprise & Copilot AI', 'Ferramentas de produtividade desenvolvimento', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 22: Passagens GOL Crédito (1/6) + Mercado Quinzena 2 Orçamento
+    ('tx-sep-22a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-res', NULL, NULL, 'EXPENSE', 'CREDIT', 'PENDING', 38000, TIMESTAMPTZ '2026-09-22 16:40:00Z', 'Passagens Aéreas GOL Férias (1/6)', 'Voo ida e volta 2 passageiros', 'BRL', 'grp-inst-04', 1, 6, TRUE),
+    ('tx-sep-22b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mer', 'bud-mer', NULL, 'EXPENSE', 'BUDGET', 'PENDING', 58000, TIMESTAMPTZ '2026-09-22 18:40:00Z', 'Mercado Quinzena Pão de Açúcar', 'Reposição laticínios, azeites e carnes', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 25: Cashback Renda + Pizza Crédito
+    ('tx-sep-25a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-inc-cb', NULL, NULL, 'INCOME', 'INCOME', 'PENDING', 42000, TIMESTAMPTZ '2026-09-25 11:20:00Z', 'Cashback Nubank Ultravioleta', 'Rendimento do cashback 200% CDI resgatado', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-sep-25b', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-res', NULL, NULL, 'EXPENSE', 'CREDIT', 'PENDING', 8800, TIMESTAMPTZ '2026-09-25 21:00:00Z', 'iFood Pizza Forno Napolitana', 'Jantar de sexta pizza artesanal', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 27: Pagamento Fatura Cartão Débito
+    ('tx-sep-27a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-fat', NULL, NULL, 'EXPENSE', 'EXPENSE', 'PENDING', 185000, TIMESTAMPTZ '2026-09-27 10:00:00Z', 'Pagamento Fatura Nubank Ultravioleta', 'Débito em conta corrente fatura mês 08', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- DIA 28: Revisão Carro Orçamento
+    ('tx-sep-28a', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-tra', 'bud-tra', NULL, 'EXPENSE', 'BUDGET', 'PENDING', 32000, TIMESTAMPTZ '2026-09-28 15:30:00Z', 'Manutenção Preventiva Troca de Óleo', 'Revisão e alinhamento do veículo', 'BRL', NULL, NULL, NULL, TRUE),
+
+    -- ==========================================
+    -- OUTUBRO 2026 (Parcelas Futuras e Previsões)
+    -- ==========================================
+    ('tx-oct-01', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-inc-sal', NULL, NULL, 'INCOME', 'INCOME', 'PENDING', 1450000, TIMESTAMPTZ '2026-10-01 10:00:00Z', 'Salário Mensal Nilbyte', 'Depósito previsto de remuneração', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-oct-02', 'd290f1ee-6c54-4b01-90e6-d701748f0851', 'acc-nubank', NULL, 'cat-exp-mor', NULL, NULL, 'EXPENSE', 'EXPENSE', 'PENDING', 320000, TIMESTAMPTZ '2026-10-02 09:00:00Z', 'Aluguel Apartamento', 'PIX proprietário programado', 'BRL', NULL, NULL, NULL, TRUE),
+    ('tx-oct-03', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-com', NULL, NULL, 'EXPENSE', 'CREDIT', 'PENDING', 24000, TIMESTAMPTZ '2026-10-11 16:30:00Z', 'Teclado Mecânico Keychron Q1 Pro (2/3)', 'Segunda parcela do teclado', 'BRL', 'grp-inst-01', 2, 3, TRUE),
+    ('tx-oct-04', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-com', NULL, NULL, 'EXPENSE', 'CREDIT', 'PENDING', 12500, TIMESTAMPTZ '2026-10-14 14:30:00Z', 'Cabos Thunderbolt 4 & Hub Anker (2/4)', 'Segunda parcela hub mercado livre', 'BRL', 'grp-inst-02', 2, 4, TRUE),
+    ('tx-oct-05', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-itau', 'cat-exp-com', NULL, NULL, 'EXPENSE', 'CREDIT', 'PENDING', 35000, TIMESTAMPTZ '2026-10-15 17:00:00Z', 'Monitor LG UltraWide 34WQ650 (3/5)', 'Terceira parcela monitor setup', 'BRL', 'grp-inst-03', 3, 5, TRUE),
+    ('tx-oct-06', 'd290f1ee-6c54-4b01-90e6-d701748f0851', NULL, 'card-nu', 'cat-exp-res', NULL, NULL, 'EXPENSE', 'CREDIT', 'PENDING', 38000, TIMESTAMPTZ '2026-10-22 16:40:00Z', 'Passagens Aéreas GOL Férias (2/6)', 'Segunda parcela passagens aéreas', 'BRL', 'grp-inst-04', 2, 6, TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
