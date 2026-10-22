@@ -181,9 +181,9 @@ Para digitar tecla a tecla (testar o `MoneyInput`), use `Input.insertText` via C
 
 ## 6. Produção
 
-- Servidor `niflheim`. Acesso SSH funcionando: `ssh niflheim-backup`
-  (IP público, usuário `notNilton`). O alias `niflheim` usa Tailscale e não
-  conecta desta máquina.
+- Servidor `niflheim-backup`. Acesso SSH configurado em `~/.ssh/config` via
+  `ssh niflheim-backup` (IP público `173.212.207.80`, usuário `notNilton`). O host
+  legado `niflheim` foi removido do `~/.ssh/config`.
 - Containers: `nilbyte_postgres_prod` (banco `somma`, compartilhado com o app
   de veículos), `somma_migrate_prod`, `somma_expenses_backend_prod`,
   `somma_expenses_web_prod` (nginx com `/api/` → backend:3300),
@@ -191,35 +191,17 @@ Para digitar tecla a tecla (testar o `MoneyInput`), use `Input.insertText` via C
 - Web: https://sommae.nilbyte.com.br (`somma.nilbyte.com.br` também responde).
 - Deploy: push na `main` → CI builda `expenses-backend`/`expenses-web` → job
   `deploy` faz `docker compose pull` + `up -d` em
-  `/home/notNilton/infrastructure/apps/infra/somma`. O migrate roda antes do backend.
+  `/home/notNilton/infrastructure/apps/infra/somma` com o prefixo `-p somma-<service>`.
 - Para saber se o deploy entrou: o `index.html` aponta para um bundle novo
   (`/assets/index-*.js`) que contém "Pagar fatura". O bundle antigo era
   `/assets/index-VhhpjoD1.js`. Ou `docker ps` no servidor (containers recriados).
 
 ## 7. Próximos passos, em ordem
 
-1. **Conferir o deploy de 22/10** (commit `60b2b96`). Se o pipeline falhou,
-   ver o log em Actions no Gitea e corrigir; candidatos: rede do runner no
-   `docker build` (o README antigo do CI menciona `--network=host`) e a imagem
-   `golang:1.26-alpine`.
-2. **Trocar o banco de produção pelo local** (usuário autorizou; precisa de
-   regras de permissão). Só depois do item 1. Passos:
-   ```bash
-   # local
-   docker exec -i somma-db-local psql -U postgres -d somma -v ON_ERROR_STOP=1 < database/migrations/000025_vehicles_and_refueling.up.sql
-   docker exec somma-db-local pg_dump -U postgres -d somma -Fc --no-owner --no-acl > ~/somma_local.dump
-   scp ~/somma_local.dump niflheim-backup:~/
-   # servidor (ssh niflheim-backup)
-   docker exec nilbyte_postgres_prod pg_dump -U somma -d somma -Fc > ~/somma_prod_backup_$(date +%F_%H%M).dump
-   docker stop somma_expenses_backend_prod somma_vehicles_backend_prod
-   docker exec nilbyte_postgres_prod psql -U somma -d somma -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-   docker exec -i nilbyte_postgres_prod pg_restore -U somma -d somma --no-owner --no-acl < ~/somma_local.dump
-   docker start somma_expenses_backend_prod somma_vehicles_backend_prod
-   ```
-   Confira o usuário do banco no `DATABASE_URL` do container do backend antes
-   (padrão do compose: `somma`). Depois, login em produção e pedir ao usuário
-   para trocar a senha (a de dev passa a valer).
-3. **Faturas por mês**: agrupar compras no crédito por ciclo (fechamento da
+1. **Deploy de 22/10 e troca do banco concluídos**: pipeline corrigido e banco de
+   produção restaurado a partir do dump local (com dados reais, migration 25 de veículos
+   e migrations 26–36 de despesas/contas aplicadas).
+2. **Faturas por mês**: agrupar compras no crédito por ciclo (fechamento da
    conta), mostrar "fatura de outubro: R$ X, vence dia N" e pagar uma fatura
    específica. A tabela `card_invoice_payments` (migration 26) existe e não é usada.
 4. **Recorrência sem fim**: ligar um job que estende as séries mensais

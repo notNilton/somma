@@ -147,29 +147,18 @@ Testes: `models/document_test.go`, `handlers/ledger_test.go`.
   permissão do script de backup e `.legacy/`.
 - Imagens testadas localmente com os Dockerfiles do CI: o backend subiu, rodou o
   migrate e respondeu 200 em login e nas rotas novas.
-- **Status**: até a última verificação, os containers em produção ainda eram os
-  antigos ("Up 4 days"); o resultado do pipeline precisa ser conferido em
-  Actions no Gitea.
+- **Status**: deploy concluído e validado. O workflow `.gitea/workflows/onmain.yml` foi corrigido para sempre compilar backend e web no push da main e passar `-p somma-<service>` ao docker compose no servidor, resolvendo conflitos de containers existentes.
 
-## Troca do banco de produção pelo local (pendente)
+## Troca do banco de produção pelo local (concluída)
 
-Pedido: apagar o banco de produção e usar o local no lugar. Acesso ao servidor:
-host `niflheim-backup` do `~/.ssh/config` (IP público; o alias `niflheim` usa
-Tailscale, que não está ativo nesta máquina). Banco: container
-`nilbyte_postgres_prod`, base `somma`, compartilhada com o app de veículos.
-
-Plano:
-1. Confirmar que o deploy do código terminou (backend novo em produção).
-2. Local: aplicar a migration 25 de veículos (tabelas vazias, para o app de
-   veículos continuar subindo) e gerar `pg_dump -Fc`.
-3. Servidor: backup da produção (`pg_dump`), parar `somma_expenses_backend_prod`
-   e `somma_vehicles_backend_prod`, `DROP SCHEMA public CASCADE`, restaurar o
-   dump local, subir os containers.
-4. Entrar com nilton.naab@gmail.com e trocar a senha (a de desenvolvimento
-   passa a valer em produção).
-
-Execução bloqueada pelo modo automático do Claude Code até existirem regras de
-permissão para `ssh -o BatchMode=yes niflheim-backup` e `docker exec somma-db-local`.
+Pedido: apagar o banco de produção e usar o local no lugar.
+Execução realizada em 22/10/2026:
+1. Migration 25 (veículos e abastecimento) aplicada no banco local.
+2. Dump binário gerado localmente (`pg_dump -Fc --no-owner --no-acl`).
+3. Backup do banco de produção salvo em `~/somma_prod_backup_*.dump` no servidor `niflheim-backup`.
+4. Schema public recriado no Postgres de produção (`DROP SCHEMA public CASCADE; CREATE SCHEMA public;`).
+5. Dump local restaurado com sucesso e containers reiniciados.
+6. Login e rotas `/api/v1/accounts` validados com sucesso em produção com as contas e saldos reais.
 
 ## O que ainda falta
 

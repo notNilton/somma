@@ -27,28 +27,11 @@ jobs:
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
           git checkout "${{ gitea.sha }}" || true
 
-      - name: Detect changes
-        id: check
-        run: |
-          CHANGED=false
-          if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
-            CHANGED=true
-          elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            if git diff --name-only HEAD^ HEAD | grep -Eq '^(backend/|database/|.gitea/workflows/|go\.(work|sum))'; then
-              CHANGED=true
-            fi
-          else
-            CHANGED=true
-          fi
-          echo "CHANGED=$CHANGED" >> "$GITHUB_OUTPUT"
-
       - name: Login to registry
-        if: steps.check.outputs.CHANGED == 'true'
         run: |
           echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
       - name: Build and push backend image
-        if: steps.check.outputs.CHANGED == 'true'
         run: |
           VERSION=$(cat backend/VERSION | tr -d '[:space:]')
           docker build -f backend/Dockerfile \
@@ -69,28 +52,11 @@ jobs:
           git clone --branch main "${{ gitea.server_url }}/${{ gitea.repository }}.git" .
           git checkout "${{ gitea.sha }}" || true
 
-      - name: Detect changes
-        id: check
-        run: |
-          CHANGED=false
-          if [ "${{ gitea.event_name }}" = "workflow_dispatch" ]; then
-            CHANGED=true
-          elif git rev-parse HEAD^ >/dev/null 2>&1; then
-            if git diff --name-only HEAD^ HEAD | grep -Eq '^(web/|.gitea/workflows/)'; then
-              CHANGED=true
-            fi
-          else
-            CHANGED=true
-          fi
-          echo "CHANGED=$CHANGED" >> "$GITHUB_OUTPUT"
-
       - name: Login to registry
-        if: steps.check.outputs.CHANGED == 'true'
         run: |
           echo "${{ secrets.TOKEN_COMPLETE }}" | docker login "${{ env.REGISTRY }}" -u notNilton --password-stdin
 
       - name: Build and push web image
-        if: steps.check.outputs.CHANGED == 'true'
         run: |
           VERSION=$(node -e "process.stdout.write(require('./web/package.json').version)")
           docker build -f web/Dockerfile \
@@ -120,10 +86,12 @@ jobs:
 
             for compose_file in docker-compose.*.yml; do
               if [ -f "$compose_file" ]; then
-                echo "⬇️ Baixando imagens para $compose_file..."
-                docker compose -f "$compose_file" pull || true
-                echo "🔄 Atualizando containers para $compose_file..."
-                docker compose -f "$compose_file" up -d --remove-orphans || true
+                project_name="somma-${compose_file#docker-compose.}"
+                project_name="${project_name%.yml}"
+                echo "⬇️ Baixando imagens para $compose_file (projeto $project_name)..."
+                docker compose -p "$project_name" -f "$compose_file" pull
+                echo "🔄 Atualizando containers para $compose_file (projeto $project_name)..."
+                docker compose -p "$project_name" -f "$compose_file" up -d --remove-orphans
               fi
             done
 
