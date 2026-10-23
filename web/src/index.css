@@ -4023,16 +4023,227 @@ body:has(.app-nav) :is(input, select, textarea):focus {
 .drawer-panel .drawer-btn-delete { border: 1px solid #fecaca; background: #ffffff; color: #b91c1c; }
 .drawer-panel .drawer-btn-delete:hover { border-color: #b91c1c; }
 
-@media (max-width: 480px) {
-  .drawer-panel .drawer-header { padding: 1rem 1rem 0.75rem; }
-  .drawer-panel .drawer-body { padding: 1.25rem 1rem; gap: 1rem; }
-  .drawer-panel .drawer-footer { padding: 0.75rem 1rem; }
-  .drawer-panel .drawer-kind-btn { font-size: 0.6875rem; padding: 0 2px; }
-  .drawer-kind-dot { display: none; }
-  .drawer-panel .drawer-tab { font-size: 0.75rem; padding: 0 0.2rem; }
-  .drawer-footer-actions { width: 100%; display: flex; gap: 0.5rem; }
-  .drawer-footer-actions button { flex: 1 1 0; min-height: 44px; padding: 0 0.5rem; font-size: 0.8125rem; }
-  .drawer-row { grid-template-columns: 1fr; }
+@media (max-width: 640px) {
+  /* Oculta navbar inferior quando o drawer estiver aberto */
+  body:has(.drawer-backdrop) .mobile-bottom-nav {
+    display: none !important;
+  }
+
+  .drawer-backdrop {
+    background: rgba(10, 10, 10, 0.45);
+  }
+
+  /* Painel vira tela cheia nativa no mobile */
+  .drawer-panel {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    z-index: 1051 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #ffffff !important;
+    animation: mobileDrawerSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  @keyframes mobileDrawerSlideUp {
+    from {
+      opacity: 0.92;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Cabeçalho do drawer */
+  .drawer-panel .drawer-header {
+    padding: 0.85rem 1rem 0.65rem !important;
+    gap: 0.75rem !important;
+    border-bottom: 1px solid var(--border) !important;
+    background: #ffffff !important;
+  }
+  .drawer-panel .drawer-title {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+  }
+  .drawer-panel .drawer-close-btn {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1.15rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Segmented tabs de topo (Lançamento / Transferência / Fatura) */
+  .drawer-panel .drawer-tabs {
+    display: flex !important;
+    background: #f4f4f5 !important;
+    border: 1px solid var(--border) !important;
+    padding: 3px !important;
+    gap: 3px !important;
+  }
+  .drawer-panel .drawer-tab {
+    flex: 1 1 0 !important;
+    height: 36px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    padding: 0 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+  .drawer-panel .drawer-tab + .drawer-tab {
+    border-left: none !important;
+  }
+  .drawer-panel .drawer-tab.active {
+    background: #ffffff !important;
+    color: #0a0a0a !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* Corpo com scroll suave */
+  .drawer-panel .drawer-body {
+    padding: 1rem 1rem 1.5rem !important;
+    gap: 1.15rem !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Labels dos campos mais nítidos */
+  .drawer-panel .drawer-label {
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: var(--text-muted) !important;
+    letter-spacing: 0.04em !important;
+    margin-bottom: 0.2rem !important;
+  }
+
+  /* Grid de tipos: em vez de 5 espremidos, vira grid responsivo com chips legíveis */
+  .drawer-panel .drawer-kind-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(95px, 1fr)) !important;
+    gap: 5px !important;
+    border: none !important;
+    background: transparent !important;
+  }
+  .drawer-panel .drawer-kind-btn {
+    height: 42px !important;
+    background: #fafafa !important;
+    border: 1px solid var(--border) !important;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    color: var(--text-strong) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.45rem !important;
+    padding: 0 0.5rem !important;
+    transition: all 0.12s ease !important;
+  }
+  .drawer-panel .drawer-kind-btn + .drawer-kind-btn {
+    border-left: 1px solid var(--border) !important;
+  }
+  .drawer-panel .drawer-kind-btn.active {
+    background: #0a0a0a !important;
+    border-color: #0a0a0a !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+  .drawer-panel .drawer-kind-dot {
+    display: inline-block !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Linha Valor e Data: empilhada no mobile para máximo conforto */
+  .drawer-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+
+  /* Inputs e Selects confortáveis para toque (sem zoom indesejado no iOS Safari) */
+  .drawer-panel :is(.drawer-input, .drawer-select, .drawer-amount-box) {
+    height: 48px !important;
+    font-size: 16px !important;
+    border-radius: 0 !important;
+    border-color: var(--border-strong) !important;
+  }
+  .drawer-panel .drawer-amount-sym {
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+  }
+  .drawer-panel .drawer-amount-field {
+    font-size: 1.35rem !important;
+    font-weight: 600 !important;
+    height: 100% !important;
+  }
+
+  /* Recorrência e checkbox */
+  .drawer-panel .drawer-check {
+    font-size: 0.875rem !important;
+    min-height: 38px !important;
+  }
+  .drawer-panel .drawer-check input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .drawer-recurring-end .drawer-input {
+    max-width: 100% !important;
+  }
+
+  /* Botão de anexo */
+  .drawer-attach {
+    padding-top: 0.85rem !important;
+  }
+  .drawer-attach label {
+    font-size: 0.85rem !important;
+    padding: 0.65rem 0.85rem !important;
+    background: #fbfbfb !important;
+    border: 1px dashed var(--border-strong) !important;
+    display: block !important;
+    text-align: center !important;
+    width: 100% !important;
+  }
+
+  /* Rodapé fixo na base da tela */
+  .drawer-panel .drawer-footer {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: #ffffff !important;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px)) !important;
+    border-top: 1px solid var(--border) !important;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04) !important;
+    z-index: 10 !important;
+  }
+  .drawer-footer-actions {
+    display: flex !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
+  }
+  .drawer-footer-actions button {
+    flex: 1 1 0 !important;
+    height: 48px !important;
+    font-size: 0.925rem !important;
+    font-weight: 600 !important;
+  }
 }
 
 .drawer-hint { font-size: 0.75rem; color: var(--text-muted); }
