@@ -245,7 +245,7 @@ export default function AccountsSettingsSection() {
           <h4>{editingId ? 'Editar Conta' : 'Cadastrar Nova Conta'}</h4>
           {error && <div className="config-form-error">{error}</div>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div className="acc-form-grid-2">
             <label className="budget-field">
               <span className="budget-field-label">Banco</span>
               <select
@@ -299,7 +299,7 @@ export default function AccountsSettingsSection() {
             />
           </label>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+          <div className="acc-form-grid-2">
             <label className="budget-field">
               <span className="budget-field-label">Titular (opcional)</span>
               <input
@@ -325,7 +325,7 @@ export default function AccountsSettingsSection() {
           <div className="acc-card-fields">
             <span className="acc-card-fields-title">Cartão de crédito</span>
             <span className="config-hint">Compras no crédito feitas nesta conta usam este cartão.</span>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.75rem' }}>
+            <div className="acc-form-grid-card">
               <label className="budget-field">
                 <span className="budget-field-label">Limite (opcional)</span>
                 <MoneyInput

@@ -174,7 +174,7 @@ export default function BudgetSection({ totalIncomeMonth, totalExpenseMonth }: P
             <h4>{editingId ? 'Editar Envelope' : 'Criar Envelope de Orçamento'}</h4>
             {error && <div className="config-form-error">{error}</div>}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
+            <div className="budget-form-grid">
               <label className="budget-field">
                 <span className="budget-field-label">Nome do Envelope / Categoria</span>
                 <input

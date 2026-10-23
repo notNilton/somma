@@ -199,7 +199,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
+      <div className="reports-tabs" style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <button
           type="button"
           onClick={() => setActiveTab('import')}
@@ -364,7 +364,7 @@ export default function ReportsPage() {
                 </div>
               )}
 
-              <div style={{ maxHeight: '420px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '1.25rem' }}>
+              <div style={{ maxHeight: '420px', overflow: 'auto', WebkitOverflowScrolling: 'touch', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '1.25rem' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                   <thead>
                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
@@ -494,15 +494,7 @@ export default function ReportsPage() {
                   return (
                     <div
                       key={i}
-                      style={{
-                        padding: '0.85rem 1rem',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
+                      className="report-mom-row"
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <span
@@ -516,7 +508,7 @@ export default function ReportsPage() {
                         <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{item.categoryName || 'Outros'}</span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                      <div className="report-mom-values">
                         <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
                           Média: {formatMoney(item.movingAvg)}
                         </span>
@@ -593,7 +585,7 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div className="reports-export-actions" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <button
               type="button"
               className="btn-primary-add"

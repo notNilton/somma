@@ -134,7 +134,7 @@ export default function GoalsSection() {
           <h4>{editingId ? 'Editar Meta' : 'Cadastrar Nova Meta / Caixinha'}</h4>
           {error && <div className="config-form-error">{error}</div>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
+          <div className="goal-form-grid-2">
             <label className="budget-field">
               <span className="budget-field-label">Nome da Meta</span>
               <input
@@ -161,7 +161,7 @@ export default function GoalsSection() {
             </label>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.75rem' }}>
+          <div className="goal-form-grid-3">
             <label className="budget-field">
               <span className="budget-field-label">Descrição / Motivo (opcional)</span>
               <input
