@@ -3465,20 +3465,20 @@ body:has(.app-nav) :is(input, select, textarea):focus {
 }
 .btn-logout:hover { border-color: #0a0a0a; }
 
-/* Mobile Bottom Navigation Bar */
+/* Mobile Bottom Navigation Bar - Minimalista */
 .mobile-bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(56px + env(safe-area-inset-bottom, 0px));
-  padding: 0 0.25rem env(safe-area-inset-bottom, 0px);
+  height: calc(52px + env(safe-area-inset-bottom, 0px));
+  padding: 0 0.5rem env(safe-area-inset-bottom, 0px);
   background: #ffffff;
   border-top: 1px solid var(--border);
   backdrop-filter: none;
   display: flex;
   align-items: stretch;
-  justify-content: space-between;
+  justify-content: space-around;
   z-index: 1000;
 }
 @media (min-width: 640px) {
@@ -3487,28 +3487,28 @@ body:has(.app-nav) :is(input, select, textarea):focus {
 .mobile-nav-item {
   flex: 1 1 0;
   min-width: 0;
-  padding: 5px 1px;
+  padding: 6px 2px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   text-decoration: none;
-  color: var(--text-muted);
+  color: #737373;
   background: none;
   border: none;
   border-radius: 0;
   cursor: pointer;
   transition: color 0.15s;
 }
-.mobile-nav-item .mobile-nav-icon {
-  font-size: 1.15rem;
-  line-height: 1;
+.mobile-nav-item svg {
+  display: block;
+  flex-shrink: 0;
 }
 .mobile-nav-item .mobile-nav-label {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 500;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3516,10 +3516,14 @@ body:has(.app-nav) :is(input, select, textarea):focus {
 }
 .mobile-nav-item.active {
   color: #0a0a0a;
-  border-top: 2px solid #0a0a0a;
+  border-top: none;
+}
+.mobile-nav-item.active svg {
+  stroke-width: 2.3;
 }
 .mobile-nav-item.active .mobile-nav-label {
   font-weight: 700;
+  color: #0a0a0a;
 }
 
 /* Mês */
@@ -4105,33 +4109,65 @@ body:has(.app-nav) :is(input, select, textarea):focus {
 .tx-total-balance { font-size: 0.9375rem; }
 .tx-total-row { font-size: 0.8125rem; }
 .tx-total-value { font-size: 0.875rem; }
+.tx-table-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tx-table-inner {
+  min-width: 100%;
+}
 @media (min-width: 640px) {
   /* Coluna de saldo/total cabe valores de seis dígitos, ex.: -R$ 100.000,00 */
   .tx-table-header,
-  .tx-day-row { grid-template-columns: 2.5rem 1fr 15rem; }
+  .tx-day-row { grid-template-columns: 2.5rem 1fr 14rem; }
 }
 .tx-total-head,
 .tx-total-row { white-space: nowrap; }
 @media (max-width: 639px) {
-  /* No celular, saldo e total do dia vão para uma faixa abaixo dos lançamentos. */
+  /* No celular, a tabela mantém as 3 colunas e rola suavemente para esquerda/direita */
+  .tx-table-inner {
+    min-width: 480px;
+  }
   .tx-table-header,
-  .tx-day-row { grid-template-columns: 2.25rem minmax(0, 1fr); }
-  .tx-table-header .th-total { display: none; }
+  .tx-day-row {
+    grid-template-columns: 2.25rem 1fr 11.5rem !important;
+  }
+  .tx-table-header .th-total {
+    display: block !important;
+    text-align: right;
+    padding-right: 0.75rem;
+  }
   .tx-total,
   .tx-total.zero,
   .tx-total.neg {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    border-left: 0;
-    border-top: 1px solid var(--border-soft);
-    padding: 0.5rem 0.75rem;
+    grid-column: 3 !important;
+    border-left: 1px solid var(--border-soft) !important;
+    border-top: 0 !important;
+    padding: 0.5rem 0.75rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 0.2rem !important;
   }
-  .tx-total-head { gap: 0.5rem; }
-  .tx-total-breakdown { display: flex; }
-  .tx-total-row { gap: 0.5rem; }
+  .tx-total-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: baseline !important;
+    gap: 0.5rem !important;
+    white-space: nowrap !important;
+  }
+  .tx-total-breakdown {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .tx-total-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: baseline !important;
+    gap: 0.5rem !important;
+    white-space: nowrap !important;
+  }
   .tx-type-row { padding: 0.45rem 0.75rem; }
   .tx-type-detail { padding-left: 1rem; padding-right: 0.75rem; }
 }
@@ -4178,8 +4214,11 @@ body:has(.app-nav) :is(input, select, textarea):focus {
 
 /* ── Regras de Responsividade Mobile ─────────────────────────────── */
 @media (max-width: 640px) {
+  .app-footer {
+    display: none !important;
+  }
   body:has(.app-nav) {
-    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .fab-add {
     bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;

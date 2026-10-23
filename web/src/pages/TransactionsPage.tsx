@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate, Outlet } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { transactionsApi } from '../api'
@@ -37,6 +37,30 @@ export default function TransactionsPage() {
     else setMonth(m => m + 1)
   }
   function goToday() { setYear(now.getFullYear()); setMonth(now.getMonth()) }
+
+  // Suporte a gestos touch para trocar de mês
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null || touchStartY.current === null) return
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
+      if (deltaX < 0) {
+        nextMonth()
+      } else {
+        prevMonth()
+      }
+    }
+    touchStartX.current = null
+    touchStartY.current = null
+  }
 
   const lastDay = new Date(year, month + 1, 0).getDate()
   const from = `${year}-${pad(month + 1)}-01`
@@ -141,7 +165,11 @@ export default function TransactionsPage() {
     <>
       <div className="tx-page">
         {/* Barra Superior Centralizada: Navegação de Mês */}
-        <div className="tx-header-toolbar centralized">
+        <div
+          className="tx-header-toolbar centralized"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="month-nav">
             <button className="today-chip" onClick={goToday} title="Ir para o dia de hoje">
               Hoje
@@ -188,52 +216,56 @@ export default function TransactionsPage() {
           </div>
         )}
 
-        <div className="tx-table-header">
-          <span className="th-dia">{t.table.day}</span>
-          <span className="th-filter">
-            <select
-              className="type-filter-select"
-              value={filterType}
-              onChange={e => setFilterType(e.target.value as UiFilterType)}
-            >
-              <option value="ALL">{t.filter.all}</option>
-              <option value="INCOME">{t.filter.income}</option>
-              <option value="EXPENSE">{t.filter.expense}</option>
-            </select>
-          </span>
-          <span className="th-total">{t.table.total}</span>
-        </div>
+        <div className="tx-table-scroll-container">
+          <div className="tx-table-inner">
+            <div className="tx-table-header">
+              <span className="th-dia">{t.table.day}</span>
+              <span className="th-filter">
+                <select
+                  className="type-filter-select"
+                  value={filterType}
+                  onChange={e => setFilterType(e.target.value as UiFilterType)}
+                >
+                  <option value="ALL">{t.filter.all}</option>
+                  <option value="INCOME">{t.filter.income}</option>
+                  <option value="EXPENSE">{t.filter.expense}</option>
+                </select>
+              </span>
+              <span className="th-total">{t.table.total}</span>
+            </div>
 
-        {visibleGroups.map(g => (
-          <DayGroupComponent
-            key={g.dateStr}
-            group={g}
-            filterType={filterType}
-            isToday={g.dateStr === todayStr}
-            selectedTxIds={selectedTxIds}
-            onToggleSelectTx={id => {
-              setSelectedTxIds(prev => {
-                const next = new Set(prev)
-                if (next.has(id)) next.delete(id)
-                else next.add(id)
-                return next
-              })
-            }}
-            onAdd={(date, kind) => navigate(`/app/new?date=${date}${kind ? `&kind=${kind}` : ''}`)}
-            onDelete={id => deleteMutation.mutate(id)}
-            onEdit={handleEdit}
-          />
-        ))}
-        {visibleGroups.length === 0 && (
-          <EmptyState
-            title={t.emptyState.title}
-            hint={t.emptyState.hint}
-            action={{
-              label: `+ ${t.modal.title}`,
-              onClick: () => navigate('/app/new'),
-            }}
-          />
-        )}
+            {visibleGroups.map(g => (
+              <DayGroupComponent
+                key={g.dateStr}
+                group={g}
+                filterType={filterType}
+                isToday={g.dateStr === todayStr}
+                selectedTxIds={selectedTxIds}
+                onToggleSelectTx={id => {
+                  setSelectedTxIds(prev => {
+                    const next = new Set(prev)
+                    if (next.has(id)) next.delete(id)
+                    else next.add(id)
+                    return next
+                  })
+                }}
+                onAdd={(date, kind) => navigate(`/app/new?date=${date}${kind ? `&kind=${kind}` : ''}`)}
+                onDelete={id => deleteMutation.mutate(id)}
+                onEdit={handleEdit}
+              />
+            ))}
+            {visibleGroups.length === 0 && (
+              <EmptyState
+                title={t.emptyState.title}
+                hint={t.emptyState.hint}
+                action={{
+                  label: `+ ${t.modal.title}`,
+                  onClick: () => navigate('/app/new'),
+                }}
+              />
+            )}
+          </div>
+        </div>
 
         <button
           type="button"
