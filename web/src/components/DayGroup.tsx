@@ -68,11 +68,30 @@ export default function DayGroupComponent({
 
   return (
     <div className={`tx-day-row${isToday ? ' is-today' : ''}`}>
-      <div className={`tx-day-num${isToday ? ' today' : ''}`}>
-        {group.dayNum}
+      {/* Top Header no mobile (Dia + Saldo/Total); Coluna de Dia no desktop */}
+      <div className="tx-day-header">
+        <div className={`tx-day-num${isToday ? ' today' : ''}`}>
+          <span className="tx-day-digit">{group.dayNum}</span>
+          {isToday && <span className="tx-today-tag">hoje</span>}
+        </div>
+        <div className={`tx-day-totals ${saldoClass}`}>
+          <div className="tx-day-total-chip">
+            <span className="tx-day-total-lbl">Saldo</span>
+            <span className={`tx-day-total-val ${saldoClass}`}>
+              {group.runningBalance > 0 ? '+' : ''}{formatMoney(group.runningBalance)}
+            </span>
+          </div>
+          <span className="tx-day-total-sep">/</span>
+          <div className="tx-day-total-chip">
+            <span className="tx-day-total-lbl">Dia</span>
+            <span className={`tx-day-total-val ${totalClass}`}>
+              {group.runningTotal > 0 ? '+' : ''}{formatMoney(group.runningTotal)}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div>
+      <div className="tx-types-grid">
         {visibleKinds.map(kind => {
           const txs = txsFor(kind)
           const total = totalFor(kind)
@@ -82,7 +101,7 @@ export default function DayGroupComponent({
           const hasItems = txs.length > 0
 
           return (
-            <div key={kind}>
+            <div key={kind} className={`tx-kind-block${isExp ? ' is-expanded' : ''}`}>
               <div
                 className="tx-type-row"
                 onClick={() => handleRowClick(kind)}
@@ -172,7 +191,7 @@ export default function DayGroupComponent({
         })}
       </div>
 
-      <div className={`tx-total ${saldoClass}`}>
+      <div className={`tx-total desktop-only ${saldoClass}`}>
         <div className="tx-total-head">
           <span className="tx-total-title">{t.dayGroup.balance}</span>
           <span className={`tx-total-balance ${saldoClass}`}>
