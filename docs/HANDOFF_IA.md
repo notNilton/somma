@@ -184,11 +184,15 @@ Para digitar tecla a tecla (testar o `MoneyInput`), use `Input.insertText` via C
 - Servidor `niflheim-backup`. Acesso SSH configurado em `~/.ssh/config` via
   `ssh niflheim-backup` (IP público `173.212.207.80`, usuário `notNilton`). O host
   legado `niflheim` foi removido do `~/.ssh/config`.
-- Containers: `nilbyte_postgres_prod` (banco `somma`, compartilhado com o app
-  de veículos), `somma_migrate_prod`, `somma_expenses_backend_prod`,
-  `somma_expenses_web_prod` (nginx com `/api/` → backend:3300),
-  `somma_vehicles_*`, `somma_doc_prod`.
-- Web: https://sommae.nilbyte.com.br (`somma.nilbyte.com.br` também responde).
+- Containers: `nilbyte_postgres_prod` (banco `somma`), `somma_migrate_prod`,
+  `somma_expenses_backend_prod`, `somma_expenses_web_prod` (nginx com `/api/` →
+  backend:3300), `somma_doc_prod`.
+- Web: https://somma.nilbyte.com.br (`sommae.nilbyte.com.br` continua respondendo
+  como alias, para apps e links antigos).
+- Veículos e abastecimentos saíram do Somma em 30/10/2026: são do **GearWolf**
+  (repo `nilByte/gearwolf`, banco `gearwolf`, https://gearwolf.nilbyte.com.br).
+  A migration 37 remove as tabelas `vehicles` e `refueling_logs` do banco `somma`;
+  as despesas de combustível em `transactions` ficam.
 - Deploy: push na `main` → CI builda `expenses-backend`/`expenses-web` → job
   `deploy` faz `docker compose pull` + `up -d` em
   `/home/notNilton/infrastructure/apps/infra/somma` com o prefixo `-p somma-<service>`.
