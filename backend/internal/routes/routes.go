@@ -57,6 +57,7 @@ func Register(mux *http.ServeMux, h *handlers.Handler, jwtKey []byte) {
 	mux.HandleFunc("DELETE /api/v1/cards/{id}", auth(h.DeleteCreditCard))
 	mux.HandleFunc("PATCH /api/v1/transactions/{id}", auth(h.UpdateLedger))
 	mux.HandleFunc("DELETE /api/v1/transactions/{id}", auth(h.DeleteLedger))
+	mux.HandleFunc("PATCH /api/v1/transactions/{id}/restore", auth(h.RestoreLedger))
 
 	// Credit Cards
 	mux.HandleFunc("POST /cards", auth(h.CreateCard))

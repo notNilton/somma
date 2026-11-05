@@ -384,6 +384,29 @@ func (h *Handler) DeleteLedger(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// RestoreLedger atende PATCH /api/v1/transactions/{id}/restore: o "desfazer" da exclusão.
+func (h *Handler) RestoreLedger(w http.ResponseWriter, r *http.Request) {
+	claims, ok := middleware.ClaimsFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	restored, err := h.queries.RestoreLedgerTransaction(r.Context(), database.RestoreLedgerTransactionParams{
+		ID:     r.PathValue("id"),
+		UserID: claims.UserID,
+	})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to restore transaction")
+		return
+	}
+	if restored == 0 {
+		writeError(w, http.StatusNotFound, "transaction not found")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type createLedgerRequest struct {
 	Type              string  `json:"type"`
 	Kind              string  `json:"kind"`

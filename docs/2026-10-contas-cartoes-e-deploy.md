@@ -97,6 +97,7 @@ estavam aplicadas).
 | `POST /api/v1/transactions` | Cria; aceita `totalInstallments` ou `isRecurring` + `recurrenceEndDate` |
 | `PATCH /api/v1/transactions/{id}` | Edita (numa recorrência, esta e as seguintes); `isRecurring` transforma avulso em série |
 | `DELETE /api/v1/transactions/{id}[?scope=following]` | Exclui um ou a série a partir dele |
+| `PATCH /api/v1/transactions/{id}/restore` | Desfaz a exclusão de um lançamento |
 | `GET /api/v1/categories` | Categorias em árvore |
 
 Arquivos principais: `internal/handlers/{account,ledger,creditcards,categories,auth}.go`,

@@ -301,6 +301,26 @@ func (q *Queries) MarkRecurringOrigin(ctx context.Context, arg MarkRecurringOrig
 	return err
 }
 
+const restoreLedgerTransaction = `-- name: RestoreLedgerTransaction :execrows
+UPDATE transactions
+SET is_active = TRUE, deleted_at = NULL, updated_at = NOW()
+WHERE id = $1 AND user_id = $2 AND deleted_at IS NOT NULL
+`
+
+type RestoreLedgerTransactionParams struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+// Desfaz a exclusão lógica de um lançamento.
+func (q *Queries) RestoreLedgerTransaction(ctx context.Context, arg RestoreLedgerTransactionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, restoreLedgerTransaction, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const softDeleteLedgerTransaction = `-- name: SoftDeleteLedgerTransaction :exec
 UPDATE transactions
 SET is_active = FALSE, deleted_at = NOW(), updated_at = NOW()

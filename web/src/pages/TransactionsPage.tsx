@@ -105,6 +105,7 @@ export default function TransactionsPage() {
     mutationFn: (id: string) => transactionsApi.restore(id),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: txKey })
+      qc.invalidateQueries({ queryKey: ['transactions-all-months'] })
       qc.invalidateQueries({ queryKey: ['transactions-before'] })
     },
   })

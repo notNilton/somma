@@ -47,6 +47,12 @@ UPDATE transactions
 SET is_active = FALSE, deleted_at = NOW(), updated_at = NOW()
 WHERE id = @id AND user_id = @user_id;
 
+-- name: RestoreLedgerTransaction :execrows
+-- Desfaz a exclusão lógica de um lançamento.
+UPDATE transactions
+SET is_active = TRUE, deleted_at = NULL, updated_at = NOW()
+WHERE id = @id AND user_id = @user_id AND deleted_at IS NOT NULL;
+
 -- name: CreateLedgerTransaction :one
 INSERT INTO transactions (
     user_id, type, kind, status, amount_cents, date, description, notes,
