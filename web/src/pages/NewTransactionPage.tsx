@@ -5,7 +5,7 @@ import { accountsApi, cardsApi, categoriesApi, transactionsApi } from '../api'
 import { useLocale } from '../i18n'
 import { formatMoney } from '../lib/format'
 import MoneyInput from '../components/MoneyInput'
-import type { Category, CreateInput, TransferInput, TxKind } from '../types'
+import type { Category, CreateInput, Transaction, TransferInput, TxKind } from '../types'
 
 function flattenCategories(cats: Category[], indent = false): Array<{ id: string; name: string; indent: boolean }> {
   const result: Array<{ id: string; name: string; indent: boolean }> = []
@@ -150,7 +150,11 @@ export default function NewTransactionPage() {
     mutationFn: ({ id, input }: { id: string; input: Partial<CreateInput> }) =>
       transactionsApi.update(id, input),
     onSuccess: () => {
+      // Editar uma recorrência muda outros meses: sem isso a próxima ocorrência
+      // abriria com os valores antigos e salvá-la desfaria a edição.
       qc.invalidateQueries({ queryKey: ['transactions'] })
+      qc.invalidateQueries({ queryKey: ['transactions-all-months'] })
+      qc.invalidateQueries({ queryKey: ['transactions-before'] })
       qc.invalidateQueries({ queryKey: ['accounts'] })
       qc.invalidateQueries({ queryKey: ['cards'] })
       navigate('/app')
@@ -159,9 +163,11 @@ export default function NewTransactionPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: ({ id, scope }: { id: string; scope?: 'following' }) => transactionsApi.remove(id, scope),
+    mutationFn: (tx: Transaction) => transactionsApi.remove(tx),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['transactions'] })
+      qc.invalidateQueries({ queryKey: ['transactions-all-months'] })
+      qc.invalidateQueries({ queryKey: ['transactions-before'] })
       qc.invalidateQueries({ queryKey: ['accounts'] })
       qc.invalidateQueries({ queryKey: ['cards'] })
       navigate('/app')
@@ -542,7 +548,7 @@ export default function NewTransactionPage() {
 
               {/* Recorrência mensal */}
               {editingTx?.isRecurring && (
-                <span className="drawer-hint">Faz parte de uma recorrência mensal. As alterações valem só para este mês.</span>
+                <span className="drawer-hint">Faz parte de uma recorrência mensal. As alterações valem para este mês e os próximos.</span>
               )}
               {canMakeRecurring && (
                 <div className="drawer-field drawer-recurring">
@@ -623,28 +629,16 @@ export default function NewTransactionPage() {
                     type="button"
                     className="drawer-btn-delete"
                     onClick={() => {
-                      if (window.confirm('Deseja realmente excluir este lançamento?')) {
-                        deleteMutation.mutate({ id: editId })
+                      if (editingTx && window.confirm(editingTx.isRecurring
+                        ? 'Excluir este lançamento e todos os próximos desta recorrência?'
+                        : 'Deseja realmente excluir este lançamento?')) {
+                        deleteMutation.mutate(editingTx)
                       }
                     }}
-                    disabled={deleteMutation.isPending}
+                    disabled={!editingTx || deleteMutation.isPending}
                   >
-                    {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
+                    {deleteMutation.isPending ? 'Excluindo...' : editingTx?.isRecurring ? 'Excluir esta e as próximas' : 'Excluir'}
                   </button>
-                  {editingTx?.isRecurring && (
-                    <button
-                      type="button"
-                      className="drawer-btn-delete"
-                      onClick={() => {
-                        if (window.confirm('Excluir este lançamento e todos os próximos desta recorrência?')) {
-                          deleteMutation.mutate({ id: editId, scope: 'following' })
-                        }
-                      }}
-                      disabled={deleteMutation.isPending}
-                    >
-                      Excluir esta e as próximas
-                    </button>
-                  )}
                 </div>
               ) : (
                 <div />

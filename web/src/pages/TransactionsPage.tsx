@@ -81,20 +81,22 @@ export default function TransactionsPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => transactionsApi.remove(id),
-    onMutate: async (id) => {
+    mutationFn: (tx: Transaction) => transactionsApi.remove(tx),
+    onMutate: async ({ id, isRecurring }) => {
       await qc.cancelQueries({ queryKey: txKey })
       const previous = qc.getQueryData<Transaction[]>(txKey)
       const deleted = previous?.find(tx => tx.id === id)
       qc.setQueryData<Transaction[]>(txKey, (old = []) => old.filter(tx => tx.id !== id))
-      if (deleted) setUndoState({ id, label: deleted.description || 'Transação' })
+      if (deleted && !isRecurring) setUndoState({ id, label: deleted.description || 'Transação' })
       return { previous }
     },
-    onError: (_err, _id, ctx) => {
+    onError: (_err, _tx, ctx) => {
       if (ctx?.previous) qc.setQueryData(txKey, ctx.previous)
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: txKey })
+      // A recorrência some também dos meses seguintes.
+      qc.invalidateQueries({ queryKey: ['transactions'] })
+      qc.invalidateQueries({ queryKey: ['transactions-all-months'] })
       qc.invalidateQueries({ queryKey: ['transactions-before'] })
     },
   })
@@ -110,13 +112,15 @@ export default function TransactionsPage() {
   // Bulk Actions
   async function handleBulkDelete() {
     if (selectedTxIds.size === 0) return
-    if (!confirm(`Deseja excluir as ${selectedTxIds.size} transações selecionadas?`)) return
-    const ids = Array.from(selectedTxIds)
-    for (const id of ids) {
-      await transactionsApi.remove(id).catch(() => {})
+    const selected = txs.filter(tx => selectedTxIds.has(tx.id))
+    const recurringNote = selected.some(tx => tx.isRecurring) ? ' As recorrentes serão excluídas junto com as próximas.' : ''
+    if (!confirm(`Deseja excluir as ${selectedTxIds.size} transações selecionadas?${recurringNote}`)) return
+    for (const tx of selected) {
+      await transactionsApi.remove(tx).catch(() => {})
     }
     setSelectedTxIds(new Set())
-    qc.invalidateQueries({ queryKey: txKey })
+    qc.invalidateQueries({ queryKey: ['transactions'] })
+    qc.invalidateQueries({ queryKey: ['transactions-all-months'] })
     qc.invalidateQueries({ queryKey: ['transactions-before'] })
   }
 
@@ -250,7 +254,7 @@ export default function TransactionsPage() {
                   })
                 }}
                 onAdd={(date, kind) => navigate(`/app/new?date=${date}${kind ? `&kind=${kind}` : ''}`)}
-                onDelete={id => deleteMutation.mutate(id)}
+                onDelete={tx => deleteMutation.mutate(tx)}
                 onEdit={handleEdit}
               />
             ))}

@@ -21,7 +21,7 @@ interface Props {
   selectedTxIds?: Set<string>
   onToggleSelectTx?: (id: string) => void
   onAdd: (date: string, kind?: TxKind) => void
-  onDelete: (id: string) => void
+  onDelete: (tx: Transaction) => void
   onEdit: (tx: Transaction) => void
 }
 
@@ -168,7 +168,7 @@ export default function DayGroupComponent({
                               className="tx-detail-del"
                               onClick={e => {
                                 e.stopPropagation()
-                                if (confirm(t.dayGroup.confirmDelete)) onDelete(tx.id)
+                                if (confirm(tx.isRecurring ? t.dayGroup.confirmDeleteRecurring : t.dayGroup.confirmDelete)) onDelete(tx)
                               }}
                             >
                               ×

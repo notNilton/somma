@@ -11,7 +11,7 @@ Substitui o app Expo de `app/`.
 - Login e cadastro, com o endereço do servidor configurável (em "Servidor")
 - Lançamentos do mês: só os dias com lançamento, saldo acumulado e total do dia; setas ou arrastar
   para o lado troca de mês, tocar no mês (ou na aba de novo) volta para hoje; filtro de entradas e saídas
-- Tocar num lançamento edita; segurar exclui (na recorrência: só este ou este e os próximos)
+- Tocar num lançamento edita; segurar exclui; na recorrência, editar e excluir valem para este e os próximos
 - Novo lançamento: Renda, Débito, Crédito, Poupança e Orçamento; crédito escolhe a conta do cartão
   e pode ser parcelado; "Repetir todo mês" com data final opcional
 - Pagar fatura: escolhe o cartão, a conta que paga, valor (sugere o usado) e data

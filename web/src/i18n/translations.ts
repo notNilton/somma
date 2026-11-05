@@ -18,7 +18,7 @@ export interface T {
     save: string
     saveEdit: string
   }
-  dayGroup: { addInline: string; confirmDelete: string; balance: string; total: string }
+  dayGroup: { addInline: string; confirmDelete: string; confirmDeleteRecurring: string; balance: string; total: string }
   login: {
     subtitle: string
     emailPlaceholder: string
@@ -132,7 +132,7 @@ export const translations: Record<Locale, T> = {
       save: 'Salvar',
       saveEdit: 'Atualizar',
     },
-    dayGroup: { addInline: '+ adicionar', confirmDelete: 'Remover?', balance: 'Saldo', total: 'Total do dia' },
+    dayGroup: { addInline: '+ adicionar', confirmDelete: 'Remover?', confirmDeleteRecurring: 'Remover este lançamento e todos os próximos desta recorrência?', balance: 'Saldo', total: 'Total do dia' },
     login: {
       subtitle: 'Cadastre renda, gastos no crédito e no débito/pix.',
       emailPlaceholder: 'Email',
@@ -249,7 +249,7 @@ export const translations: Record<Locale, T> = {
       save: 'Save',
       saveEdit: 'Update',
     },
-    dayGroup: { addInline: '+ add', confirmDelete: 'Remove?', balance: 'Balance', total: 'Day total' },
+    dayGroup: { addInline: '+ add', confirmDelete: 'Remove?', confirmDeleteRecurring: 'Remove this entry and all upcoming ones in this series?', balance: 'Balance', total: 'Day total' },
     login: {
       subtitle: 'Track income, credit and debit/pix expenses.',
       emailPlaceholder: 'Email',
@@ -366,7 +366,7 @@ export const translations: Record<Locale, T> = {
       save: 'Guardar',
       saveEdit: 'Actualizar',
     },
-    dayGroup: { addInline: '+ agregar', confirmDelete: '¿Eliminar?', balance: 'Saldo', total: 'Total del día' },
+    dayGroup: { addInline: '+ agregar', confirmDelete: '¿Eliminar?', confirmDeleteRecurring: '¿Eliminar este movimiento y todos los próximos de esta recurrencia?', balance: 'Saldo', total: 'Total del día' },
     login: {
       subtitle: 'Registra ingresos, gastos en crédito y débito/pix.',
       emailPlaceholder: 'Correo',

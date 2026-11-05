@@ -20,9 +20,9 @@ export const transactionsApi = {
       body: JSON.stringify(input),
     }),
 
-  /** scope 'following' numa recorrência exclui esta ocorrência e as próximas. */
-  remove: (id: string, scope?: 'following') =>
-    req<void>(`/api/v1/transactions/${id}${scope ? `?scope=${scope}` : ''}`, { method: 'DELETE' }),
+  /** Numa recorrência exclui esta ocorrência e as próximas. */
+  remove: (tx: Pick<Transaction, 'id' | 'isRecurring'>) =>
+    req<void>(`/api/v1/transactions/${tx.id}${tx.isRecurring ? '?scope=following' : ''}`, { method: 'DELETE' }),
 
   restore: (id: string) =>
     req<void>(`/api/v1/transactions/${id}/restore`, { method: 'PATCH' }),

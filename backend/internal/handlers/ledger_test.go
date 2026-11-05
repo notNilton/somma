@@ -52,3 +52,27 @@ func TestMonthsUntil(t *testing.T) {
 		}
 	}
 }
+
+func TestRescheduleFollowing(t *testing.T) {
+	day := func(s string) time.Time {
+		d, err := parseDay(s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return d
+	}
+	cases := []struct{ oldDay, newDay, occurrence, want string }{
+		{"2026-11-05", "2026-11-10", "2026-12-05", "2026-12-10"}, // muda o dia
+		{"2026-11-05", "2026-11-10", "2027-03-05", "2027-03-10"}, // mês com um buraco antes
+		{"2026-12-05", "2026-12-31", "2027-02-05", "2027-02-28"}, // limita ao fim do mês
+		{"2026-12-31", "2026-12-15", "2027-02-28", "2027-02-15"}, // ocorrência que estava limitada
+		{"2026-11-05", "2027-01-05", "2026-12-05", "2027-02-05"}, // muda o mês: desloca a série
+		{"2026-11-05", "2026-10-20", "2026-12-05", "2026-11-20"}, // volta um mês
+	}
+	for _, c := range cases {
+		months := monthsBetween(day(c.oldDay), day(c.occurrence))
+		if got := addMonthsClamped(day(c.newDay), months).Format(time.DateOnly); got != c.want {
+			t.Errorf("%s→%s em %s = %s, want %s", c.oldDay, c.newDay, c.occurrence, got, c.want)
+		}
+	}
+}

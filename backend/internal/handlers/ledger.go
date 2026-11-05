@@ -137,6 +137,7 @@ var validKinds = map[string]bool{"INCOME": true, "EXPENSE": true, "CREDIT": true
 
 // UpdateLedger atende PATCH /api/v1/transactions/{id}. O drawer do web envia o
 // formulário inteiro, então os vínculos ausentes (conta, categoria) ficam vazios.
+// Numa recorrência a edição vale para esta ocorrência e as seguintes da série.
 func (h *Handler) UpdateLedger(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.ClaimsFromContext(r.Context())
 	if !ok {
@@ -232,7 +233,7 @@ func (h *Handler) UpdateLedger(w http.ResponseWriter, r *http.Request) {
 		cardID = &id
 	}
 
-	updated, err := qtx.UpdateLedgerTransaction(ctx, database.UpdateLedgerTransactionParams{
+	params := database.UpdateLedgerTransactionParams{
 		ID:          current.ID,
 		UserID:      claims.UserID,
 		Type:        req.Type,
@@ -243,10 +244,18 @@ func (h *Handler) UpdateLedger(w http.ResponseWriter, r *http.Request) {
 		CategoryID:  categoryID,
 		AccountID:   accountID,
 		CardID:      cardID,
-	})
+	}
+	updated, err := qtx.UpdateLedgerTransaction(ctx, params)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to update transaction")
 		return
+	}
+
+	if current.IsRecurring {
+		if err := updateFollowing(ctx, qtx, current, params, day); err != nil {
+			writeError(w, http.StatusInternalServerError, "failed to update transaction")
+			return
+		}
 	}
 
 	if makeRecurring {
@@ -284,6 +293,42 @@ func (h *Handler) UpdateLedger(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, toLedgerTransaction(database.ListLedgerTransactionsRow(updated)))
 }
 
+// seriesID devolve a origem da série de uma ocorrência recorrente.
+func seriesID(t database.GetLedgerTransactionForUpdateRow) string {
+	if t.RecurringOriginID != nil {
+		return *t.RecurringOriginID
+	}
+	return t.ID
+}
+
+// updateFollowing replica nas ocorrências seguintes da série a edição de current.
+// As datas só mudam se a data de current mudou: uma série do dia 31 editada na
+// ocorrência de fevereiro (dia 28) continua no dia 31 nos meses seguintes.
+func updateFollowing(ctx context.Context, qtx *database.Queries, current database.GetLedgerTransactionForUpdateRow,
+	params database.UpdateLedgerTransactionParams, day time.Time) error {
+	following, err := qtx.ListRecurringFollowing(ctx, database.ListRecurringFollowingParams{
+		UserID:   params.UserID,
+		SeriesID: seriesID(current),
+		FromDate: current.Date,
+		ID:       current.ID,
+	})
+	if err != nil {
+		return err
+	}
+	oldDay := current.Date.Time.In(brt)
+	moved := oldDay.Format(time.DateOnly) != day.Format(time.DateOnly)
+	for _, occurrence := range following {
+		params.ID, params.Date = occurrence.ID, occurrence.Date
+		if moved {
+			params.Date = dayTimestamp(addMonthsClamped(day, monthsBetween(oldDay, occurrence.Date.Time.In(brt))))
+		}
+		if _, err := qtx.UpdateLedgerTransaction(ctx, params); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // DeleteLedger atende DELETE /api/v1/transactions/{id}: exclusão lógica.
 func (h *Handler) DeleteLedger(w http.ResponseWriter, r *http.Request) {
 	claims, ok := middleware.ClaimsFromContext(r.Context())
@@ -316,13 +361,9 @@ func (h *Handler) DeleteLedger(w http.ResponseWriter, r *http.Request) {
 
 	// ?scope=following numa recorrência exclui esta ocorrência e as seguintes da série.
 	if r.URL.Query().Get("scope") == "following" && current.IsRecurring {
-		seriesID := current.ID
-		if current.RecurringOriginID != nil {
-			seriesID = *current.RecurringOriginID
-		}
 		_, err = qtx.SoftDeleteRecurringFrom(ctx, database.SoftDeleteRecurringFromParams{
 			UserID:   claims.UserID,
-			SeriesID: seriesID,
+			SeriesID: seriesID(current),
 			FromDate: current.Date,
 		})
 	} else {
@@ -409,6 +450,11 @@ func monthsUntil(start, end time.Time) int {
 		}
 	}
 	return n
+}
+
+// monthsBetween conta os meses de calendário de from até to, ignorando o dia.
+func monthsBetween(from, to time.Time) int {
+	return (to.Year()-from.Year())*12 + int(to.Month()) - int(from.Month())
 }
 
 // splitInstallments divide o total em n parcelas; os centavos que sobram vão na primeira.

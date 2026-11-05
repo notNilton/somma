@@ -6,33 +6,16 @@ import '../models.dart';
 import '../store.dart';
 import '../ui.dart';
 
-/// Exclui um lançamento; numa recorrência pergunta se é só este ou este e os próximos.
+/// Exclui um lançamento; numa recorrência exclui também os próximos.
 /// Devolve true se excluiu.
 Future<bool> deleteTransaction(BuildContext context, Transaction t) async {
-  bool? following;
-  if (t.isRecurring) {
-    following = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Excluir lançamento mensal'),
-        content: const Text('Este lançamento se repete todo mês.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Só este')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Este e os próximos')),
-        ],
-      ),
-    );
-    if (following == null) return false;
-  } else {
-    if (!await confirm(context, 'Excluir lançamento?', body: t.description.isEmpty ? null : t.description)) {
-      return false;
-    }
-  }
-  if (!context.mounted) return false;
+  final confirmed = t.isRecurring
+      ? await confirm(context, 'Excluir este e os próximos?', body: 'Este lançamento se repete todo mês.')
+      : await confirm(context, 'Excluir lançamento?', body: t.description.isEmpty ? null : t.description);
+  if (!confirmed || !context.mounted) return false;
   final messenger = ScaffoldMessenger.of(context);
   try {
-    await api.deleteTransaction(t.id, following: following ?? false);
+    await api.deleteTransaction(t.id, following: t.isRecurring);
     store.changed();
     messenger.showSnackBar(const SnackBar(content: Text('Lançamento excluído')));
     return true;
@@ -301,6 +284,14 @@ class _EntryPageState extends State<EntryPage> with SingleTickerProviderStateMix
                   ),
               ],
               onChanged: (v) => setState(() => _installments = v ?? 1),
+            ),
+          ),
+        if (_editing && widget.edit!.isRecurring)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Faz parte de uma recorrência mensal. As alterações valem para este mês e os próximos.',
+              style: TextStyle(fontSize: 13, color: Theme.of(context).hintColor),
             ),
           ),
         if (_canRecur && _installments == 1) ...[

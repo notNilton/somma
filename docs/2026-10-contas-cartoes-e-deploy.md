@@ -51,8 +51,9 @@ categorias, alinhamento das migrations com a produção e o deploy pelo Gitea.
 - **Recorrente mensal**: uma linha por mês; a primeira é a origem da série
   (`recurring_origin_id` nas demais). Sem data final, cria 12 meses; máximo 5
   anos. Não combina com parcelamento. Um lançamento avulso pode virar
-  recorrente na edição. Editar mexe só na ocorrência; excluir pode ser só ela ou
-  "esta e as próximas".
+  recorrente na edição. Editar ou excluir uma ocorrência vale para ela e as
+  seguintes; as anteriores ficam como estão. Se a data mudar, cada ocorrência
+  seguinte vai para o novo dia no seu mês (limitado ao fim do mês).
 - Datas são dias de calendário no horário de Brasília, gravadas ao meio-dia.
 
 ### Categorias
@@ -94,7 +95,7 @@ estavam aplicadas).
 | `GET /api/v1/cards`, `PATCH/DELETE /api/v1/cards/{id}` | Cartões com limite usado/disponível |
 | `GET /api/v1/transactions?from&to` | Lançamentos do período (`to` inclusivo) |
 | `POST /api/v1/transactions` | Cria; aceita `totalInstallments` ou `isRecurring` + `recurrenceEndDate` |
-| `PATCH /api/v1/transactions/{id}` | Edita; `isRecurring` transforma avulso em série |
+| `PATCH /api/v1/transactions/{id}` | Edita (numa recorrência, esta e as seguintes); `isRecurring` transforma avulso em série |
 | `DELETE /api/v1/transactions/{id}[?scope=following]` | Exclui um ou a série a partir dele |
 | `GET /api/v1/categories` | Categorias em árvore |
 
