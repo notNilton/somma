@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef } from 'react'
 import { formatMoney } from '../lib/format'
 import { useLocale } from '../i18n'
 import type { DayGroup } from '../lib/groupByDay'
@@ -11,8 +11,6 @@ const KIND_TONES: Record<TxKind, string> = {
   SAVING: 'saving',
   BUDGET: 'budget',
 }
-
-const ALL_KINDS: TxKind[] = ['INCOME', 'EXPENSE', 'CREDIT', 'SAVING', 'BUDGET']
 
 interface Props {
   group: DayGroup
@@ -27,6 +25,21 @@ interface Props {
   onEdit: (tx: Transaction) => void
 }
 
+function effectiveKind(tx: Transaction): TxKind {
+  if (tx.kind === 'CREDIT' || tx.kind === 'SAVING' || tx.kind === 'BUDGET') return tx.kind
+  return tx.type === 'INCOME' ? 'INCOME' : 'EXPENSE'
+}
+
+const LONG_PRESS_MS = 500
+
+function signed(value: number) {
+  return `${value > 0 ? '+' : ''}${formatMoney(value)}`
+}
+
+function tone(value: number) {
+  return value > 0 ? 'pos' : value < 0 ? 'neg' : 'zero'
+}
+
 export default function DayGroupComponent({
   group,
   filterType,
@@ -38,189 +51,111 @@ export default function DayGroupComponent({
   onDelete,
   onEdit,
 }: Props) {
-  // Os tipos com lançamento já vêm abertos; aqui ficam só os que foram fechados.
-  const [collapsed, setCollapsed] = useState<Set<TxKind>>(new Set())
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
+  // No toque, segurar a linha seleciona; o clique que vem depois é ignorado.
+  const pressTimer = useRef<number | undefined>(undefined)
+  const longPressed = useRef(false)
 
-  const allowedKinds = ALL_KINDS.filter(kind =>
+  function startPress(id: string) {
+    longPressed.current = false
+    if (!onToggleSelectTx) return
+    pressTimer.current = window.setTimeout(() => {
+      longPressed.current = true
+      onToggleSelectTx(id)
+    }, LONG_PRESS_MS)
+  }
+
+  function cancelPress() {
+    window.clearTimeout(pressTimer.current)
+  }
+
+  const txs = group.transactions.filter(tx =>
     filterType === 'ALL' ? true :
-    filterType === 'INCOME' ? kind === 'INCOME' :
-    kind !== 'INCOME'
+    filterType === 'INCOME' ? tx.type === 'INCOME' :
+    tx.type !== 'INCOME'
   )
-  // Só aparecem as linhas dos tipos que têm lançamento no dia.
-  const visibleKinds = allowedKinds.filter(kind => txsFor(kind).length > 0)
-
-  const saldoClass = group.runningBalance > 0 ? 'pos' : group.runningBalance < 0 ? 'neg' : 'zero'
-  const totalClass = group.runningTotal > 0 ? 'pos' : group.runningTotal < 0 ? 'neg' : 'zero'
-
-  function getEffectiveKind(tx: Transaction): TxKind {
-    if (tx.kind === 'CREDIT' || tx.kind === 'SAVING' || tx.kind === 'BUDGET') return tx.kind
-    return tx.type === 'INCOME' ? 'INCOME' : 'EXPENSE'
-  }
-
-  function txsFor(kind: TxKind) {
-    return group.transactions.filter(tx => getEffectiveKind(tx) === kind)
-  }
-
-  function totalFor(kind: TxKind) {
-    return txsFor(kind).reduce((sum, tx) => sum + tx.amount, 0)
-  }
-
-  function handleRowClick(kind: TxKind) {
-    setCollapsed(prev => {
-      const next = new Set(prev)
-      if (next.has(kind)) next.delete(kind)
-      else next.add(kind)
-      return next
-    })
-  }
+  const selecting = selectedTxIds.size > 0
+  const weekday = new Date(`${group.dateStr}T12:00:00`).toLocaleDateString(locale, { weekday: 'long' })
 
   return (
-    <div className={`tx-day-row${isToday ? ' is-today' : ''}`}>
-      {/* Top Header no mobile (Dia + Saldo/Total); Coluna de Dia no desktop */}
-      <div className="tx-day-header">
-        <div className={`tx-day-num${isToday ? ' today' : ''}`}>
-          <span className="tx-day-digit">{group.dayNum}</span>
-          {isToday && <span className="tx-today-tag">hoje</span>}
-        </div>
-        <div className={`tx-day-totals ${saldoClass}`}>
-          <div className="tx-day-total-chip">
-            <span className="tx-day-total-lbl">Saldo</span>
-            <span className={`tx-day-total-val ${saldoClass}`}>
-              {group.runningBalance > 0 ? '+' : ''}{formatMoney(group.runningBalance)}
-            </span>
-          </div>
-          <span className="tx-day-total-sep">/</span>
-          <div className="tx-day-total-chip">
-            <span className="tx-day-total-lbl">Dia</span>
-            <span className={`tx-day-total-val ${totalClass}`}>
-              {group.runningTotal > 0 ? '+' : ''}{formatMoney(group.runningTotal)}
-            </span>
-          </div>
-        </div>
-      </div>
+    <section className={`day${isToday ? ' is-today' : ''}`}>
+      <header className="day-head">
+        <span className="day-num">{group.dayNum}</span>
+        <span className="day-weekday">{isToday ? 'hoje' : weekday}</span>
+        <button
+          className="day-add"
+          onClick={() => onAdd(group.dateStr)}
+          title={t.dayGroup.addInline}
+          aria-label={t.dayGroup.addInline}
+        >
+          +
+        </button>
+        <span className="day-totals">
+          <span>Saldo <b className={tone(group.runningBalance)}>{signed(group.runningBalance)}</b></span>
+          <span>Dia <b className={tone(group.runningTotal)}>{signed(group.runningTotal)}</b></span>
+        </span>
+      </header>
 
-      <div className="tx-types-grid">
-        {visibleKinds.map(kind => {
-          const txs = txsFor(kind)
-          const total = totalFor(kind)
-          const isExp = !collapsed.has(kind)
-          const label = t.kind[kind].label
-          const tone = KIND_TONES[kind]
-          const hasItems = txs.length > 0
+      {txs.map(tx => {
+        const kind = effectiveKind(tx)
+        const label = t.kind[kind].label
+        const isSelected = selectedTxIds.has(tx.id)
+        const isSaved = !tx.id.startsWith('optimistic-')
+        const detail = detailFor?.(tx)
 
-          return (
-            <div key={kind} className={`tx-kind-block${isExp ? ' is-expanded' : ''}`}>
-              <div
-                className="tx-type-row"
-                onClick={() => handleRowClick(kind)}
-                title={hasItems ? `${label}: ${formatMoney(total)}` : label}
+        return (
+          <div
+            key={tx.id}
+            className={`day-tx${isSelected ? ' is-selected' : ''}`}
+            onTouchStart={() => startPress(tx.id)}
+            onTouchMove={cancelPress}
+            onTouchEnd={cancelPress}
+            onTouchCancel={cancelPress}
+            onClick={() => {
+              if (longPressed.current) longPressed.current = false
+              else if (selecting && onToggleSelectTx) onToggleSelectTx(tx.id)
+              else if (isSaved) onEdit(tx)
+            }}
+          >
+            {onToggleSelectTx && (
+              <input
+                type="checkbox"
+                className={`day-tx-check${selecting ? ' is-visible' : ''}`}
+                checked={isSelected}
+                onClick={e => e.stopPropagation()}
+                onChange={() => onToggleSelectTx(tx.id)}
+                aria-label="Selecionar lançamento"
+              />
+            )}
+            <span className={`day-tx-kind ${KIND_TONES[kind]}`} title={label}>{t.kind[kind].letter}</span>
+            <span className="day-tx-main">
+              <span className="day-tx-title">
+                <span className="day-tx-desc">{tx.description || label}</span>
+                {tx.isInvoicePayment && <span className="day-tx-tag" title="Pagamento de fatura do cartão">fatura</span>}
+                {tx.isRecurring && <span className="day-tx-tag" title="Repete todo mês">mensal</span>}
+                {tx.status === 'PENDING' && <span className="day-tx-tag">{t.status.pending}</span>}
+              </span>
+              {detail && <span className="day-tx-detail">{detail}</span>}
+            </span>
+            <span className={`day-tx-amt${kind === 'INCOME' ? ' pos' : ''}`}>
+              {kind === 'INCOME' ? '+' : ''}{formatMoney(tx.amount)}
+            </span>
+            {isSaved && (
+              <button
+                className="day-tx-del"
+                title="Excluir"
+                aria-label="Excluir lançamento"
+                onClick={e => {
+                  e.stopPropagation()
+                  if (confirm(tx.isRecurring ? t.dayGroup.confirmDeleteRecurring : t.dayGroup.confirmDelete)) onDelete(tx)
+                }}
               >
-                <span className={`tx-type-icon ${tone}${hasItems ? '' : ' dim'}`}>
-                  {t.kind[kind].letter}
-                </span>
-                <span className="tx-type-label">{label}</span>
-                <span className={`tx-type-amt ${hasItems ? tone : 'zero'}`}>
-                  {total > 0 ? formatMoney(total) : '—'}
-                </span>
-                {hasItems && (
-                  <span className="tx-expand-arrow">{isExp ? '▴' : '▾'}</span>
-                )}
-              </div>
-
-              {isExp && hasItems && (
-                <div className="tx-type-detail">
-                  {txs.map(tx => {
-                    const isSelected = selectedTxIds.has(tx.id)
-                    const detail = detailFor?.(tx)
-                    return (
-                      <div
-                        key={tx.id}
-                        className={`tx-detail-row${isSelected ? ' tx-selected' : ''}`}
-                        onClick={e => {
-                          if (onToggleSelectTx) {
-                            e.stopPropagation()
-                            onToggleSelectTx(tx.id)
-                          }
-                        }}
-                      >
-                        {onToggleSelectTx && (
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}}
-                            style={{ marginRight: '0.4rem' }}
-                          />
-                        )}
-                        <span className="tx-detail-main">
-                          <span className="tx-detail-desc">
-                            {tx.description || label}
-                          </span>
-                          {detail && <span className="tx-detail-meta">{detail}</span>}
-                        </span>
-                        {tx.isInvoicePayment && (
-                          <span className="tx-badge recurring" title="Pagamento de fatura do cartão">fatura</span>
-                        )}
-                        {tx.isRecurring && (
-                          <span className="tx-badge recurring" title="Repete todo mês">mensal</span>
-                        )}
-                        {tx.status === 'PENDING' && (
-                          <span className="tx-badge pending">{t.status.pending}</span>
-                        )}
-                        <span className="tx-detail-amt">{formatMoney(tx.amount)}</span>
-                        {!tx.id.startsWith('optimistic-') && (
-                          <>
-                            <button
-                              className="tx-detail-edit"
-                              onClick={e => { e.stopPropagation(); onEdit(tx) }}
-                              title="Editar"
-                            >
-                              ✎
-                            </button>
-                            <button
-                              className="tx-detail-del"
-                              onClick={e => {
-                                e.stopPropagation()
-                                if (confirm(tx.isRecurring ? t.dayGroup.confirmDeleteRecurring : t.dayGroup.confirmDelete)) onDelete(tx)
-                              }}
-                            >
-                              ×
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    )
-                  })}
-                  <button
-                    className="tx-add-inline"
-                    onClick={e => { e.stopPropagation(); onAdd(group.dateStr, kind) }}
-                  >
-                    {t.dayGroup.addInline}
-                  </button>
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      <div className={`tx-total desktop-only ${saldoClass}`}>
-        <div className="tx-total-head">
-          <span className="tx-total-title">{t.dayGroup.balance}</span>
-          <span className={`tx-total-balance ${saldoClass}`}>
-            {group.runningBalance > 0 ? '+' : ''}{formatMoney(group.runningBalance)}
-          </span>
-        </div>
-
-        <div className="tx-total-breakdown">
-          <div className="tx-total-row total">
-            <span className="tx-total-label">{t.table.total}</span>
-            <span className={`tx-total-value total ${totalClass}`}>
-              {group.runningTotal > 0 ? '+' : ''}{formatMoney(group.runningTotal)}
-            </span>
+                ×
+              </button>
+            )}
           </div>
-        </div>
-      </div>
-    </div>
+        )
+      })}
+    </section>
   )
 }

@@ -260,19 +260,16 @@ export default function TransactionsPage() {
         <div className="tx-table-scroll-container">
           <div className="tx-table-inner">
             <div className="tx-table-header">
-              <span className="th-dia">{t.table.day}</span>
-              <span className="th-filter">
-                <select
-                  className="type-filter-select"
-                  value={filterType}
-                  onChange={e => setFilterType(e.target.value as UiFilterType)}
-                >
-                  <option value="ALL">{t.filter.all}</option>
-                  <option value="INCOME">{t.filter.income}</option>
-                  <option value="EXPENSE">{t.filter.expense}</option>
-                </select>
-              </span>
-              <span className="th-total">{t.table.total}</span>
+              <select
+                className="type-filter-select"
+                value={filterType}
+                onChange={e => setFilterType(e.target.value as UiFilterType)}
+                aria-label="Filtrar lançamentos"
+              >
+                <option value="ALL">{t.filter.all}</option>
+                <option value="INCOME">{t.filter.income}</option>
+                <option value="EXPENSE">{t.filter.expense}</option>
+              </select>
             </div>
 
             {visibleGroups.map(g => (

@@ -45,13 +45,13 @@ export default function AppLayout() {
             Contas
           </NavLink>
           <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/app/projections">
-            Projeções & Runway
+            Projeções
           </NavLink>
           <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/app/budgets">
-            Orçamentos & Metas
+            Metas
           </NavLink>
           <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/app/reports">
-            Relatórios & Importação
+            Relatórios
           </NavLink>
           <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} to="/app/config">
             {t.nav.config}
@@ -62,13 +62,6 @@ export default function AppLayout() {
         </button>
       </nav>
       <Outlet />
-      <footer className="app-footer">
-        <span className="app-footer-brand">somma</span>
-        <span className="app-footer-sep" />
-        desenvolvido por <a className="app-footer-link" href="https://nilbyte.com.br" target="_blank" rel="noopener noreferrer">nilbyte</a>
-        <span className="app-footer-sep" />
-        {new Date().getFullYear()}
-      </footer>
 
       {/* Mobile Bottom Navigation Bar - Minimalista */}
       <nav className="mobile-bottom-nav" aria-label="Navegação móvel">
