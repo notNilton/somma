@@ -18,6 +18,8 @@ interface Props {
   group: DayGroup
   filterType: 'ALL' | 'INCOME' | 'EXPENSE'
   isToday: boolean
+  /** Categoria e conta ou cartão de cada lançamento. */
+  detailFor?: (tx: Transaction) => string
   selectedTxIds?: Set<string>
   onToggleSelectTx?: (id: string) => void
   onAdd: (date: string, kind?: TxKind) => void
@@ -29,13 +31,15 @@ export default function DayGroupComponent({
   group,
   filterType,
   isToday,
+  detailFor,
   selectedTxIds = new Set(),
   onToggleSelectTx,
   onAdd,
   onDelete,
   onEdit,
 }: Props) {
-  const [expanded, setExpanded] = useState<TxKind | null>(null)
+  // Os tipos com lançamento já vêm abertos; aqui ficam só os que foram fechados.
+  const [collapsed, setCollapsed] = useState<Set<TxKind>>(new Set())
   const { t } = useLocale()
 
   const allowedKinds = ALL_KINDS.filter(kind =>
@@ -63,7 +67,12 @@ export default function DayGroupComponent({
   }
 
   function handleRowClick(kind: TxKind) {
-    setExpanded(prev => prev === kind ? null : kind)
+    setCollapsed(prev => {
+      const next = new Set(prev)
+      if (next.has(kind)) next.delete(kind)
+      else next.add(kind)
+      return next
+    })
   }
 
   return (
@@ -95,7 +104,7 @@ export default function DayGroupComponent({
         {visibleKinds.map(kind => {
           const txs = txsFor(kind)
           const total = totalFor(kind)
-          const isExp = expanded === kind
+          const isExp = !collapsed.has(kind)
           const label = t.kind[kind].label
           const tone = KIND_TONES[kind]
           const hasItems = txs.length > 0
@@ -123,6 +132,7 @@ export default function DayGroupComponent({
                 <div className="tx-type-detail">
                   {txs.map(tx => {
                     const isSelected = selectedTxIds.has(tx.id)
+                    const detail = detailFor?.(tx)
                     return (
                       <div
                         key={tx.id}
@@ -142,8 +152,11 @@ export default function DayGroupComponent({
                             style={{ marginRight: '0.4rem' }}
                           />
                         )}
-                        <span className="tx-detail-desc">
-                          {tx.category?.name || tx.description || label}
+                        <span className="tx-detail-main">
+                          <span className="tx-detail-desc">
+                            {tx.description || label}
+                          </span>
+                          {detail && <span className="tx-detail-meta">{detail}</span>}
                         </span>
                         {tx.isInvoicePayment && (
                           <span className="tx-badge recurring" title="Pagamento de fatura do cartão">fatura</span>

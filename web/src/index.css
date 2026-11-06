@@ -617,6 +617,8 @@ body:has(.app-footer) { padding-bottom: 0; }
   padding: 0.25rem 0; font-size: 0.78rem;
 }
 .tx-detail-desc { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; font-weight: 600; }
+.tx-detail-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.tx-detail-meta { color: var(--text-disabled); font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tx-detail-amt  { font-weight: 700; color: var(--text-strong); flex-shrink: 0; font-size: 0.76rem; }
 .tx-detail-del  {
   background: none; border: none; cursor: pointer;

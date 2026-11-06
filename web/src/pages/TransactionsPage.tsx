@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate, Outlet } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { transactionsApi } from '../api'
+import { accountsApi, cardsApi, categoriesApi, transactionsApi } from '../api'
 import { useLocale } from '../i18n'
 import { groupByDay } from '../lib/groupByDay'
 import DayGroupComponent from '../components/DayGroup'
@@ -74,6 +74,42 @@ export default function TransactionsPage() {
 
   const prevMonthEnd = new Date(year, month, 0)
   const before = `${prevMonthEnd.getFullYear()}-${pad(prevMonthEnd.getMonth() + 1)}-${pad(prevMonthEnd.getDate())}`
+
+  const { data: accounts = [] } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => accountsApi.list(),
+  })
+  const { data: cards = [] } = useQuery({
+    queryKey: ['cards'],
+    queryFn: () => cardsApi.list(),
+  })
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesApi.list(),
+  })
+
+  function categoryNameFor(id?: string) {
+    if (!id) return undefined
+    for (const category of categories) {
+      if (category.id === id) return category.name
+      const child = category.children?.find(c => c.id === id)
+      if (child) return child.name
+    }
+    return undefined
+  }
+
+  function sourceNameFor(tx: Transaction) {
+    if (tx.cardId) {
+      const card = cards.find(c => c.id === tx.cardId)
+      return card ? `Cartão ${card.name}` : undefined
+    }
+    return accounts.find(a => a.id === tx.accountId)?.name
+  }
+
+  function detailFor(tx: Transaction) {
+    return [categoryNameFor(tx.categoryId), sourceNameFor(tx)].filter(Boolean).join(' · ')
+  }
 
   const { data: priorTxs = [] } = useQuery({
     queryKey: ['transactions-before', before],
@@ -245,6 +281,7 @@ export default function TransactionsPage() {
                 group={g}
                 filterType={filterType}
                 isToday={g.dateStr === todayStr}
+                detailFor={detailFor}
                 selectedTxIds={selectedTxIds}
                 onToggleSelectTx={id => {
                   setSelectedTxIds(prev => {
